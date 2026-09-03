@@ -1,4 +1,9 @@
-import { ApplicationConfig, provideBrowserGlobalErrorListeners } from '@angular/core';
+import {
+  ApplicationConfig,
+  inject,
+  provideAppInitializer,
+  provideBrowserGlobalErrorListeners,
+} from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import {
@@ -14,6 +19,7 @@ import {
 
 import { routes } from './app.routes';
 import { config } from './core/config';
+import { SessionService } from './core/session';
 
 /** Attach the access token to our own API only, never to third party hosts. */
 const apiCondition = createInterceptorCondition<IncludeBearerTokenCondition>({
@@ -30,7 +36,8 @@ export const appConfig: ApplicationConfig = {
         clientId: config.clientId,
       },
       initOptions: {
-        onLoad: 'login-required',
+        // Not login-required: the registration page has to open without an account.
+        onLoad: 'check-sso',
         checkLoginIframe: false,
         pkceMethod: 'S256',
       },
@@ -46,6 +53,9 @@ export const appConfig: ApplicationConfig = {
       ],
     }),
     provideHttpClient(withInterceptors([includeBearerTokenInterceptor])),
+    // Resolved before the first navigation, so route guards read permissions
+    // synchronously instead of racing the profile request.
+    provideAppInitializer(() => inject(SessionService).load()),
     provideRouter(routes, withComponentInputBinding()),
   ],
 };

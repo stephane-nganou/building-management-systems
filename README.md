@@ -26,10 +26,13 @@ Pass `--wipe` (`-Wipe` on Windows) to the stop script to drop the database volum
 | API docs | http://localhost:8080/swagger-ui.html |
 | Keycloak | http://localhost:8081 (admin / admin) |
 
-Demo sign in: `owner` / `owner`, or `assistant` / `assistant`. These live in
+New landlords sign up at http://localhost:4200/register. Demo sign in:
+`owner` / `owner`, or `assistant` / `assistant`. These live in
 `docker/keycloak/realm-bms.json` and exist for local development only.
 
-Keycloak takes about a minute on first start while it imports the realm.
+Keycloak takes about a minute on first start while it imports the realm. The
+import runs only when the realm does not exist yet, so an existing local stack
+needs `--wipe` on stop to pick up realm changes.
 
 ## Stack
 
@@ -72,9 +75,17 @@ The frontend reads its API and Keycloak URLs at runtime from
 
 Every record belongs to an owner. A user always sees their own data, and an
 assistant sees an owner's data only where that owner granted the matching
-permission, such as `EXPENSE_READ` or `INVOICE_WRITE`. Owners manage their
-assistants under **Assistants**; an assistant must sign in once before they can
-be added, which is what creates their local record.
+permission, such as `EXPENSE_READ` or `INVOICE_WRITE`.
+
+Landlords register themselves and get the `owner` realm role. Assistants never
+sign up: an owner creates them under **Assistants**, and the app returns a
+temporary password once, to hand over. Keycloak makes them choose their own at
+first sign in. Both accounts are created through the Keycloak admin API by the
+`bms-backend` service account client.
+
+In the browser an assistant is shown only the screens their permissions cover.
+The route guards are `canMatch`, so a screen they may not use is never matched
+and its code is never downloaded.
 
 ## Layout
 

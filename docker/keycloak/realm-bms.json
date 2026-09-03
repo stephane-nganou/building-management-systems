@@ -47,9 +47,33 @@
         "roles",
         "email"
       ]
+    },
+    {
+      "clientId": "bms-backend",
+      "name": "Building Management Backend",
+      "description": "Service account the backend uses to create owner and assistant accounts",
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "bms-backend-secret",
+      "standardFlowEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "authorizationServicesEnabled": false
     }
   ],
   "users": [
+    {
+      "username": "service-account-bms-backend",
+      "enabled": true,
+      "serviceAccountClientId": "bms-backend",
+      "clientRoles": {
+        "realm-management": [
+          "manage-users",
+          "view-users",
+          "view-realm"
+        ]
+      }
+    },
     {
       "username": "owner",
       "email": "owner@bms.local",

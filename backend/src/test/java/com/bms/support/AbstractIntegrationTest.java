@@ -1,5 +1,6 @@
 package com.bms.support;
 
+import com.bms.identity.KeycloakAdminClient;
 import org.junit.jupiter.api.BeforeEach;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -33,6 +34,10 @@ public abstract class AbstractIntegrationTest {
     /** No Keycloak in tests: authentication is supplied directly by the jwt() post processor. */
     @MockitoBean
     private JwtDecoder jwtDecoder;
+
+    /** Account creation is stubbed; the tests care about what we do with the result. */
+    @MockitoBean
+    protected KeycloakAdminClient keycloak;
 
     @Autowired
     protected MockMvc mockMvc;

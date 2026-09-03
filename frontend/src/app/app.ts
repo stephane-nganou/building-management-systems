@@ -1,59 +1,56 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { rxResource } from '@angular/core/rxjs-interop';
 import Keycloak from 'keycloak-js';
 
-import { MeApi } from './core/api';
+import { SessionService } from './core/session';
 
 @Component({
   selector: 'app-root',
   imports: [RouterOutlet, RouterLink, RouterLinkActive],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="shell">
-      <aside class="spine">
-        <div class="spine-mark">
-          <strong>Hausbuch</strong>
-          <span>Property ledger</span>
-        </div>
+    @if (me()) {
+      <div class="shell">
+        <aside class="spine">
+          <div class="spine-mark">
+            <strong>Hausbuch</strong>
+            <span>Property ledger</span>
+          </div>
 
-        <nav>
-          <a routerLink="/dashboard" routerLinkActive="active">Overview</a>
-          <a routerLink="/buildings" routerLinkActive="active">Buildings</a>
-          <a routerLink="/apartments" routerLinkActive="active">Apartments</a>
-          <a routerLink="/tenants" routerLinkActive="active">Tenants</a>
-          <a routerLink="/expenses" routerLinkActive="active">Expenses</a>
-          <a routerLink="/invoices" routerLinkActive="active">Invoices</a>
-          <a routerLink="/reports" routerLinkActive="active">Profit and loss</a>
-          <a routerLink="/assistants" routerLinkActive="active">Assistants</a>
-        </nav>
+          <nav>
+            @for (entry of entries(); track entry.path) {
+              <a [routerLink]="entry.path" routerLinkActive="active">{{ entry.label }}</a>
+            }
+          </nav>
 
-        <div class="spine-foot">
-          @if (me.hasValue()) {
-            <div class="who">{{ me.value()!.name }}</div>
+          <div class="spine-foot">
+            <div class="who">{{ me()!.name }}</div>
             <div class="role">
-              @if (me.value()!.assistingFor.length) {
-                Assisting {{ me.value()!.assistingFor.length }} owner(s)
-              } @else {
+              @if (session.owner()) {
                 Owner
+              } @else {
+                Assisting {{ me()!.assistingFor.length }} owner(s)
               }
             </div>
-          }
-          <button class="quiet" type="button" (click)="signOut()">Sign out</button>
-        </div>
-      </aside>
+            <button class="quiet" type="button" (click)="signOut()">Sign out</button>
+          </div>
+        </aside>
 
-      <main class="main">
-        <router-outlet />
-      </main>
-    </div>
+        <main class="main">
+          <router-outlet />
+        </main>
+      </div>
+    } @else {
+      <router-outlet />
+    }
   `,
 })
 export class App {
   private keycloak = inject(Keycloak);
-  private meApi = inject(MeApi);
 
-  protected readonly me = rxResource({ stream: () => this.meApi.get() });
+  protected readonly session = inject(SessionService);
+  protected readonly me = this.session.user;
+  protected readonly entries = computed(() => (this.me() ? this.session.visibleEntries() : []));
 
   protected signOut(): void {
     void this.keycloak.logout({ redirectUri: window.location.origin });

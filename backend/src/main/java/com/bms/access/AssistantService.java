@@ -1,12 +1,15 @@
 package com.bms.access;
 
 import java.util.List;
+import java.util.Set;
 import java.util.UUID;
 
 import com.bms.access.dto.AssistantRequest;
 import com.bms.access.dto.AssistantResponse;
+import com.bms.access.dto.PermissionsRequest;
 import com.bms.common.exception.NotFoundException;
 import com.bms.common.exception.ValidationException;
+import com.bms.identity.AccountService;
 import com.bms.user.AppUser;
 import com.bms.user.AppUserRepository;
 import com.bms.user.CurrentUserService;
@@ -20,12 +23,14 @@ public class AssistantService {
     private final AssistantAssignmentRepository assignments;
     private final AppUserRepository users;
     private final CurrentUserService currentUser;
+    private final AccountService accounts;
 
     public AssistantService(AssistantAssignmentRepository assignments, AppUserRepository users,
-                            CurrentUserService currentUser) {
+                            CurrentUserService currentUser, AccountService accounts) {
         this.assignments = assignments;
         this.users = users;
         this.currentUser = currentUser;
+        this.accounts = accounts;
     }
 
     @Transactional(readOnly = true)
@@ -34,34 +39,53 @@ public class AssistantService {
                 .map(AssistantResponse::from).toList();
     }
 
+    /**
+     * Adds an assistant. Their account is created here, with a password the
+     * owner hands over, unless the email already belongs to someone.
+     */
     @Transactional
     public AssistantResponse grant(AssistantRequest request) {
         AppUser owner = currentUser.require();
-        AppUser assistant = users.findByEmailIgnoreCase(request.email())
-                .orElseThrow(() -> new ValidationException(
-                        "No user with email " + request.email() + " has signed in yet"));
-        if (assistant.getId().equals(owner.getId())) {
-            throw new ValidationException("You cannot add yourself as an assistant");
-        }
-        return assignments.findByOwnerIdAndAssistantId(owner.getId(), assistant.getId())
-                .map(existing -> {
-                    existing.replacePermissions(request.permissions());
-                    return AssistantResponse.from(existing);
-                })
-                .orElseGet(() -> AssistantResponse.from(
-                        assignments.save(new AssistantAssignment(owner, assistant, request.permissions()))));
+        return users.findByEmailIgnoreCase(request.email())
+                .map(assistant -> assign(owner, assistant, request.permissions(), null))
+                .orElseGet(() -> {
+                    AccountService.NewAccount created = accounts.createAssistant(
+                            request.email(), request.firstName(), request.lastName());
+                    return assign(owner, created.user(), request.permissions(), created.password());
+                });
     }
 
     @Transactional
-    public AssistantResponse updatePermissions(UUID assignmentId, AssistantRequest request) {
+    public AssistantResponse updatePermissions(UUID assignmentId, PermissionsRequest request) {
         AssistantAssignment assignment = require(assignmentId);
         assignment.replacePermissions(request.permissions());
         return AssistantResponse.from(assignment);
     }
 
+    /** Hands the owner a new password to pass on when their assistant lost theirs. */
+    @Transactional
+    public AssistantResponse resetPassword(UUID assignmentId) {
+        AssistantAssignment assignment = require(assignmentId);
+        return AssistantResponse.from(assignment, accounts.resetPassword(assignment.getAssistant()));
+    }
+
     @Transactional
     public void revoke(UUID assignmentId) {
         assignments.delete(require(assignmentId));
+    }
+
+    private AssistantResponse assign(AppUser owner, AppUser assistant, Set<Permission> permissions,
+                                     String temporaryPassword) {
+        if (assistant.getId().equals(owner.getId())) {
+            throw new ValidationException("You cannot add yourself as an assistant");
+        }
+        AssistantAssignment assignment = assignments.findByOwnerIdAndAssistantId(owner.getId(), assistant.getId())
+                .map(existing -> {
+                    existing.replacePermissions(permissions);
+                    return existing;
+                })
+                .orElseGet(() -> assignments.save(new AssistantAssignment(owner, assistant, permissions)));
+        return AssistantResponse.from(assignment, temporaryPassword);
     }
 
     private AssistantAssignment require(UUID assignmentId) {

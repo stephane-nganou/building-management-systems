@@ -146,11 +146,22 @@ export interface Assistant {
   name: string;
   email: string;
   permissions: Permission[];
+  /** Only ever sent back on the response that created it or reset it. */
+  temporaryPassword: string | null;
 }
 
 export interface Me {
   id: string;
   email: string;
   name: string;
+  owner: boolean;
+  permissions: Permission[];
   assistingFor: { ownerId: string; ownerName: string; permissions: Permission[] }[];
+}
+
+export interface Registration {
+  email: string;
+  firstName: string;
+  lastName: string;
+  password: string;
 }
