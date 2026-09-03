@@ -58,6 +58,27 @@ class BuildingApiIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(status().isNotFound());
     }
 
+    /**
+     * A first request that only reads runs in a read only transaction, where a
+     * lazily created user record would never be flushed. The caller must still
+     * end up with a local record.
+     */
+    @Test
+    void aNewUserIsGivenALocalRecordOnAReadOnlyFirstRequest() throws Exception {
+        mockMvc.perform(get("/api/buildings").with(asUser("fresh", "fresh@example.com")))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(get("/api/me").with(asUser("fresh", "fresh@example.com")))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.email").value("fresh@example.com"));
+
+        // Creating works straight away, which needs that record to exist.
+        mockMvc.perform(post("/api/buildings")
+                        .with(asUser("fresh", "fresh@example.com"))
+                        .contentType(MediaType.APPLICATION_JSON).content(BODY))
+                .andExpect(status().isCreated());
+    }
+
     @Test
     void rejectsABuildingWithoutAName() throws Exception {
         mockMvc.perform(post("/api/buildings")

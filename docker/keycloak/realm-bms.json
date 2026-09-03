@@ -40,6 +40,7 @@
         "pkce.code.challenge.method": "S256"
       },
       "defaultClientScopes": [
+        "basic",
         "web-origins",
         "acr",
         "profile",

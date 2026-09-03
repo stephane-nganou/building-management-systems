@@ -9,7 +9,9 @@ services:
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
-      - postgres-data:/var/lib/postgresql/data
+      # Postgres 18+ images expect a single mount at /var/lib/postgresql and
+      # place the version specific data directory underneath it.
+      - postgres-data:/var/lib/postgresql
       - ./docker/postgres/init-keycloak-db.sql:/docker-entrypoint-initdb.d/init-keycloak-db.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-bms} -d ${POSTGRES_DB:-bms}"]
