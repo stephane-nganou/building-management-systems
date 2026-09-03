@@ -35,7 +35,7 @@ Keycloak takes about a minute on first start while it imports the realm.
 
 | Part | Choice |
 |---|---|
-| Backend | Spring Boot 4.1.1, Java 21, Maven |
+| Backend | Spring Boot 4.1.1, Java 25, Maven |
 | Frontend | Angular 22, standalone and zoneless, signals |
 | Database | Postgres 18, persisted in a Docker volume |
 | Migrations | Flyway |
@@ -46,9 +46,11 @@ Keycloak takes about a minute on first start while it imports the realm.
 reads and reviews like the schema it produces. Liquibase's changelog abstraction
 buys database portability this project does not need.
 
-**Java 21, not 25:** Boot 4.1 supports 17 through 26. Java 21 is the current LTS
-that builds on the machines here; moving to 25 is a one line change to
-`java.version` in `backend/pom.xml` plus the base image tags in the Dockerfiles.
+**Java 25, not 26:** Boot 4.1 supports 17 through 26. Java 25 is the current LTS;
+26 is a six month feature release. A local JDK 26 builds this fine, because
+`java.version` makes Maven compile to release 25, and the containers run a 25
+runtime. The version lives in `java.version` in `backend/pom.xml` plus the base
+image tags in the Dockerfiles.
 
 ## Develop
 
