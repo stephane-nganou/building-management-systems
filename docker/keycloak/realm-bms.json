@@ -1,0 +1,90 @@
+{
+  "realm": "bms",
+  "enabled": true,
+  "displayName": "Building Management",
+  "registrationAllowed": false,
+  "resetPasswordAllowed": true,
+  "loginWithEmailAllowed": true,
+  "duplicateEmailsAllowed": false,
+  "accessTokenLifespan": 1800,
+  "ssoSessionIdleTimeout": 3600,
+  "roles": {
+    "realm": [
+      {
+        "name": "owner",
+        "description": "Owns buildings and manages assistants"
+      },
+      {
+        "name": "assistant",
+        "description": "Works on an owner's data within granted permissions"
+      }
+    ]
+  },
+  "clients": [
+    {
+      "clientId": "bms-frontend",
+      "name": "Building Management Frontend",
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "standardFlowEnabled": true,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "redirectUris": [
+        "http://localhost:4200/*"
+      ],
+      "webOrigins": [
+        "http://localhost:4200"
+      ],
+      "attributes": {
+        "post.logout.redirect.uris": "http://localhost:4200/*",
+        "pkce.code.challenge.method": "S256"
+      },
+      "defaultClientScopes": [
+        "basic",
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "email"
+      ]
+    }
+  ],
+  "users": [
+    {
+      "username": "owner",
+      "email": "owner@bms.local",
+      "firstName": "Olivia",
+      "lastName": "Owner",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "owner",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "owner"
+      ]
+    },
+    {
+      "username": "assistant",
+      "email": "assistant@bms.local",
+      "firstName": "Adam",
+      "lastName": "Assistant",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "assistant",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "assistant"
+      ]
+    }
+  ]
+}
