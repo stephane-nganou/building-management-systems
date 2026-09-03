@@ -1,0 +1,229 @@
+<!--
+  Rendered to PDF by openhtmltopdf, which parses this document as XML.
+  Keep the markup well formed: close every tag, avoid void elements such as
+  <meta> or <br>, and avoid named entities like &nbsp;.
+-->
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title th:text="'Invoice ' + ${invoice.invoiceNumber}">Invoice</title>
+    <style>
+        @page {
+            size: A4;
+            margin: 22mm 18mm;
+        }
+
+        body {
+            font-family: Helvetica, Arial, sans-serif;
+            font-size: 10.5pt;
+            color: #1f2933;
+            line-height: 1.5;
+        }
+
+        .header {
+            border-bottom: 2pt solid #1f2933;
+            padding-bottom: 10pt;
+            margin-bottom: 18pt;
+        }
+
+        .issuer {
+            font-size: 15pt;
+            font-weight: bold;
+            letter-spacing: 0.4pt;
+        }
+
+        .doc-type {
+            color: #52606d;
+            font-size: 9pt;
+            text-transform: uppercase;
+            letter-spacing: 1.4pt;
+        }
+
+        .meta-table {
+            width: 100%;
+            margin-bottom: 20pt;
+        }
+
+        .meta-table td {
+            vertical-align: top;
+            width: 50%;
+        }
+
+        .label {
+            color: #7b8794;
+            font-size: 8.5pt;
+            text-transform: uppercase;
+            letter-spacing: 0.8pt;
+        }
+
+        .value {
+            font-weight: bold;
+        }
+
+        .party {
+            margin-top: 4pt;
+        }
+
+        table.lines {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 6pt;
+        }
+
+        table.lines th {
+            background: #f5f7fa;
+            border-bottom: 1pt solid #cbd2d9;
+            padding: 7pt 6pt;
+            text-align: left;
+            font-size: 9pt;
+            text-transform: uppercase;
+            letter-spacing: 0.6pt;
+            color: #52606d;
+        }
+
+        table.lines td {
+            border-bottom: 0.5pt solid #e4e7eb;
+            padding: 7pt 6pt;
+        }
+
+        .num {
+            text-align: right;
+        }
+
+        .totals {
+            width: 42%;
+            margin-left: 58%;
+            margin-top: 14pt;
+            border-collapse: collapse;
+        }
+
+        .totals td {
+            padding: 6pt 6pt;
+        }
+
+        .totals tr.grand td {
+            border-top: 1.5pt solid #1f2933;
+            font-size: 12pt;
+            font-weight: bold;
+        }
+
+        .notes {
+            margin-top: 26pt;
+            padding-top: 10pt;
+            border-top: 0.5pt solid #e4e7eb;
+            color: #52606d;
+            font-size: 9.5pt;
+        }
+
+        .footer {
+            margin-top: 30pt;
+            color: #7b8794;
+            font-size: 8.5pt;
+        }
+    </style>
+</head>
+<body>
+
+<div class="header">
+    <table style="width:100%">
+        <tr>
+            <td>
+                <div class="issuer" th:text="${issuerName}">Building Management</div>
+            </td>
+            <td style="text-align:right">
+                <div class="doc-type"
+                     th:text="${invoice.type.name() == 'RENT'} ? 'Rent invoice' : 'Cold water invoice'">Invoice</div>
+                <div class="value" th:text="${invoice.invoiceNumber}">INV-2026-000001</div>
+            </td>
+        </tr>
+    </table>
+</div>
+
+<table class="meta-table">
+    <tr>
+        <td>
+            <div class="label">Billed to</div>
+            <div class="party">
+                <div class="value" th:text="${invoice.tenant.fullName}">Tenant name</div>
+                <div th:text="${building.name} + ' - ' + ${invoice.apartment.label}">Building - Apartment</div>
+                <div th:text="${building.address != null} ? ${building.address.asSingleLine()} : ''">Address</div>
+                <div th:if="${invoice.tenant.email != null}" th:text="${invoice.tenant.email}">mail</div>
+            </div>
+        </td>
+        <td>
+            <div class="label">Issued by</div>
+            <div class="party">
+                <div class="value" th:text="${owner.fullName}">Owner</div>
+                <div th:text="${owner.email}">owner@example.com</div>
+            </div>
+        </td>
+    </tr>
+</table>
+
+<table class="meta-table">
+    <tr>
+        <td>
+            <div class="label">Billing period</div>
+            <div class="value" th:text="${periodStart} + ' - ' + ${periodEnd}">01.01.2026 - 31.01.2026</div>
+        </td>
+        <td>
+            <table style="width:100%">
+                <tr>
+                    <td>
+                        <div class="label">Issue date</div>
+                        <div class="value" th:text="${issueDate}">01.01.2026</div>
+                    </td>
+                    <td>
+                        <div class="label">Due date</div>
+                        <div class="value" th:text="${dueDate}">15.01.2026</div>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+
+<table class="lines">
+    <thead>
+    <tr>
+        <th>Description</th>
+        <th class="num">Quantity</th>
+        <th>Unit</th>
+        <th class="num">Unit price</th>
+        <th class="num">Amount</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="line : ${invoice.lines}">
+        <td th:text="${line.description}">Rent</td>
+        <td class="num" th:text="${#numbers.formatDecimal(line.quantity, 1, 'POINT', 2, 'COMMA')}">1,00</td>
+        <td th:text="${line.unit != null} ? ${line.unit} : ''">month</td>
+        <td class="num"
+            th:text="${#numbers.formatDecimal(line.unitPrice, 1, 'POINT', 2, 'COMMA')} + ' ' + ${currency}">
+            0,00
+        </td>
+        <td class="num"
+            th:text="${#numbers.formatDecimal(line.amount, 1, 'POINT', 2, 'COMMA')} + ' ' + ${currency}">0,00</td>
+    </tr>
+    </tbody>
+</table>
+
+<table class="totals">
+    <tr class="grand">
+        <td>Total due</td>
+        <td class="num"
+            th:text="${#numbers.formatDecimal(invoice.total, 1, 'POINT', 2, 'COMMA')} + ' ' + ${currency}">0,00</td>
+    </tr>
+</table>
+
+<div class="notes" th:if="${invoice.notes != null}">
+    <div class="label">Notes</div>
+    <div th:text="${invoice.notes}">Notes</div>
+</div>
+
+<div class="footer">
+    <span th:text="'Please transfer the total due by ' + ${dueDate} + ', quoting invoice '
+            + ${invoice.invoiceNumber} + '.'">Payment terms</span>
+</div>
+
+</body>
+</html>
