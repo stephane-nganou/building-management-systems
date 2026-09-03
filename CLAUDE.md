@@ -21,10 +21,10 @@ When instructed to build a feature:
 ## Technical design
 
 - The entire project should be packaged into Docker containers.  
-- The backend should be in backend/ and be a Spring boot project using the latest stable spring boot version, latest stable Java version compatible with the spring boot version, and maven.  
+- The backend should be in backend/ and be a Spring boot project using the latest stable spring boot version, latest stable Java version compatible with the spring boot version, and maven.
 - The frontend should be in frontend/  and be an angular project (latest stable version of angular).
 - We will use JWT, keycloak and later on, implement Oauth 2.
-- The database should use Postgres and be persisted using volumes.
+- The database should use Postgres and be persisted using volumes. For quick e2e test purposes you may use SQLLite. Thing from the beginning about a migration tool (propose what is convenient and why)
 - There should be scripts in scripts/ for:  
     ```bash
     # Mac
