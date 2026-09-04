@@ -110,6 +110,10 @@ again on a later read.
 
 - Write actions are still shown inside a screen an assistant may only read; the
   backend refuses them, but the buttons are there.
+- Shell scripts and the hook need the executable bit set in git itself
+  (`git update-index --chmod=+x`). Windows checkouts run with
+  `core.fileMode=false`, so a local `chmod` is not recorded, and a script
+  committed without it fails on Linux and macOS, including in CI.
 - The end to end stack uses the same ports as the development one, because the
   realm's redirect URIs name them, so the two cannot run at once.
 - `docker/keycloak/themes/bms` hardcodes the registration URL, for the same
