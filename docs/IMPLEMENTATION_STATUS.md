@@ -88,6 +88,11 @@ again on a later read.
   registration stays off, because signing up has to assign the owner role, which
   only our backend does. The theme copies one 56 line template from
   `keycloak.v2` and changes its footer to point at our page.
+- **Syncing the realm never overwrites a role.** Keycloak's partial import
+  replaces a role by deleting and recreating it, which drops it from every user
+  who held it: the demo owner stops being an owner, and worse, an assistant who
+  loses their marker is treated as one. Roles are added and never replaced;
+  clients, where redirect URIs and secrets actually drift, are replaced.
 - **A Keycloak failure is a 502, never a 401.** The admin client's own HTTP
   errors used to escape untouched, so a realm missing the `bms-backend` client
   answered registration with a bare 401 and an empty body. That reads as "you
@@ -116,8 +121,9 @@ again on a later read.
 - Write actions are still shown inside a screen an assistant may only read; the
   backend refuses them, but the buttons are there.
 - Changing the realm export does not change a realm Keycloak already has, since
-  it only imports one that is absent. An existing stack needs `--wipe`, or the
-  change applied by hand through the admin API.
+  it only imports one that is absent. `node scripts/sync-realm.mjs` applies the
+  export to a running Keycloak; `--wipe` is the alternative, at the cost of the
+  application database.
 - Shell scripts and the hook need the executable bit set in git itself
   (`git update-index --chmod=+x`). Windows checkouts run with
   `core.fileMode=false`, so a local `chmod` is not recorded, and a script

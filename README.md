@@ -32,8 +32,17 @@ New landlords sign up at http://localhost:4200/register, reachable from
 `docker/keycloak/realm-bms.json` and exist for local development only.
 
 Keycloak takes about a minute on first start while it imports the realm. The
-import runs only when the realm does not exist yet, so an existing local stack
-needs `--wipe` on stop to pick up realm changes.
+import runs only when the realm does not exist yet, so a stack that has been
+started once will not see later changes to `docker/keycloak/realm-bms.json`.
+Apply them to a running Keycloak instead of wiping the database:
+
+```bash
+node scripts/sync-realm.mjs
+```
+
+It updates the realm settings, adds any missing roles and refreshes the
+clients, then checks that the backend can still get a token. Users are left
+alone, so nobody loses their account or their buildings.
 
 ## Stack
 
@@ -112,7 +121,7 @@ backend/    Spring Boot service, one package per feature
 frontend/   Angular app, one lazy loaded route per feature
   e2e/      Playwright specs, run against the whole stack
 docker/     Keycloak realm export, login theme and Postgres bootstrap
-scripts/    start, stop, end to end and hook installation
+scripts/    start, stop, end to end, realm sync and hook installation
 .githooks/  pre-push, so a branch is never pushed broken
 docs/       implementation status
 ```
