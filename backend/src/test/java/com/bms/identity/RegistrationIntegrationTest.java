@@ -1,5 +1,6 @@
 package com.bms.identity;
 
+import com.bms.common.exception.IdentityProviderException;
 import com.bms.support.AbstractIntegrationTest;
 import com.bms.user.AppUserRepository;
 import org.junit.jupiter.api.Test;
@@ -61,6 +62,22 @@ class RegistrationIntegrationTest extends AbstractIntegrationTest {
                                 """))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors.password").exists());
+    }
+
+    /**
+     * A Keycloak that will not talk to us is a server side fault. Reporting it
+     * as a 401 made a configuration problem look like an authentication one.
+     */
+    @Test
+    void aKeycloakFailureIsReportedAsABadGatewayRatherThanUnauthorized() throws Exception {
+        given(keycloak.createUser(anyString(), anyString(), anyString(), anyString(), eq(false), eq("owner")))
+                .willThrow(new IdentityProviderException("the bms-backend client is missing"));
+
+        mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content(SIGN_UP))
+                .andExpect(status().isBadGateway())
+                .andExpect(jsonPath("$.detail").value("Accounts cannot be managed right now. Please try again later."));
+
+        assertThat(users.findByEmailIgnoreCase("nina@example.com")).isEmpty();
     }
 
     /** Everything else still needs a token; registration is the single exception. */

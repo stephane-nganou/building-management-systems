@@ -4,7 +4,9 @@ import java.net.URI;
 import java.util.List;
 import java.util.Map;
 
+import com.bms.common.exception.IdentityProviderException;
 import com.bms.common.exception.ValidationException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
@@ -13,6 +15,7 @@ import org.springframework.stereotype.Component;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestClient;
+import org.springframework.web.client.RestClientException;
 
 /**
  * The slice of Keycloak's admin REST API this application needs: create an
@@ -27,8 +30,16 @@ public class KeycloakAdminClient {
     private final RestClient http;
     private final KeycloakAdminProperties properties;
 
+    // Named explicitly: a second constructor exists for tests, and Spring will not
+    // guess between them.
+    @Autowired
     public KeycloakAdminClient(KeycloakAdminProperties properties) {
-        this.http = RestClient.create(properties.serverUrl());
+        this(RestClient.create(properties.serverUrl()), properties);
+    }
+
+    /** Lets a test supply a client bound to a mock server. */
+    KeycloakAdminClient(RestClient http, KeycloakAdminProperties properties) {
+        this.http = http;
         this.properties = properties;
     }
 
@@ -88,12 +99,19 @@ public class KeycloakAdminClient {
     }
 
     private void assignRealmRole(String token, String userId, String role) {
-        Map<String, Object> representation = http.get()
-                .uri("/admin/realms/{realm}/roles/{role}", properties.realm(), role)
-                .headers(headers -> headers.setBearerAuth(token))
-                .retrieve()
-                .body(new ParameterizedTypeReference<>() {
-                });
+        Map<String, Object> representation;
+        try {
+            representation = http.get()
+                    .uri("/admin/realms/{realm}/roles/{role}", properties.realm(), role)
+                    .headers(headers -> headers.setBearerAuth(token))
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<>() {
+                    });
+        } catch (RestClientException exception) {
+            throw new IdentityProviderException(
+                    "Could not read the realm role '" + role + "' from realm '" + properties.realm() + "'",
+                    exception);
+        }
         http.post()
                 .uri("/admin/realms/{realm}/users/{id}/role-mappings/realm", properties.realm(), userId)
                 .headers(headers -> headers.setBearerAuth(token))
@@ -111,19 +129,29 @@ public class KeycloakAdminClient {
         form.add("client_id", properties.clientId());
         form.add("client_secret", properties.clientSecret());
 
-        Map<String, Object> body = http.post()
-                .uri("/realms/{realm}/protocol/openid-connect/token", properties.realm())
-                .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE)
-                .body(form)
-                .retrieve()
-                .body(new ParameterizedTypeReference<>() {
-                });
+        Map<String, Object> body;
+        try {
+            body = http.post()
+                    .uri("/realms/{realm}/protocol/openid-connect/token", properties.realm())
+                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+                    .body(form)
+                    .retrieve()
+                    .body(new ParameterizedTypeReference<>() {
+                    });
+        } catch (RestClientException exception) {
+            // Almost always the realm was imported before this client existed:
+            // Keycloak only imports a realm that is not already in its database.
+            throw new IdentityProviderException(
+                    "Could not authenticate as the '" + properties.clientId() + "' client in realm '"
+                            + properties.realm() + "'. Check that the client exists and its secret matches.",
+                    exception);
+        }
         return String.valueOf(body.get("access_token"));
     }
 
     private void failOnError(HttpStatusCode status, String action) {
         if (status.isError()) {
-            throw new IllegalStateException("Keycloak refused to " + action + ", status " + status.value());
+            throw new IdentityProviderException("Keycloak refused to " + action + ", status " + status.value());
         }
     }
 }

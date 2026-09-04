@@ -37,7 +37,7 @@ again on a later read.
 
 ## Tests
 
-- Backend: 31 tests. Unit tests for invoice totals, rounding and status rules;
+- Backend: 35 tests. Unit tests for invoice totals, rounding and status rules;
   integration tests on a real Postgres 18 via Testcontainers covering the API,
   owner isolation, assistant permissions, registration, PDF rendering and the
   report maths. The Keycloak admin client is mocked there.
@@ -88,6 +88,11 @@ again on a later read.
   registration stays off, because signing up has to assign the owner role, which
   only our backend does. The theme copies one 56 line template from
   `keycloak.v2` and changes its footer to point at our page.
+- **A Keycloak failure is a 502, never a 401.** The admin client's own HTTP
+  errors used to escape untouched, so a realm missing the `bms-backend` client
+  answered registration with a bare 401 and an empty body. That reads as "you
+  are not signed in" on an endpoint that needs no sign in, which is the worst
+  possible signpost. The reason is logged; the caller is only told to try later.
 - **An owner is anyone whose token does not say `assistant`.** Registration
   assigns the `owner` role, but treating a missing role as an owner keeps
   accounts made before roles existed working.
@@ -110,6 +115,9 @@ again on a later read.
 
 - Write actions are still shown inside a screen an assistant may only read; the
   backend refuses them, but the buttons are there.
+- Changing the realm export does not change a realm Keycloak already has, since
+  it only imports one that is absent. An existing stack needs `--wipe`, or the
+  change applied by hand through the admin API.
 - Shell scripts and the hook need the executable bit set in git itself
   (`git update-index --chmod=+x`). Windows checkouts run with
   `core.fileMode=false`, so a local `chmod` is not recorded, and a script
