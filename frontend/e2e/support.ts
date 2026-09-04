@@ -43,8 +43,15 @@ export async function signOut(page: Page): Promise<void> {
   await page.waitForURL(/\/realms\/bms\/protocol\/openid-connect/);
 }
 
-/** The sidebar entries the signed in user can see. */
-export async function navLabels(page: Page): Promise<string[]> {
-  await expect(page.locator('aside.spine nav a').first()).toBeVisible();
-  return page.locator('aside.spine nav a').allInnerTexts();
+/**
+ * Asserts the sidebar entries the signed in user can see.
+ *
+ * <p>Retrying matters here. Reading the labels into an array and comparing that
+ * takes one snapshot, and a snapshot can be taken before the browser has
+ * applied a change the test just asked for: signing in, or switching language.
+ * `toHaveText` polls until the sidebar settles, so a busy machine is slow
+ * rather than red.
+ */
+export async function expectNavLabels(page: Page, labels: string[]): Promise<void> {
+  await expect(page.locator('aside.spine nav a')).toHaveText(labels);
 }

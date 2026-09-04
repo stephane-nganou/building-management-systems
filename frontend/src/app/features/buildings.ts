@@ -3,7 +3,9 @@ import { FormsModule } from '@angular/forms';
 import { rxResource } from '@angular/core/rxjs-interop';
 
 import { BuildingsApi } from '../core/api';
+import { TranslationService } from '../core/i18n';
 import { Building } from '../core/models';
+import { TranslatePipe } from '../shared/translate.pipe';
 
 interface BuildingForm {
   name: string;
@@ -25,33 +27,37 @@ const blank = (): BuildingForm => ({
 
 @Component({
   selector: 'bms-buildings',
-  imports: [FormsModule],
+  imports: [FormsModule, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="band">
       <div class="band-head">
         <div>
-          <h1>Buildings</h1>
-          <p>Every property you manage. Apartments, costs and invoices hang off these.</p>
+          <h1>{{ 'buildings.title' | t }}</h1>
+          <p>{{ 'buildings.subtitle' | t }}</p>
         </div>
-        <button class="primary" type="button" (click)="startCreate()">Add building</button>
+        <button class="primary" type="button" (click)="startCreate()">
+          {{ 'buildings.add' | t }}
+        </button>
       </div>
 
       @if (buildings.isLoading()) {
-        <p class="loading">Loading buildings.</p>
+        <p class="loading">{{ 'buildings.loading' | t }}</p>
       } @else if (buildings.hasValue() && buildings.value()!.length === 0) {
         <div class="empty">
-          <h3>No buildings yet</h3>
-          <p>Add the first property to start tracking its apartments, costs and rent.</p>
-          <button class="primary" type="button" (click)="startCreate()">Add building</button>
+          <h3>{{ 'buildings.emptyTitle' | t }}</h3>
+          <p>{{ 'buildings.emptyBody' | t }}</p>
+          <button class="primary" type="button" (click)="startCreate()">
+            {{ 'buildings.add' | t }}
+          </button>
         </div>
       } @else if (buildings.hasValue()) {
         <table class="sheet">
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Address</th>
-              <th class="right">Apartments</th>
+              <th>{{ 'common.name' | t }}</th>
+              <th>{{ 'buildings.address' | t }}</th>
+              <th class="right">{{ 'buildings.apartments' | t }}</th>
               <th></th>
             </tr>
           </thead>
@@ -62,8 +68,12 @@ const blank = (): BuildingForm => ({
                 <td class="muted">{{ address(building) }}</td>
                 <td class="right">{{ building.apartmentCount }}</td>
                 <td class="right">
-                  <button class="quiet" type="button" (click)="startEdit(building)">Edit</button>
-                  <button class="quiet danger" type="button" (click)="remove(building)">Delete</button>
+                  <button class="quiet" type="button" (click)="startEdit(building)">
+                    {{ 'common.edit' | t }}
+                  </button>
+                  <button class="quiet danger" type="button" (click)="remove(building)">
+                    {{ 'common.delete' | t }}
+                  </button>
                 </td>
               </tr>
             }
@@ -80,40 +90,40 @@ const blank = (): BuildingForm => ({
       <div class="scrim" (click)="cancel()">
         <div class="panel" (click)="$event.stopPropagation()">
           <header>
-            <h2>{{ editingId() ? 'Edit building' : 'Add building' }}</h2>
+            <h2>{{ (editingId() ? 'buildings.editTitle' : 'buildings.add') | t }}</h2>
           </header>
           <div class="body">
             <div class="field">
-              <label for="name">Name</label>
+              <label for="name">{{ 'common.name' | t }}</label>
               <input id="name" name="name" [(ngModel)]="form.name" placeholder="Hauptstrasse 1" />
             </div>
             <div class="grid-2">
               <div class="field">
-                <label for="street">Street</label>
+                <label for="street">{{ 'buildings.street' | t }}</label>
                 <input id="street" name="street" [(ngModel)]="form.street" />
               </div>
               <div class="field">
-                <label for="postalCode">Postal code</label>
+                <label for="postalCode">{{ 'buildings.postalCode' | t }}</label>
                 <input id="postalCode" name="postalCode" [(ngModel)]="form.postalCode" />
               </div>
               <div class="field">
-                <label for="city">City</label>
+                <label for="city">{{ 'buildings.city' | t }}</label>
                 <input id="city" name="city" [(ngModel)]="form.city" />
               </div>
               <div class="field">
-                <label for="country">Country</label>
+                <label for="country">{{ 'buildings.country' | t }}</label>
                 <input id="country" name="country" [(ngModel)]="form.country" />
               </div>
             </div>
             <div class="field">
-              <label for="notes">Notes</label>
+              <label for="notes">{{ 'common.notes' | t }}</label>
               <textarea id="notes" name="notes" rows="3" [(ngModel)]="form.notes"></textarea>
             </div>
           </div>
           <footer>
-            <button type="button" (click)="cancel()">Cancel</button>
+            <button type="button" (click)="cancel()">{{ 'common.cancel' | t }}</button>
             <button class="primary" type="button" [disabled]="!form.name.trim()" (click)="save()">
-              {{ editingId() ? 'Save changes' : 'Add building' }}
+              {{ (editingId() ? 'common.saveChanges' : 'buildings.add') | t }}
             </button>
           </footer>
         </div>
@@ -123,6 +133,7 @@ const blank = (): BuildingForm => ({
 })
 export class BuildingsPage {
   private api = inject(BuildingsApi);
+  private i18n = inject(TranslationService);
 
   protected readonly buildings = rxResource({ stream: () => this.api.list() });
   protected readonly editing = signal(false);
@@ -168,14 +179,15 @@ export class BuildingsPage {
         this.error.set(null);
         this.buildings.reload();
       },
-      error: () => this.error.set('The building could not be saved.'),
+      error: () => this.error.set(this.i18n.translate('buildings.saveFailed')),
     });
   }
 
   protected remove(building: Building): void {
     this.api.remove(building.id).subscribe({
       next: () => this.buildings.reload(),
-      error: () => this.error.set(`${building.name} could not be deleted.`),
+      error: () =>
+        this.error.set(this.i18n.translate('buildings.deleteFailed', { name: building.name })),
     });
   }
 }

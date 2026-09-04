@@ -3,44 +3,44 @@ import { FormsModule } from '@angular/forms';
 import { rxResource } from '@angular/core/rxjs-interop';
 
 import { AssistantsApi } from '../core/api';
+import { TranslationService } from '../core/i18n';
 import { Assistant, Permission } from '../core/models';
 import { LabelPipe } from '../shared/money.pipe';
+import { TranslatePipe } from '../shared/translate.pipe';
 
 @Component({
   selector: 'bms-assistants',
-  imports: [FormsModule, LabelPipe],
+  imports: [FormsModule, LabelPipe, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="band">
       <div class="band-head">
         <div>
-          <h1>Assistants</h1>
-          <p>
-            People who help you manage your buildings. You create their account, and each one only
-            sees what you tick below.
-          </p>
+          <h1>{{ 'assistants.title' | t }}</h1>
+          <p>{{ 'assistants.subtitle' | t }}</p>
         </div>
-        <button class="primary" type="button" (click)="startGrant()">Add assistant</button>
+        <button class="primary" type="button" (click)="startGrant()">
+          {{ 'assistants.add' | t }}
+        </button>
       </div>
 
       @if (assistants.isLoading()) {
-        <p class="loading">Loading assistants.</p>
+        <p class="loading">{{ 'assistants.loading' | t }}</p>
       } @else if (assistants.hasValue() && assistants.value()!.length === 0) {
         <div class="empty">
-          <h3>You work alone right now</h3>
-          <p>
-            Create an account for someone who helps you, then choose exactly what they may see and
-            change.
-          </p>
-          <button class="primary" type="button" (click)="startGrant()">Add assistant</button>
+          <h3>{{ 'assistants.emptyTitle' | t }}</h3>
+          <p>{{ 'assistants.emptyBody' | t }}</p>
+          <button class="primary" type="button" (click)="startGrant()">
+            {{ 'assistants.add' | t }}
+          </button>
         </div>
       } @else if (assistants.hasValue()) {
         <table class="sheet">
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Email</th>
-              <th>Can do</th>
+              <th>{{ 'common.name' | t }}</th>
+              <th>{{ 'common.email' | t }}</th>
+              <th>{{ 'assistants.canDo' | t }}</th>
               <th></th>
             </tr>
           </thead>
@@ -51,18 +51,22 @@ import { LabelPipe } from '../shared/money.pipe';
                 <td class="muted">{{ assistant.email }}</td>
                 <td>
                   @for (permission of assistant.permissions; track permission) {
-                    <span class="mark">{{ permission | label }}</span>
+                    <span class="mark">{{ permission | label: 'permission' }}</span>
                   }
                   @if (assistant.permissions.length === 0) {
-                    <span class="muted">Nothing yet</span>
+                    <span class="muted">{{ 'assistants.nothingYet' | t }}</span>
                   }
                 </td>
                 <td class="right">
-                  <button class="quiet" type="button" (click)="startEdit(assistant)">Change</button>
-                  <button class="quiet" type="button" (click)="resetPassword(assistant)">
-                    New password
+                  <button class="quiet" type="button" (click)="startEdit(assistant)">
+                    {{ 'assistants.change' | t }}
                   </button>
-                  <button class="quiet danger" type="button" (click)="revoke(assistant)">Remove</button>
+                  <button class="quiet" type="button" (click)="resetPassword(assistant)">
+                    {{ 'assistants.newPassword' | t }}
+                  </button>
+                  <button class="quiet danger" type="button" (click)="revoke(assistant)">
+                    {{ 'assistants.remove' | t }}
+                  </button>
                 </td>
               </tr>
             }
@@ -79,24 +83,23 @@ import { LabelPipe } from '../shared/money.pipe';
       <div class="scrim" (click)="dismissCredentials()">
         <div class="panel" (click)="$event.stopPropagation()">
           <header>
-            <h2>Hand these over</h2>
+            <h2>{{ 'assistants.handOver' | t }}</h2>
           </header>
           <div class="body">
-            <p>
-              This password is shown once. {{ credentials.name }} has to change it the first time
-              they sign in.
-            </p>
+            <p>{{ 'assistants.handOverBody' | t: { name: credentials.name } }}</p>
             <div class="field">
-              <label for="issuedEmail">Email</label>
+              <label for="issuedEmail">{{ 'common.email' | t }}</label>
               <input id="issuedEmail" [value]="credentials.email" readonly />
             </div>
             <div class="field">
-              <label for="issuedPassword">Temporary password</label>
+              <label for="issuedPassword">{{ 'assistants.temporaryPassword' | t }}</label>
               <input id="issuedPassword" [value]="credentials.temporaryPassword" readonly />
             </div>
           </div>
           <footer>
-            <button class="primary" type="button" (click)="dismissCredentials()">Done</button>
+            <button class="primary" type="button" (click)="dismissCredentials()">
+              {{ 'common.done' | t }}
+            </button>
           </footer>
         </div>
       </div>
@@ -106,31 +109,31 @@ import { LabelPipe } from '../shared/money.pipe';
       <div class="scrim" (click)="cancel()">
         <div class="panel" (click)="$event.stopPropagation()">
           <header>
-            <h2>{{ editingId() ? 'Change what they can do' : 'Add assistant' }}</h2>
+            <h2>{{ (editingId() ? 'assistants.editTitle' : 'assistants.add') | t }}</h2>
           </header>
           <div class="body">
             @if (!editingId()) {
               <div class="field">
-                <label for="firstName">First name</label>
+                <label for="firstName">{{ 'common.firstName' | t }}</label>
                 <input id="firstName" [(ngModel)]="firstName" />
               </div>
 
               <div class="field">
-                <label for="lastName">Last name</label>
+                <label for="lastName">{{ 'common.lastName' | t }}</label>
                 <input id="lastName" [(ngModel)]="lastName" />
               </div>
 
               <div class="field">
-                <label for="email">Their email</label>
+                <label for="email">{{ 'assistants.theirEmail' | t }}</label>
                 <input id="email" type="email" [(ngModel)]="email" placeholder="assistant@example.com" />
                 <p class="muted" style="font-size:0.8125rem;margin:6px 0 0">
-                  We create the account and give you a password to pass on.
+                  {{ 'assistants.emailHint' | t }}
                 </p>
               </div>
             }
 
             <div class="field">
-              <label>What they may do</label>
+              <label>{{ 'assistants.mayDo' | t }}</label>
               <div class="checks">
                 @for (permission of available.value(); track permission) {
                   <div class="check">
@@ -140,16 +143,16 @@ import { LabelPipe } from '../shared/money.pipe';
                       [checked]="selected().has(permission)"
                       (change)="toggle(permission)"
                     />
-                    <label [for]="permission">{{ permission | label }}</label>
+                    <label [for]="permission">{{ permission | label: 'permission' }}</label>
                   </div>
                 }
               </div>
             </div>
           </div>
           <footer>
-            <button type="button" (click)="cancel()">Cancel</button>
+            <button type="button" (click)="cancel()">{{ 'common.cancel' | t }}</button>
             <button class="primary" type="button" [disabled]="!complete()" (click)="save()">
-              {{ editingId() ? 'Save changes' : 'Create assistant' }}
+              {{ (editingId() ? 'common.saveChanges' : 'assistants.create') | t }}
             </button>
           </footer>
         </div>
@@ -159,6 +162,7 @@ import { LabelPipe } from '../shared/money.pipe';
 })
 export class AssistantsPage {
   private api = inject(AssistantsApi);
+  private i18n = inject(TranslationService);
 
   protected readonly editing = signal(false);
   protected readonly editingId = signal<string | null>(null);
@@ -228,7 +232,7 @@ export class AssistantsPage {
         this.assistants.reload();
       },
       error: (response) =>
-        this.error.set(response?.error?.detail ?? 'That assistant could not be saved.'),
+        this.error.set(response?.error?.detail ?? this.i18n.translate('assistants.saveFailed')),
     });
   }
 
@@ -238,7 +242,8 @@ export class AssistantsPage {
         this.error.set(null);
         this.showCredentials(saved);
       },
-      error: () => this.error.set(`A new password for ${assistant.name} could not be issued.`),
+      error: () =>
+        this.error.set(this.i18n.translate('assistants.resetFailed', { name: assistant.name })),
     });
   }
 
@@ -254,7 +259,8 @@ export class AssistantsPage {
   protected revoke(assistant: Assistant): void {
     this.api.revoke(assistant.id).subscribe({
       next: () => this.assistants.reload(),
-      error: () => this.error.set(`${assistant.name} could not be removed.`),
+      error: () =>
+        this.error.set(this.i18n.translate('assistants.removeFailed', { name: assistant.name })),
     });
   }
 }

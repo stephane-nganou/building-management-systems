@@ -5,7 +5,7 @@
 -->
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
-    <title th:text="'Invoice ' + ${invoice.invoiceNumber}">Invoice</title>
+    <title th:text="#{'invoice.title.' + ${invoice.type.name()}} + ' ' + ${invoice.invoiceNumber}">Invoice</title>
     <style>
         @page {
             size: A4;
@@ -131,7 +131,7 @@
             </td>
             <td style="text-align:right">
                 <div class="doc-type"
-                     th:text="${invoice.type.name() == 'RENT'} ? 'Rent invoice' : 'Cold water invoice'">Invoice</div>
+                     th:text="#{'invoice.title.' + ${invoice.type.name()}}">Invoice</div>
                 <div class="value" th:text="${invoice.invoiceNumber}">INV-2026-000001</div>
             </td>
         </tr>
@@ -141,7 +141,7 @@
 <table class="meta-table">
     <tr>
         <td>
-            <div class="label">Billed to</div>
+            <div class="label" th:text="#{invoice.billedTo}">Billed to</div>
             <div class="party">
                 <div class="value" th:text="${invoice.tenant.fullName}">Tenant name</div>
                 <div th:text="${building.name} + ' - ' + ${invoice.apartment.label}">Building - Apartment</div>
@@ -150,7 +150,7 @@
             </div>
         </td>
         <td>
-            <div class="label">Issued by</div>
+            <div class="label" th:text="#{invoice.issuedBy}">Issued by</div>
             <div class="party">
                 <div class="value" th:text="${owner.fullName}">Owner</div>
                 <div th:text="${owner.email}">owner@example.com</div>
@@ -162,18 +162,18 @@
 <table class="meta-table">
     <tr>
         <td>
-            <div class="label">Billing period</div>
+            <div class="label" th:text="#{invoice.billingPeriod}">Billing period</div>
             <div class="value" th:text="${periodStart} + ' - ' + ${periodEnd}">01.01.2026 - 31.01.2026</div>
         </td>
         <td>
             <table style="width:100%">
                 <tr>
                     <td>
-                        <div class="label">Issue date</div>
+                        <div class="label" th:text="#{invoice.issueDate}">Issue date</div>
                         <div class="value" th:text="${issueDate}">01.01.2026</div>
                     </td>
                     <td>
-                        <div class="label">Due date</div>
+                        <div class="label" th:text="#{invoice.dueDate}">Due date</div>
                         <div class="value" th:text="${dueDate}">15.01.2026</div>
                     </td>
                 </tr>
@@ -185,44 +185,43 @@
 <table class="lines">
     <thead>
     <tr>
-        <th>Description</th>
-        <th class="num">Quantity</th>
-        <th>Unit</th>
-        <th class="num">Unit price</th>
-        <th class="num">Amount</th>
+        <th th:text="#{invoice.description}">Description</th>
+        <th class="num" th:text="#{invoice.quantity}">Quantity</th>
+        <th th:text="#{invoice.unit}">Unit</th>
+        <th class="num" th:text="#{invoice.unitPrice}">Unit price</th>
+        <th class="num" th:text="#{invoice.amount}">Amount</th>
     </tr>
     </thead>
     <tbody>
     <tr th:each="line : ${invoice.lines}">
         <td th:text="${line.description}">Rent</td>
-        <td class="num" th:text="${#numbers.formatDecimal(line.quantity, 1, 'POINT', 2, 'COMMA')}">1,00</td>
+        <td class="num" th:text="${#numbers.formatDecimal(line.quantity, 1, 2)}">1,00</td>
         <td th:text="${line.unit != null} ? ${line.unit} : ''">month</td>
         <td class="num"
-            th:text="${#numbers.formatDecimal(line.unitPrice, 1, 'POINT', 2, 'COMMA')} + ' ' + ${currency}">
+            th:text="${#numbers.formatDecimal(line.unitPrice, 1, 2)} + ' ' + ${currency}">
             0,00
         </td>
         <td class="num"
-            th:text="${#numbers.formatDecimal(line.amount, 1, 'POINT', 2, 'COMMA')} + ' ' + ${currency}">0,00</td>
+            th:text="${#numbers.formatDecimal(line.amount, 1, 2)} + ' ' + ${currency}">0,00</td>
     </tr>
     </tbody>
 </table>
 
 <table class="totals">
     <tr class="grand">
-        <td>Total due</td>
+        <td th:text="#{invoice.totalDue}">Total due</td>
         <td class="num"
-            th:text="${#numbers.formatDecimal(invoice.total, 1, 'POINT', 2, 'COMMA')} + ' ' + ${currency}">0,00</td>
+            th:text="${#numbers.formatDecimal(invoice.total, 1, 2)} + ' ' + ${currency}">0,00</td>
     </tr>
 </table>
 
 <div class="notes" th:if="${invoice.notes != null}">
-    <div class="label">Notes</div>
+    <div class="label" th:text="#{invoice.notes}">Notes</div>
     <div th:text="${invoice.notes}">Notes</div>
 </div>
 
 <div class="footer">
-    <span th:text="'Please transfer the total due by ' + ${dueDate} + ', quoting invoice '
-            + ${invoice.invoiceNumber} + '.'">Payment terms</span>
+    <span th:text="#{invoice.paymentTerms(${dueDate}, ${invoice.invoiceNumber})}">Payment terms</span>
 </div>
 
 </body>

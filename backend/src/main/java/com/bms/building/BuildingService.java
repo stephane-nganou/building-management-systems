@@ -73,7 +73,7 @@ public class BuildingService {
     @Transactional(readOnly = true)
     public Building require(UUID id, Permission permission) {
         return buildings.findByIdAndOwnerIdIn(id, accessControl.accessibleOwnerIds(permission))
-                .orElseThrow(() -> NotFoundException.of("Building", id));
+                .orElseThrow(() -> NotFoundException.of("error.notFound.building", id));
     }
 
     private Map<UUID, Long> apartmentCounts(List<Building> forBuildings) {

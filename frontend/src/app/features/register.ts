@@ -3,10 +3,13 @@ import { FormsModule } from '@angular/forms';
 import Keycloak from 'keycloak-js';
 
 import { AuthApi } from '../core/api';
+import { TranslationService } from '../core/i18n';
+import { LanguageSwitcher } from '../shared/language-switcher';
+import { TranslatePipe } from '../shared/translate.pipe';
 
 @Component({
   selector: 'bms-register',
-  imports: [FormsModule],
+  imports: [FormsModule, LanguageSwitcher, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="gate">
@@ -14,39 +17,38 @@ import { AuthApi } from '../core/api';
         @if (registered()) {
           <div class="band-head">
             <div>
-              <h1>Your account is ready</h1>
-              <p>Sign in with {{ email }} and start by adding your first building.</p>
+              <h1>{{ 'register.readyTitle' | t }}</h1>
+              <p>{{ 'register.readyBody' | t: { email: email } }}</p>
             </div>
           </div>
-          <button class="primary" type="button" (click)="signIn()">Sign in</button>
+          <button class="primary" type="button" (click)="signIn()">
+            {{ 'register.signIn' | t }}
+          </button>
         } @else {
           <div class="band-head">
             <div>
-              <h1>Create your account</h1>
-              <p>
-                For landlords who manage their own buildings. Assistants do not sign up here; their
-                owner creates them.
-              </p>
+              <h1>{{ 'register.title' | t }}</h1>
+              <p>{{ 'register.subtitle' | t }}</p>
             </div>
           </div>
 
           <div class="field">
-            <label for="firstName">First name</label>
+            <label for="firstName">{{ 'common.firstName' | t }}</label>
             <input id="firstName" name="firstName" [(ngModel)]="firstName" autocomplete="given-name" />
           </div>
 
           <div class="field">
-            <label for="lastName">Last name</label>
+            <label for="lastName">{{ 'common.lastName' | t }}</label>
             <input id="lastName" name="lastName" [(ngModel)]="lastName" autocomplete="family-name" />
           </div>
 
           <div class="field">
-            <label for="email">Email</label>
+            <label for="email">{{ 'common.email' | t }}</label>
             <input id="email" name="email" type="email" [(ngModel)]="email" autocomplete="email" />
           </div>
 
           <div class="field">
-            <label for="password">Password</label>
+            <label for="password">{{ 'register.password' | t }}</label>
             <input
               id="password"
               name="password"
@@ -54,7 +56,9 @@ import { AuthApi } from '../core/api';
               [(ngModel)]="password"
               autocomplete="new-password"
             />
-            <p class="muted" style="font-size:0.8125rem;margin:6px 0 0">At least 8 characters.</p>
+            <p class="muted" style="font-size:0.8125rem;margin:6px 0 0">
+              {{ 'register.passwordHint' | t }}
+            </p>
           </div>
 
           @if (error()) {
@@ -63,18 +67,24 @@ import { AuthApi } from '../core/api';
 
           <div class="gate-actions">
             <button class="primary" type="button" [disabled]="!complete() || saving()" (click)="submit()">
-              {{ saving() ? 'Creating' : 'Create account' }}
+              {{ (saving() ? 'register.submitting' : 'register.submit') | t }}
             </button>
-            <button class="quiet" type="button" (click)="signIn()">I already have an account</button>
+            <button class="quiet" type="button" (click)="signIn()">
+              {{ 'register.haveAccount' | t }}
+            </button>
           </div>
         }
       </section>
+
+      <bms-language-switcher />
     </div>
   `,
   styles: `
     .gate {
       display: grid;
       place-items: center;
+      align-content: center;
+      gap: 18px;
       min-height: 100vh;
       padding: 32px 20px;
     }
@@ -94,6 +104,7 @@ import { AuthApi } from '../core/api';
 export class RegisterPage {
   private api = inject(AuthApi);
   private keycloak = inject(Keycloak);
+  private i18n = inject(TranslationService);
 
   protected readonly saving = signal(false);
   protected readonly registered = signal(false);
@@ -131,12 +142,15 @@ export class RegisterPage {
         },
         error: (response) => {
           this.saving.set(false);
-          this.error.set(response?.error?.detail ?? 'That account could not be created.');
+          this.error.set(response?.error?.detail ?? this.i18n.translate('register.failed'));
         },
       });
   }
 
   protected signIn(): void {
-    void this.keycloak.login({ redirectUri: window.location.origin });
+    void this.keycloak.login({
+      redirectUri: window.location.origin,
+      locale: this.i18n.language(),
+    });
   }
 }

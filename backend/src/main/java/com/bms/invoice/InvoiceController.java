@@ -2,6 +2,7 @@ package com.bms.invoice;
 
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 
 import com.bms.access.Permission;
@@ -65,9 +66,9 @@ public class InvoiceController {
 
     @GetMapping(value = "/{id}/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
     @Transactional(readOnly = true)
-    public ResponseEntity<byte[]> pdf(@PathVariable UUID id) {
+    public ResponseEntity<byte[]> pdf(@PathVariable UUID id, Locale locale) {
         Invoice invoice = invoices.require(id, Permission.INVOICE_READ);
-        byte[] pdf = pdfRenderer.render(invoice);
+        byte[] pdf = pdfRenderer.render(invoice, locale);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, ContentDisposition.attachment()
                         .filename(invoice.getInvoiceNumber() + ".pdf").build().toString())

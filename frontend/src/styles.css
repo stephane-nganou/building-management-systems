@@ -124,11 +124,12 @@ a {
   }
 }
 
+/* Stacked, because the tagline is a word longer in some languages than others. */
 .spine-mark {
   padding: 22px 20px 18px;
   display: flex;
-  align-items: baseline;
-  gap: 9px;
+  flex-direction: column;
+  gap: 2px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.09);
 }
 
@@ -197,6 +198,51 @@ a {
   color: #fff;
   background: transparent;
   text-decoration: underline;
+}
+
+/* EN and FR, side by side as one segmented control. It takes a line of its
+   own, so what follows it in the sidebar does not sit alongside it. */
+.languages {
+  display: flex;
+  width: fit-content;
+  border: 1px solid var(--mist-deep);
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+button.language {
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  color: var(--slate);
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  padding: 3px 10px;
+}
+
+button.language.on {
+  background: var(--mist);
+  color: var(--ink);
+}
+
+.spine-foot .languages {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.spine-foot button.language {
+  color: rgba(233, 239, 244, 0.62);
+}
+
+.spine-foot button.language:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.spine-foot button.language.on {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.12);
 }
 
 .main {

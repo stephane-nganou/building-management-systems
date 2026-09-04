@@ -1,3 +1,4 @@
+import { MessageKey } from '../i18n/en';
 import { Permission } from './models';
 
 /**
@@ -7,18 +8,18 @@ import { Permission } from './models';
  */
 export interface NavEntry {
   path: string;
-  label: string;
+  label: MessageKey;
   permission?: Permission;
   ownerOnly?: boolean;
 }
 
 export const NAV_ENTRIES: NavEntry[] = [
-  { path: '/dashboard', label: 'Overview', permission: 'REPORT_READ' },
-  { path: '/buildings', label: 'Buildings', permission: 'BUILDING_READ' },
-  { path: '/apartments', label: 'Apartments', permission: 'APARTMENT_READ' },
-  { path: '/tenants', label: 'Tenants', permission: 'TENANT_READ' },
-  { path: '/expenses', label: 'Expenses', permission: 'EXPENSE_READ' },
-  { path: '/invoices', label: 'Invoices', permission: 'INVOICE_READ' },
-  { path: '/reports', label: 'Profit and loss', permission: 'REPORT_READ' },
-  { path: '/assistants', label: 'Assistants', ownerOnly: true },
+  { path: '/dashboard', label: 'nav.dashboard', permission: 'REPORT_READ' },
+  { path: '/buildings', label: 'nav.buildings', permission: 'BUILDING_READ' },
+  { path: '/apartments', label: 'nav.apartments', permission: 'APARTMENT_READ' },
+  { path: '/tenants', label: 'nav.tenants', permission: 'TENANT_READ' },
+  { path: '/expenses', label: 'nav.expenses', permission: 'EXPENSE_READ' },
+  { path: '/invoices', label: 'nav.invoices', permission: 'INVOICE_READ' },
+  { path: '/reports', label: 'nav.reports', permission: 'REPORT_READ' },
+  { path: '/assistants', label: 'nav.assistants', ownerOnly: true },
 ];

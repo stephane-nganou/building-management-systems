@@ -50,7 +50,7 @@ public class AccountService {
     private AppUser create(String email, String firstName, String lastName, String password,
                            boolean temporaryPassword, String realmRole) {
         users.findByEmailIgnoreCase(email).ifPresent(existing -> {
-            throw new ValidationException("An account already exists for " + email);
+            throw new ValidationException("error.account.exists", email);
         });
         String keycloakId = keycloak.createUser(email, firstName, lastName, password, temporaryPassword, realmRole);
         return users.save(new AppUser(keycloakId, email, firstName, lastName));

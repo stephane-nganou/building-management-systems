@@ -3,8 +3,12 @@ import { FormsModule } from '@angular/forms';
 import { rxResource } from '@angular/core/rxjs-interop';
 
 import { ApartmentsApi, BuildingsApi } from '../core/api';
+import { TranslationService } from '../core/i18n';
 import { Apartment, ApartmentStatus } from '../core/models';
 import { LabelPipe, MoneyPipe } from '../shared/money.pipe';
+import { TranslatePipe } from '../shared/translate.pipe';
+
+const STATUSES: ApartmentStatus[] = ['VACANT', 'OCCUPIED', 'MAINTENANCE'];
 
 interface ApartmentForm {
   label: string;
@@ -36,25 +40,25 @@ const blank = (): ApartmentForm => ({
 
 @Component({
   selector: 'bms-apartments',
-  imports: [FormsModule, MoneyPipe, LabelPipe],
+  imports: [FormsModule, MoneyPipe, LabelPipe, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="band">
       <div class="band-head">
         <div>
-          <h1>Apartments</h1>
-          <p>Units across your buildings, with the rent each one is let for.</p>
+          <h1>{{ 'apartments.title' | t }}</h1>
+          <p>{{ 'apartments.subtitle' | t }}</p>
         </div>
         <button class="primary" type="button" [disabled]="!hasBuildings()" (click)="startCreate()">
-          Add apartment
+          {{ 'apartments.add' | t }}
         </button>
       </div>
 
       <div class="toolbar">
         <div class="field">
-          <label for="filter">Building</label>
+          <label for="filter">{{ 'common.building' | t }}</label>
           <select id="filter" [ngModel]="buildingFilter()" (ngModelChange)="buildingFilter.set($event)">
-            <option value="">All buildings</option>
+            <option value="">{{ 'common.allBuildings' | t }}</option>
             @for (building of buildings.value(); track building.id) {
               <option [value]="building.id">{{ building.name }}</option>
             }
@@ -63,30 +67,32 @@ const blank = (): ApartmentForm => ({
       </div>
 
       @if (apartments.isLoading()) {
-        <p class="loading">Loading apartments.</p>
+        <p class="loading">{{ 'apartments.loading' | t }}</p>
       } @else if (!hasBuildings()) {
         <div class="empty">
-          <h3>Add a building first</h3>
-          <p>Apartments belong to a building, so create one before adding units.</p>
+          <h3>{{ 'apartments.needBuildingTitle' | t }}</h3>
+          <p>{{ 'apartments.needBuildingBody' | t }}</p>
         </div>
       } @else if (apartments.hasValue() && apartments.value()!.length === 0) {
         <div class="empty">
-          <h3>No apartments here</h3>
-          <p>Add the units in this building, with their rent and room layout.</p>
-          <button class="primary" type="button" (click)="startCreate()">Add apartment</button>
+          <h3>{{ 'apartments.emptyTitle' | t }}</h3>
+          <p>{{ 'apartments.emptyBody' | t }}</p>
+          <button class="primary" type="button" (click)="startCreate()">
+            {{ 'apartments.add' | t }}
+          </button>
         </div>
       } @else if (apartments.hasValue()) {
         <table class="sheet">
           <thead>
             <tr>
-              <th>Unit</th>
-              <th>Building</th>
-              <th class="right">Floor</th>
-              <th class="right">Size</th>
-              <th class="right">Rooms</th>
-              <th class="right">Rent</th>
-              <th class="right">Utilities</th>
-              <th>Status</th>
+              <th>{{ 'apartments.unit' | t }}</th>
+              <th>{{ 'common.building' | t }}</th>
+              <th class="right">{{ 'apartments.floor' | t }}</th>
+              <th class="right">{{ 'apartments.size' | t }}</th>
+              <th class="right">{{ 'apartments.rooms' | t }}</th>
+              <th class="right">{{ 'apartments.rent' | t }}</th>
+              <th class="right">{{ 'apartments.utilities' | t }}</th>
+              <th>{{ 'common.status' | t }}</th>
               <th></th>
             </tr>
           </thead>
@@ -102,12 +108,16 @@ const blank = (): ApartmentForm => ({
                 <td class="right muted">{{ apartment.utilitiesAdvance | money }}</td>
                 <td>
                   <span class="mark {{ apartment.status.toLowerCase() }}">
-                    {{ apartment.status | label }}
+                    {{ apartment.status | label: 'status' }}
                   </span>
                 </td>
                 <td class="right">
-                  <button class="quiet" type="button" (click)="startEdit(apartment)">Edit</button>
-                  <button class="quiet danger" type="button" (click)="remove(apartment)">Delete</button>
+                  <button class="quiet" type="button" (click)="startEdit(apartment)">
+                    {{ 'common.edit' | t }}
+                  </button>
+                  <button class="quiet danger" type="button" (click)="remove(apartment)">
+                    {{ 'common.delete' | t }}
+                  </button>
                 </td>
               </tr>
             }
@@ -124,12 +134,12 @@ const blank = (): ApartmentForm => ({
       <div class="scrim" (click)="cancel()">
         <div class="panel" (click)="$event.stopPropagation()">
           <header>
-            <h2>{{ editingId() ? 'Edit apartment' : 'Add apartment' }}</h2>
+            <h2>{{ (editingId() ? 'apartments.editTitle' : 'apartments.add') | t }}</h2>
           </header>
           <div class="body">
             @if (!editingId()) {
               <div class="field">
-                <label for="building">Building</label>
+                <label for="building">{{ 'common.building' | t }}</label>
                 <select id="building" [(ngModel)]="targetBuildingId">
                   @for (building of buildings.value(); track building.id) {
                     <option [value]="building.id">{{ building.name }}</option>
@@ -139,31 +149,31 @@ const blank = (): ApartmentForm => ({
             }
             <div class="grid-2">
               <div class="field">
-                <label for="label">Number or name</label>
+                <label for="label">{{ 'apartments.label' | t }}</label>
                 <input id="label" [(ngModel)]="form.label" placeholder="1A" />
               </div>
               <div class="field">
-                <label for="status">Status</label>
+                <label for="status">{{ 'common.status' | t }}</label>
                 <select id="status" [(ngModel)]="form.status">
-                  <option value="VACANT">Vacant</option>
-                  <option value="OCCUPIED">Occupied</option>
-                  <option value="MAINTENANCE">Maintenance</option>
+                  @for (status of statuses; track status) {
+                    <option [value]="status">{{ status | label: 'status' }}</option>
+                  }
                 </select>
               </div>
               <div class="field">
-                <label for="floor">Floor</label>
+                <label for="floor">{{ 'apartments.floor' | t }}</label>
                 <input id="floor" type="number" [(ngModel)]="form.floor" />
               </div>
               <div class="field">
-                <label for="sizeSqm">Size in m2</label>
+                <label for="sizeSqm">{{ 'apartments.sizeSqm' | t }}</label>
                 <input id="sizeSqm" type="number" step="0.01" [(ngModel)]="form.sizeSqm" />
               </div>
               <div class="field">
-                <label for="baseRent">Monthly rent</label>
+                <label for="baseRent">{{ 'apartments.monthlyRent' | t }}</label>
                 <input id="baseRent" type="number" step="0.01" [(ngModel)]="form.baseRent" />
               </div>
               <div class="field">
-                <label for="utilitiesAdvance">Utilities advance</label>
+                <label for="utilitiesAdvance">{{ 'apartments.utilitiesAdvance' | t }}</label>
                 <input
                   id="utilitiesAdvance"
                   type="number"
@@ -172,31 +182,31 @@ const blank = (): ApartmentForm => ({
                 />
               </div>
               <div class="field">
-                <label for="rooms">Rooms</label>
+                <label for="rooms">{{ 'apartments.rooms' | t }}</label>
                 <input id="rooms" type="number" [(ngModel)]="form.rooms" />
               </div>
               <div class="field">
-                <label for="bedrooms">Bedrooms</label>
+                <label for="bedrooms">{{ 'apartments.bedrooms' | t }}</label>
                 <input id="bedrooms" type="number" [(ngModel)]="form.bedrooms" />
               </div>
               <div class="field">
-                <label for="bathrooms">Bathrooms</label>
+                <label for="bathrooms">{{ 'apartments.bathrooms' | t }}</label>
                 <input id="bathrooms" type="number" [(ngModel)]="form.bathrooms" />
               </div>
               <div class="field">
-                <label for="kitchens">Kitchens</label>
+                <label for="kitchens">{{ 'apartments.kitchens' | t }}</label>
                 <input id="kitchens" type="number" [(ngModel)]="form.kitchens" />
               </div>
               <div class="field">
-                <label for="toilets">Toilets</label>
+                <label for="toilets">{{ 'apartments.toilets' | t }}</label>
                 <input id="toilets" type="number" [(ngModel)]="form.toilets" />
               </div>
             </div>
           </div>
           <footer>
-            <button type="button" (click)="cancel()">Cancel</button>
+            <button type="button" (click)="cancel()">{{ 'common.cancel' | t }}</button>
             <button class="primary" type="button" [disabled]="!form.label.trim()" (click)="save()">
-              {{ editingId() ? 'Save changes' : 'Add apartment' }}
+              {{ (editingId() ? 'common.saveChanges' : 'apartments.add') | t }}
             </button>
           </footer>
         </div>
@@ -207,7 +217,9 @@ const blank = (): ApartmentForm => ({
 export class ApartmentsPage {
   private api = inject(ApartmentsApi);
   private buildingsApi = inject(BuildingsApi);
+  private i18n = inject(TranslationService);
 
+  protected readonly statuses = STATUSES;
   protected readonly buildingFilter = signal('');
   protected readonly editing = signal(false);
   protected readonly editingId = signal<string | null>(null);
@@ -271,7 +283,7 @@ export class ApartmentsPage {
         this.buildings.reload();
       },
       error: (response) =>
-        this.error.set(response?.error?.detail ?? 'The apartment could not be saved.'),
+        this.error.set(response?.error?.detail ?? this.i18n.translate('apartments.saveFailed')),
     });
   }
 
@@ -281,7 +293,8 @@ export class ApartmentsPage {
         this.apartments.reload();
         this.buildings.reload();
       },
-      error: () => this.error.set(`Apartment ${apartment.label} could not be deleted.`),
+      error: () =>
+        this.error.set(this.i18n.translate('apartments.deleteFailed', { label: apartment.label })),
     });
   }
 }

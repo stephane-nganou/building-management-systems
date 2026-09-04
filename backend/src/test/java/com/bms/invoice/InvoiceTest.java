@@ -47,7 +47,7 @@ class InvoiceTest {
         assertThatThrownBy(() -> new Invoice(null, null, "INV-1", InvoiceType.RENT,
                 END, START, START, START.plusDays(14), null))
                 .isInstanceOf(ValidationException.class)
-                .hasMessageContaining("period end");
+                .hasMessage("error.invoice.periodOrder");
     }
 
     @Test
@@ -55,7 +55,7 @@ class InvoiceTest {
         assertThatThrownBy(() -> new Invoice(null, null, "INV-1", InvoiceType.RENT,
                 START, END, END, START, null))
                 .isInstanceOf(ValidationException.class)
-                .hasMessageContaining("due date");
+                .hasMessage("error.invoice.dueBeforeIssue");
     }
 
     @Test

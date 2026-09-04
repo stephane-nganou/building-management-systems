@@ -50,7 +50,7 @@ public class ProfitLossService {
     @Transactional(readOnly = true)
     public ProfitLossReport report(LocalDate from, LocalDate to, UUID buildingId) {
         if (to.isBefore(from)) {
-            throw new ValidationException("Report end date must not be before the start date");
+            throw new ValidationException("error.report.dateOrder");
         }
         List<UUID> ownerIds = accessControl.accessibleOwnerIds(Permission.REPORT_READ);
 

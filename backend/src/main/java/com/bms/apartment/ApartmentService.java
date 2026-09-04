@@ -50,7 +50,7 @@ public class ApartmentService {
     public ApartmentResponse create(UUID buildingId, ApartmentRequest request) {
         Building building = buildings.require(buildingId, Permission.APARTMENT_WRITE);
         if (apartments.existsByBuildingIdAndLabelIgnoreCase(buildingId, request.label())) {
-            throw new ValidationException("Apartment '" + request.label() + "' already exists in this building");
+            throw new ValidationException("error.apartment.duplicateLabel", request.label());
         }
         Apartment apartment = new Apartment(building, request.label(), request.floor(), request.sizeSqm(),
                 layoutOf(request), request.baseRent(), request.utilitiesAdvance(), request.status());
@@ -63,7 +63,7 @@ public class ApartmentService {
         boolean labelChanged = !apartment.getLabel().equalsIgnoreCase(request.label());
         if (labelChanged
                 && apartments.existsByBuildingIdAndLabelIgnoreCase(apartment.getBuilding().getId(), request.label())) {
-            throw new ValidationException("Apartment '" + request.label() + "' already exists in this building");
+            throw new ValidationException("error.apartment.duplicateLabel", request.label());
         }
         apartment.update(request.label(), request.floor(), request.sizeSqm(), layoutOf(request),
                 request.baseRent(), request.utilitiesAdvance(), request.status());
@@ -78,7 +78,7 @@ public class ApartmentService {
     @Transactional(readOnly = true)
     public Apartment require(UUID id, Permission permission) {
         return apartments.findByIdAndBuildingOwnerIdIn(id, accessControl.accessibleOwnerIds(permission))
-                .orElseThrow(() -> NotFoundException.of("Apartment", id));
+                .orElseThrow(() -> NotFoundException.of("error.notFound.apartment", id));
     }
 
     private RoomLayout layoutOf(ApartmentRequest request) {
