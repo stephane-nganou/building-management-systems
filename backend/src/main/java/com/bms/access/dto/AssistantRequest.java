@@ -8,10 +8,12 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
 /**
- * Grants an existing user assistant access to the caller's data.
- * The assistant must have signed in at least once so that a local account exists.
+ * Gives someone assistant access to the caller's data. When no account exists
+ * for the email yet, one is created and its password returned once to the owner.
  */
 public record AssistantRequest(
         @NotBlank @Email String email,
+        @NotBlank String firstName,
+        @NotBlank String lastName,
         @NotNull Set<Permission> permissions) {
 }

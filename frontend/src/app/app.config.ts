@@ -30,7 +30,8 @@ export const appConfig: ApplicationConfig = {
         clientId: config.clientId,
       },
       initOptions: {
-        onLoad: 'login-required',
+        // Not login-required: the registration page has to open without an account.
+        onLoad: 'check-sso',
         checkLoginIframe: false,
         pkceMethod: 'S256',
       },

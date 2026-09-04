@@ -40,6 +40,8 @@ services:
       - "${KEYCLOAK_PORT:-8081}:8080"
     volumes:
       - ./docker/keycloak/realm-bms.json:/opt/keycloak/data/import/realm-bms.json:ro
+      # The sign in page links to our own registration page, so it needs a theme.
+      - ./docker/keycloak/themes/bms:/opt/keycloak/themes/bms:ro
     depends_on:
       postgres:
         condition: service_healthy
@@ -63,6 +65,9 @@ services:
       # while the signing keys are fetched over the internal network.
       BMS_KEYCLOAK_ISSUER_URI: http://localhost:${KEYCLOAK_PORT:-8081}/realms/bms
       BMS_KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/bms/protocol/openid-connect/certs
+      # The admin API is called server to server, so it uses the internal host.
+      # The secret matches the bms-backend client in the realm export.
+      BMS_KEYCLOAK_SERVER_URL: http://keycloak:8080
       BMS_CORS_ALLOWED_ORIGINS: http://localhost:${FRONTEND_PORT:-4200}
     ports:
       - "${BACKEND_PORT:-8080}:8080"

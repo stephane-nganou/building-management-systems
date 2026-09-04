@@ -14,6 +14,7 @@ import {
   Me,
   Permission,
   ProfitLossReport,
+  Registration,
   Tenant,
 } from './models';
 
@@ -180,16 +181,40 @@ export class AssistantsApi {
     return this.http.get<Permission[]>(api('/api/assistants/permissions'));
   }
 
-  grant(email: string, permissions: Permission[]): Observable<Assistant> {
-    return this.http.post<Assistant>(api('/api/assistants'), { email, permissions });
+  grant(
+    email: string,
+    firstName: string,
+    lastName: string,
+    permissions: Permission[],
+  ): Observable<Assistant> {
+    return this.http.post<Assistant>(api('/api/assistants'), {
+      email,
+      firstName,
+      lastName,
+      permissions,
+    });
   }
 
-  update(id: string, email: string, permissions: Permission[]): Observable<Assistant> {
-    return this.http.put<Assistant>(api(`/api/assistants/${id}`), { email, permissions });
+  update(id: string, permissions: Permission[]): Observable<Assistant> {
+    return this.http.put<Assistant>(api(`/api/assistants/${id}`), { permissions });
+  }
+
+  resetPassword(id: string): Observable<Assistant> {
+    return this.http.post<Assistant>(api(`/api/assistants/${id}/password`), null);
   }
 
   revoke(id: string): Observable<void> {
     return this.http.delete<void>(api(`/api/assistants/${id}`));
+  }
+}
+
+@Injectable({ providedIn: 'root' })
+export class AuthApi {
+  private http = inject(HttpClient);
+
+  /** The only call made without a token. */
+  register(body: Registration): Observable<unknown> {
+    return this.http.post(api('/api/auth/register'), body);
   }
 }
 

@@ -1,0 +1,7 @@
+#!/usr/bin/env sh
+# The end to end suite guards every push, so a pull request is never opened on a
+# branch that does not actually work. Install with scripts/install-hooks.
+#
+# Skipping it is a deliberate act: git push --no-verify.
+echo "Running the end to end suite before pushing."
+exec "$(dirname "$0")/../scripts/e2e.sh"

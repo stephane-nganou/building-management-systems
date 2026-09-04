@@ -5,6 +5,7 @@ import java.util.UUID;
 
 import com.bms.access.dto.AssistantRequest;
 import com.bms.access.dto.AssistantResponse;
+import com.bms.access.dto.PermissionsRequest;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -44,8 +45,14 @@ public class AssistantController {
     }
 
     @PutMapping("/{id}")
-    public AssistantResponse update(@PathVariable UUID id, @Valid @RequestBody AssistantRequest request) {
+    public AssistantResponse update(@PathVariable UUID id, @Valid @RequestBody PermissionsRequest request) {
         return assistants.updatePermissions(id, request);
+    }
+
+    /** Issues a new temporary password, returned once so the owner can pass it on. */
+    @PostMapping("/{id}/password")
+    public AssistantResponse resetPassword(@PathVariable UUID id) {
+        return assistants.resetPassword(id);
     }
 
     @DeleteMapping("/{id}")

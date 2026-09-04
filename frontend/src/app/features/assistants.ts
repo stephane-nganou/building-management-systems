@@ -16,7 +16,8 @@ import { LabelPipe } from '../shared/money.pipe';
         <div>
           <h1>Assistants</h1>
           <p>
-            People who help you manage your buildings. Each one only sees what you tick below.
+            People who help you manage your buildings. You create their account, and each one only
+            sees what you tick below.
           </p>
         </div>
         <button class="primary" type="button" (click)="startGrant()">Add assistant</button>
@@ -28,8 +29,8 @@ import { LabelPipe } from '../shared/money.pipe';
         <div class="empty">
           <h3>You work alone right now</h3>
           <p>
-            Invite someone who already signed in to this app, then choose exactly what they may see
-            and change.
+            Create an account for someone who helps you, then choose exactly what they may see and
+            change.
           </p>
           <button class="primary" type="button" (click)="startGrant()">Add assistant</button>
         </div>
@@ -58,6 +59,9 @@ import { LabelPipe } from '../shared/money.pipe';
                 </td>
                 <td class="right">
                   <button class="quiet" type="button" (click)="startEdit(assistant)">Change</button>
+                  <button class="quiet" type="button" (click)="resetPassword(assistant)">
+                    New password
+                  </button>
                   <button class="quiet danger" type="button" (click)="revoke(assistant)">Remove</button>
                 </td>
               </tr>
@@ -71,6 +75,33 @@ import { LabelPipe } from '../shared/money.pipe';
       }
     </section>
 
+    @if (issued(); as credentials) {
+      <div class="scrim" (click)="dismissCredentials()">
+        <div class="panel" (click)="$event.stopPropagation()">
+          <header>
+            <h2>Hand these over</h2>
+          </header>
+          <div class="body">
+            <p>
+              This password is shown once. {{ credentials.name }} has to change it the first time
+              they sign in.
+            </p>
+            <div class="field">
+              <label for="issuedEmail">Email</label>
+              <input id="issuedEmail" [value]="credentials.email" readonly />
+            </div>
+            <div class="field">
+              <label for="issuedPassword">Temporary password</label>
+              <input id="issuedPassword" [value]="credentials.temporaryPassword" readonly />
+            </div>
+          </div>
+          <footer>
+            <button class="primary" type="button" (click)="dismissCredentials()">Done</button>
+          </footer>
+        </div>
+      </div>
+    }
+
     @if (editing()) {
       <div class="scrim" (click)="cancel()">
         <div class="panel" (click)="$event.stopPropagation()">
@@ -78,21 +109,25 @@ import { LabelPipe } from '../shared/money.pipe';
             <h2>{{ editingId() ? 'Change what they can do' : 'Add assistant' }}</h2>
           </header>
           <div class="body">
-            <div class="field">
-              <label for="email">Their email</label>
-              <input
-                id="email"
-                type="email"
-                [(ngModel)]="email"
-                [readonly]="!!editingId()"
-                placeholder="assistant@example.com"
-              />
-              @if (!editingId()) {
+            @if (!editingId()) {
+              <div class="field">
+                <label for="firstName">First name</label>
+                <input id="firstName" [(ngModel)]="firstName" />
+              </div>
+
+              <div class="field">
+                <label for="lastName">Last name</label>
+                <input id="lastName" [(ngModel)]="lastName" />
+              </div>
+
+              <div class="field">
+                <label for="email">Their email</label>
+                <input id="email" type="email" [(ngModel)]="email" placeholder="assistant@example.com" />
                 <p class="muted" style="font-size:0.8125rem;margin:6px 0 0">
-                  They need to have signed in once before you can add them.
+                  We create the account and give you a password to pass on.
                 </p>
-              }
-            </div>
+              </div>
+            }
 
             <div class="field">
               <label>What they may do</label>
@@ -113,8 +148,8 @@ import { LabelPipe } from '../shared/money.pipe';
           </div>
           <footer>
             <button type="button" (click)="cancel()">Cancel</button>
-            <button class="primary" type="button" [disabled]="!email.trim()" (click)="save()">
-              {{ editingId() ? 'Save changes' : 'Add assistant' }}
+            <button class="primary" type="button" [disabled]="!complete()" (click)="save()">
+              {{ editingId() ? 'Save changes' : 'Create assistant' }}
             </button>
           </footer>
         </div>
@@ -129,6 +164,10 @@ export class AssistantsPage {
   protected readonly editingId = signal<string | null>(null);
   protected readonly error = signal<string | null>(null);
   protected readonly selected = signal(new Set<Permission>());
+  protected readonly issued = signal<Assistant | null>(null);
+
+  protected firstName = '';
+  protected lastName = '';
   protected email = '';
 
   protected readonly assistants = rxResource({ stream: () => this.api.list() });
@@ -148,7 +187,16 @@ export class AssistantsPage {
     this.selected.set(next);
   }
 
+  protected complete(): boolean {
+    if (this.editingId()) {
+      return true;
+    }
+    return this.firstName.trim() !== '' && this.lastName.trim() !== '' && this.email.trim() !== '';
+  }
+
   protected startGrant(): void {
+    this.firstName = '';
+    this.lastName = '';
     this.email = '';
     this.selected.set(new Set());
     this.editingId.set(null);
@@ -170,17 +218,37 @@ export class AssistantsPage {
     const permissions = [...this.selected()];
     const id = this.editingId();
     const request = id
-      ? this.api.update(id, this.email, permissions)
-      : this.api.grant(this.email, permissions);
+      ? this.api.update(id, permissions)
+      : this.api.grant(this.email.trim(), this.firstName.trim(), this.lastName.trim(), permissions);
     request.subscribe({
-      next: () => {
+      next: (saved) => {
         this.editing.set(false);
         this.error.set(null);
+        this.showCredentials(saved);
         this.assistants.reload();
       },
       error: (response) =>
         this.error.set(response?.error?.detail ?? 'That assistant could not be saved.'),
     });
+  }
+
+  protected resetPassword(assistant: Assistant): void {
+    this.api.resetPassword(assistant.id).subscribe({
+      next: (saved) => {
+        this.error.set(null);
+        this.showCredentials(saved);
+      },
+      error: () => this.error.set(`A new password for ${assistant.name} could not be issued.`),
+    });
+  }
+
+  protected dismissCredentials(): void {
+    this.issued.set(null);
+  }
+
+  /** Only responses that created or reset an account carry a password. */
+  private showCredentials(assistant: Assistant): void {
+    this.issued.set(assistant.temporaryPassword ? assistant : null);
   }
 
   protected revoke(assistant: Assistant): void {
