@@ -38,6 +38,17 @@ wait_for() {
   return 1
 }
 
+# The compose file pins container names and the realm pins the ports, so the
+# development stack and this one cannot both be up. Say so plainly, rather than
+# letting docker report a name conflict.
+conflicting=$(docker ps --format '{{.Names}}	{{.Label "com.docker.compose.project"}}'   | awk -F'	' -v project="$PROJECT" '$1 ~ /^bms-/ && $2 != project { printf "%s ", $1 }')
+if [ -n "$conflicting" ]; then
+  echo "Another stack is already running: ${conflicting% }" >&2
+  echo "It holds the same container names and ports. Stop it first:" >&2
+  echo "  scripts/stop-linux.sh    (or stop-mac.sh, or scripts/stop-windows.ps1)" >&2
+  exit 1
+fi
+
 echo "Starting the $PROJECT stack."
 docker compose -p "$PROJECT" up --build -d
 

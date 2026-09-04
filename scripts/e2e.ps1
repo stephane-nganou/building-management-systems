@@ -32,6 +32,19 @@ function Wait-ForUrl {
 }
 
 try {
+    # The compose file pins container names and the realm pins the ports, so the
+    # development stack and this one cannot both be up. Say so plainly, rather
+    # than letting docker report a name conflict.
+    $running = docker ps --format '{{.Names}}|{{.Label "com.docker.compose.project"}}'
+    $clash = @($running | Where-Object { $_ -like 'bms-*' -and ($_ -split '\|')[1] -ne $project })
+    if ($clash.Count -gt 0) {
+        $names = ($clash | ForEach-Object { ($_ -split '\|')[0] }) -join ' '
+        Write-Host "Another stack is already running: $names"
+        Write-Host 'It holds the same container names and ports. Stop it first:'
+        Write-Host '  scripts/stop-windows.ps1'
+        throw 'The development stack is in the way of the end to end stack.'
+    }
+
     Write-Host "Starting the $project stack."
     docker compose -p $project up --build -d
     if ($LASTEXITCODE -ne 0) { throw 'docker compose failed to start the stack.' }
