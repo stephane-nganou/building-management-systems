@@ -70,7 +70,7 @@ public class ExpenseService {
 
     private Expense require(UUID id, Permission permission) {
         return expenses.findByIdAndBuildingOwnerIdIn(id, accessControl.accessibleOwnerIds(permission))
-                .orElseThrow(() -> NotFoundException.of("Expense", id));
+                .orElseThrow(() -> NotFoundException.of("error.notFound.expense", id));
     }
 
     /** An apartment level expense must belong to the building the expense is booked against. */
@@ -80,7 +80,7 @@ public class ExpenseService {
         }
         Apartment apartment = apartments.require(request.apartmentId(), Permission.EXPENSE_WRITE);
         if (!apartment.getBuilding().getId().equals(building.getId())) {
-            throw new ValidationException("The apartment does not belong to the selected building");
+            throw new ValidationException("error.expense.apartmentNotInBuilding");
         }
         return apartment;
     }

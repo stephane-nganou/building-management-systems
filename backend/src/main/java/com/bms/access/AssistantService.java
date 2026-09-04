@@ -77,7 +77,7 @@ public class AssistantService {
     private AssistantResponse assign(AppUser owner, AppUser assistant, Set<Permission> permissions,
                                      String temporaryPassword) {
         if (assistant.getId().equals(owner.getId())) {
-            throw new ValidationException("You cannot add yourself as an assistant");
+            throw new ValidationException("error.assistant.self");
         }
         AssistantAssignment assignment = assignments.findByOwnerIdAndAssistantId(owner.getId(), assistant.getId())
                 .map(existing -> {
@@ -90,9 +90,9 @@ public class AssistantService {
 
     private AssistantAssignment require(UUID assignmentId) {
         AssistantAssignment assignment = assignments.findById(assignmentId)
-                .orElseThrow(() -> NotFoundException.of("Assistant assignment", assignmentId));
+                .orElseThrow(() -> NotFoundException.of("error.notFound.assistant", assignmentId));
         if (!assignment.getOwner().getId().equals(currentUser.requireId())) {
-            throw NotFoundException.of("Assistant assignment", assignmentId);
+            throw NotFoundException.of("error.notFound.assistant", assignmentId);
         }
         return assignment;
     }

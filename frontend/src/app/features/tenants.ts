@@ -3,8 +3,10 @@ import { FormsModule } from '@angular/forms';
 import { rxResource } from '@angular/core/rxjs-interop';
 
 import { ApartmentsApi, TenantsApi } from '../core/api';
+import { TranslationService } from '../core/i18n';
 import { Tenant } from '../core/models';
 import { DayPipe, MoneyPipe } from '../shared/money.pipe';
+import { TranslatePipe } from '../shared/translate.pipe';
 
 interface TenantForm {
   firstName: string;
@@ -30,42 +32,44 @@ const blank = (): TenantForm => ({
 
 @Component({
   selector: 'bms-tenants',
-  imports: [FormsModule, MoneyPipe, DayPipe],
+  imports: [FormsModule, MoneyPipe, DayPipe, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="band">
       <div class="band-head">
         <div>
-          <h1>Tenants</h1>
-          <p>Who lives where, and for how long their lease runs.</p>
+          <h1>{{ 'tenants.title' | t }}</h1>
+          <p>{{ 'tenants.subtitle' | t }}</p>
         </div>
         <button class="primary" type="button" [disabled]="!hasApartments()" (click)="startCreate()">
-          Add tenant
+          {{ 'tenants.add' | t }}
         </button>
       </div>
 
       @if (tenants.isLoading()) {
-        <p class="loading">Loading tenants.</p>
+        <p class="loading">{{ 'tenants.loading' | t }}</p>
       } @else if (!hasApartments()) {
         <div class="empty">
-          <h3>Add an apartment first</h3>
-          <p>A tenant is always attached to a unit, so create one before adding people.</p>
+          <h3>{{ 'tenants.needApartmentTitle' | t }}</h3>
+          <p>{{ 'tenants.needApartmentBody' | t }}</p>
         </div>
       } @else if (tenants.hasValue() && tenants.value()!.length === 0) {
         <div class="empty">
-          <h3>No tenants recorded</h3>
-          <p>Add the people renting your units to start issuing invoices to them.</p>
-          <button class="primary" type="button" (click)="startCreate()">Add tenant</button>
+          <h3>{{ 'tenants.emptyTitle' | t }}</h3>
+          <p>{{ 'tenants.emptyBody' | t }}</p>
+          <button class="primary" type="button" (click)="startCreate()">
+            {{ 'tenants.add' | t }}
+          </button>
         </div>
       } @else if (tenants.hasValue()) {
         <table class="sheet">
           <thead>
             <tr>
-              <th>Name</th>
-              <th>Unit</th>
-              <th>Contact</th>
-              <th>Lease</th>
-              <th class="right">Deposit</th>
+              <th>{{ 'common.name' | t }}</th>
+              <th>{{ 'tenants.unit' | t }}</th>
+              <th>{{ 'tenants.contact' | t }}</th>
+              <th>{{ 'tenants.lease' | t }}</th>
+              <th class="right">{{ 'tenants.deposit' | t }}</th>
               <th></th>
             </tr>
           </thead>
@@ -75,7 +79,7 @@ const blank = (): TenantForm => ({
                 <td class="strong">
                   {{ tenant.firstName }} {{ tenant.lastName }}
                   @if (!tenant.active) {
-                    <span class="mark">Past</span>
+                    <span class="mark">{{ 'tenants.past' | t }}</span>
                   }
                 </td>
                 <td class="muted">{{ tenant.buildingName }} - {{ tenant.apartmentLabel }}</td>
@@ -83,15 +87,19 @@ const blank = (): TenantForm => ({
                 <td class="muted">
                   {{ tenant.leaseStart | day }}
                   @if (tenant.leaseEnd) {
-                    to {{ tenant.leaseEnd | day }}
+                    - {{ tenant.leaseEnd | day }}
                   } @else {
-                    onwards
+                    {{ 'tenants.onwards' | t }}
                   }
                 </td>
                 <td class="right">{{ tenant.deposit | money }}</td>
                 <td class="right">
-                  <button class="quiet" type="button" (click)="startEdit(tenant)">Edit</button>
-                  <button class="quiet danger" type="button" (click)="remove(tenant)">Delete</button>
+                  <button class="quiet" type="button" (click)="startEdit(tenant)">
+                    {{ 'common.edit' | t }}
+                  </button>
+                  <button class="quiet danger" type="button" (click)="remove(tenant)">
+                    {{ 'common.delete' | t }}
+                  </button>
                 </td>
               </tr>
             }
@@ -108,12 +116,12 @@ const blank = (): TenantForm => ({
       <div class="scrim" (click)="cancel()">
         <div class="panel" (click)="$event.stopPropagation()">
           <header>
-            <h2>{{ editingId() ? 'Edit tenant' : 'Add tenant' }}</h2>
+            <h2>{{ (editingId() ? 'tenants.editTitle' : 'tenants.add') | t }}</h2>
           </header>
           <div class="body">
             @if (!editingId()) {
               <div class="field">
-                <label for="apartment">Apartment</label>
+                <label for="apartment">{{ 'common.apartment' | t }}</label>
                 <select id="apartment" [(ngModel)]="targetApartmentId">
                   @for (apartment of apartments.value(); track apartment.id) {
                     <option [value]="apartment.id">
@@ -125,48 +133,48 @@ const blank = (): TenantForm => ({
             }
             <div class="grid-2">
               <div class="field">
-                <label for="firstName">First name</label>
+                <label for="firstName">{{ 'common.firstName' | t }}</label>
                 <input id="firstName" [(ngModel)]="form.firstName" />
               </div>
               <div class="field">
-                <label for="lastName">Last name</label>
+                <label for="lastName">{{ 'common.lastName' | t }}</label>
                 <input id="lastName" [(ngModel)]="form.lastName" />
               </div>
               <div class="field">
-                <label for="email">Email</label>
+                <label for="email">{{ 'common.email' | t }}</label>
                 <input id="email" type="email" [(ngModel)]="form.email" />
               </div>
               <div class="field">
-                <label for="phone">Phone</label>
+                <label for="phone">{{ 'tenants.phone' | t }}</label>
                 <input id="phone" [(ngModel)]="form.phone" />
               </div>
               <div class="field">
-                <label for="leaseStart">Lease start</label>
+                <label for="leaseStart">{{ 'tenants.leaseStart' | t }}</label>
                 <input id="leaseStart" type="date" [(ngModel)]="form.leaseStart" />
               </div>
               <div class="field">
-                <label for="leaseEnd">Lease end</label>
+                <label for="leaseEnd">{{ 'tenants.leaseEnd' | t }}</label>
                 <input id="leaseEnd" type="date" [(ngModel)]="form.leaseEnd" />
               </div>
               <div class="field">
-                <label for="deposit">Deposit</label>
+                <label for="deposit">{{ 'tenants.deposit' | t }}</label>
                 <input id="deposit" type="number" step="0.01" [(ngModel)]="form.deposit" />
               </div>
             </div>
             <div class="check">
               <input id="active" type="checkbox" [(ngModel)]="form.active" />
-              <label for="active">Currently living here</label>
+              <label for="active">{{ 'tenants.living' | t }}</label>
             </div>
           </div>
           <footer>
-            <button type="button" (click)="cancel()">Cancel</button>
+            <button type="button" (click)="cancel()">{{ 'common.cancel' | t }}</button>
             <button
               class="primary"
               type="button"
               [disabled]="!form.firstName.trim() || !form.lastName.trim()"
               (click)="save()"
             >
-              {{ editingId() ? 'Save changes' : 'Add tenant' }}
+              {{ (editingId() ? 'common.saveChanges' : 'tenants.add') | t }}
             </button>
           </footer>
         </div>
@@ -177,6 +185,7 @@ const blank = (): TenantForm => ({
 export class TenantsPage {
   private api = inject(TenantsApi);
   private apartmentsApi = inject(ApartmentsApi);
+  private i18n = inject(TranslationService);
 
   protected readonly editing = signal(false);
   protected readonly editingId = signal<string | null>(null);
@@ -234,14 +243,15 @@ export class TenantsPage {
         this.tenants.reload();
       },
       error: (response) =>
-        this.error.set(response?.error?.detail ?? 'The tenant could not be saved.'),
+        this.error.set(response?.error?.detail ?? this.i18n.translate('tenants.saveFailed')),
     });
   }
 
   protected remove(tenant: Tenant): void {
+    const name = `${tenant.firstName} ${tenant.lastName}`;
     this.api.remove(tenant.id).subscribe({
       next: () => this.tenants.reload(),
-      error: () => this.error.set(`${tenant.firstName} ${tenant.lastName} could not be deleted.`),
+      error: () => this.error.set(this.i18n.translate('tenants.deleteFailed', { name })),
     });
   }
 }

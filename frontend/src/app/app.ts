@@ -3,10 +3,12 @@ import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import Keycloak from 'keycloak-js';
 
 import { SessionService } from './core/session';
+import { LanguageSwitcher } from './shared/language-switcher';
+import { TranslatePipe } from './shared/translate.pipe';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive],
+  imports: [RouterOutlet, RouterLink, RouterLinkActive, LanguageSwitcher, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (me()) {
@@ -14,12 +16,12 @@ import { SessionService } from './core/session';
         <aside class="spine">
           <div class="spine-mark">
             <strong>Hausbuch</strong>
-            <span>Property ledger</span>
+            <span>{{ 'app.tagline' | t }}</span>
           </div>
 
           <nav>
             @for (entry of entries(); track entry.path) {
-              <a [routerLink]="entry.path" routerLinkActive="active">{{ entry.label }}</a>
+              <a [routerLink]="entry.path" routerLinkActive="active">{{ entry.label | t }}</a>
             }
           </nav>
 
@@ -27,12 +29,13 @@ import { SessionService } from './core/session';
             <div class="who">{{ me()!.name }}</div>
             <div class="role">
               @if (session.owner()) {
-                Owner
+                {{ 'app.role.owner' | t }}
               } @else {
-                Assisting {{ me()!.assistingFor.length }} owner(s)
+                {{ 'app.role.assisting' | t: { count: me()!.assistingFor.length } }}
               }
             </div>
-            <button class="quiet" type="button" (click)="signOut()">Sign out</button>
+            <bms-language-switcher />
+            <button class="quiet" type="button" (click)="signOut()">{{ 'app.signOut' | t }}</button>
           </div>
         </aside>
 

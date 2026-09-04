@@ -19,6 +19,9 @@ export default defineConfig({
   reporter: process.env.CI ? [['github'], ['html', { open: 'never' }]] : [['list']],
   use: {
     baseURL: process.env.E2E_BASE_URL ?? 'http://localhost:4200',
+    // The app reads the browser's language on a first visit, so pinning it is
+    // what keeps the specs asserting English wherever they run.
+    locale: 'en-GB',
     trace: 'retain-on-failure',
     screenshot: 'only-on-failure',
   },

@@ -74,7 +74,7 @@ public class KeycloakAdminClient {
                         "emailVerified", true))
                 .exchange((request, response) -> {
                     if (response.getStatusCode().value() == 409) {
-                        throw new ValidationException("An account already exists for " + email);
+                        throw new ValidationException("error.account.exists", email);
                     }
                     failOnError(response.getStatusCode(), "create the account");
                     return response.getHeaders().getLocation();

@@ -10,6 +10,7 @@ import com.bms.access.Permission;
 import com.bms.apartment.Apartment;
 import com.bms.common.exception.NotFoundException;
 import com.bms.common.exception.ValidationException;
+import com.bms.common.i18n.Messages;
 import com.bms.invoice.dto.InvoiceRequest;
 import com.bms.invoice.dto.InvoiceResponse;
 import com.bms.tenant.Tenant;
@@ -24,13 +25,16 @@ public class InvoiceService {
     private final TenantService tenants;
     private final InvoiceNumberGenerator numberGenerator;
     private final AccessControl accessControl;
+    private final Messages messages;
 
     public InvoiceService(InvoiceRepository invoices, TenantService tenants,
-                          InvoiceNumberGenerator numberGenerator, AccessControl accessControl) {
+                          InvoiceNumberGenerator numberGenerator, AccessControl accessControl,
+                          Messages messages) {
         this.invoices = invoices;
         this.tenants = tenants;
         this.numberGenerator = numberGenerator;
         this.accessControl = accessControl;
+        this.messages = messages;
     }
 
     @Transactional(readOnly = true)
@@ -69,7 +73,7 @@ public class InvoiceService {
     public void delete(UUID id) {
         Invoice invoice = require(id, Permission.INVOICE_WRITE);
         if (invoice.getStatus() != InvoiceStatus.DRAFT) {
-            throw new ValidationException("Only draft invoices can be deleted; cancel the invoice instead");
+            throw new ValidationException("error.invoice.deleteDraftOnly");
         }
         invoices.delete(invoice);
     }
@@ -77,7 +81,7 @@ public class InvoiceService {
     @Transactional(readOnly = true)
     public Invoice require(UUID id, Permission permission) {
         return invoices.findByIdAndApartmentBuildingOwnerIdIn(id, accessControl.accessibleOwnerIds(permission))
-                .orElseThrow(() -> NotFoundException.of("Invoice", id));
+                .orElseThrow(() -> NotFoundException.of("error.notFound.invoice", id));
     }
 
     private void addLines(Invoice invoice, InvoiceRequest request, Apartment apartment) {
@@ -87,11 +91,17 @@ public class InvoiceService {
             return;
         }
         if (request.type() != InvoiceType.RENT) {
-            throw new ValidationException("A " + request.type() + " invoice requires at least one line");
+            throw new ValidationException("error.invoice.linesRequired",
+                    messages.get("invoice.type." + request.type()));
         }
-        invoice.addLine("Rent " + apartment.getLabel(), BigDecimal.ONE, apartment.getBaseRent(), "month");
+        // Written in the language of whoever created the invoice, and left as
+        // written from then on, exactly like a line a user typed themselves.
+        String month = messages.get("invoice.line.month");
+        invoice.addLine(messages.get("invoice.line.rent", apartment.getLabel()),
+                BigDecimal.ONE, apartment.getBaseRent(), month);
         if (apartment.getUtilitiesAdvance().compareTo(BigDecimal.ZERO) > 0) {
-            invoice.addLine("Utilities advance", BigDecimal.ONE, apartment.getUtilitiesAdvance(), "month");
+            invoice.addLine(messages.get("invoice.line.utilitiesAdvance"),
+                    BigDecimal.ONE, apartment.getUtilitiesAdvance(), month);
         }
     }
 }

@@ -4,6 +4,7 @@ import { rxResource } from '@angular/core/rxjs-interop';
 
 import { ReportsApi } from '../core/api';
 import { MoneyPipe } from '../shared/money.pipe';
+import { TranslatePipe } from '../shared/translate.pipe';
 
 const today = new Date();
 const startOfYear = `${today.getFullYear()}-01-01`;
@@ -11,40 +12,40 @@ const isoToday = today.toISOString().slice(0, 10);
 
 @Component({
   selector: 'bms-dashboard',
-  imports: [RouterLink, MoneyPipe],
+  imports: [RouterLink, MoneyPipe, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="band">
       <div class="band-head">
         <div>
-          <h1>Overview</h1>
-          <p>Where the portfolio stands this year, {{ periodLabel }}.</p>
+          <h1>{{ 'dashboard.title' | t }}</h1>
+          <p>{{ 'dashboard.subtitle' | t }}</p>
         </div>
       </div>
 
       @if (summary.isLoading()) {
-        <p class="loading">Loading the ledger.</p>
+        <p class="loading">{{ 'dashboard.loading' | t }}</p>
       } @else if (summary.error()) {
-        <p class="notice">The overview could not be loaded. Check that the backend is running.</p>
+        <p class="notice">{{ 'dashboard.error' | t }}</p>
       } @else if (summary.hasValue()) {
         <div class="figures">
           <div class="figure">
             <span class="amount pos">{{ summary.value()!.yearToDateIncome | money }}</span>
-            <span class="caption">Collected</span>
+            <span class="caption">{{ 'dashboard.collected' | t }}</span>
           </div>
           <div class="figure">
             <span class="amount neg">{{ summary.value()!.yearToDateExpenses | money }}</span>
-            <span class="caption">Spent</span>
+            <span class="caption">{{ 'dashboard.spent' | t }}</span>
           </div>
           <div class="figure">
             <span class="amount" [class.pos]="net() >= 0" [class.neg]="net() < 0">
               {{ net() | money }}
             </span>
-            <span class="caption">Net result</span>
+            <span class="caption">{{ 'dashboard.net' | t }}</span>
           </div>
           <div class="figure">
             <span class="amount">{{ summary.value()!.monthlyRentRoll | money }}</span>
-            <span class="caption">Rent roll each month</span>
+            <span class="caption">{{ 'dashboard.rentRoll' | t }}</span>
           </div>
         </div>
       }
@@ -54,8 +55,8 @@ const isoToday = today.toISOString().slice(0, 10);
       <section class="band">
         <div class="band-head">
           <div>
-            <h2>Position by building</h2>
-            <p>Rent collected against what each building cost to run.</p>
+            <h2>{{ 'dashboard.byBuilding' | t }}</h2>
+            <p>{{ 'dashboard.byBuildingSubtitle' | t }}</p>
           </div>
         </div>
 
@@ -79,7 +80,7 @@ const isoToday = today.toISOString().slice(0, 10);
     <section class="band">
       <div class="band-head">
         <div>
-          <h2>Portfolio</h2>
+          <h2>{{ 'dashboard.portfolio' | t }}</h2>
         </div>
       </div>
 
@@ -87,23 +88,23 @@ const isoToday = today.toISOString().slice(0, 10);
         <table class="sheet">
           <tbody>
             <tr>
-              <td>Buildings</td>
+              <td>{{ 'dashboard.buildings' | t }}</td>
               <td class="right strong">{{ summary.value()!.buildingCount }}</td>
             </tr>
             <tr>
-              <td>Apartments</td>
+              <td>{{ 'dashboard.apartments' | t }}</td>
               <td class="right strong">{{ summary.value()!.apartmentCount }}</td>
             </tr>
             <tr>
-              <td>Occupied</td>
+              <td>{{ 'dashboard.occupied' | t }}</td>
               <td class="right strong">{{ summary.value()!.occupiedApartments }}</td>
             </tr>
             <tr>
-              <td>Vacant</td>
+              <td>{{ 'dashboard.vacant' | t }}</td>
               <td class="right strong">{{ summary.value()!.vacantApartments }}</td>
             </tr>
             <tr>
-              <td>Active tenants</td>
+              <td>{{ 'dashboard.activeTenants' | t }}</td>
               <td class="right strong">{{ summary.value()!.activeTenants }}</td>
             </tr>
           </tbody>
@@ -111,9 +112,11 @@ const isoToday = today.toISOString().slice(0, 10);
 
         @if (summary.value()!.buildingCount === 0) {
           <div class="empty">
-            <h3>Nothing to show yet</h3>
-            <p>Add your first building, then its apartments, and the numbers here fill in.</p>
-            <a class="btn btn-primary" routerLink="/buildings">Add a building</a>
+            <h3>{{ 'dashboard.emptyTitle' | t }}</h3>
+            <p>{{ 'dashboard.emptyBody' | t }}</p>
+            <a class="btn btn-primary" routerLink="/buildings">
+              {{ 'dashboard.emptyAction' | t }}
+            </a>
           </div>
         }
       }
@@ -122,8 +125,6 @@ const isoToday = today.toISOString().slice(0, 10);
 })
 export class DashboardPage {
   private reports = inject(ReportsApi);
-
-  protected readonly periodLabel = `1 January to today`;
 
   protected readonly summary = rxResource({ stream: () => this.reports.summary() });
 

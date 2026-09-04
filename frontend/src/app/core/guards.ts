@@ -2,6 +2,7 @@ import { inject } from '@angular/core';
 import { CanMatchFn } from '@angular/router';
 import Keycloak from 'keycloak-js';
 
+import { TranslationService } from './i18n';
 import { Permission } from './models';
 import { SessionService } from './session';
 
@@ -24,8 +25,10 @@ function currentPage(): string {
 export const authGuard: CanMatchFn = () => {
   const keycloak = inject(Keycloak);
   const session = inject(SessionService);
+  const language = inject(TranslationService).language();
   if (!keycloak.authenticated) {
-    void keycloak.login({ redirectUri: currentPage() });
+    // Keycloak's own sign in page speaks both languages; ui_locales picks one.
+    void keycloak.login({ redirectUri: currentPage(), locale: language });
     return false;
   }
   return session.load().then(() => true);

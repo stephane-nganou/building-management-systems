@@ -14,6 +14,7 @@ import {
 
 import { routes } from './app.routes';
 import { config } from './core/config';
+import { acceptLanguageInterceptor } from './core/i18n';
 
 /** Attach the access token to our own API only, never to third party hosts. */
 const apiCondition = createInterceptorCondition<IncludeBearerTokenCondition>({
@@ -46,7 +47,7 @@ export const appConfig: ApplicationConfig = {
         },
       ],
     }),
-    provideHttpClient(withInterceptors([includeBearerTokenInterceptor])),
+    provideHttpClient(withInterceptors([includeBearerTokenInterceptor, acceptLanguageInterceptor])),
     provideRouter(routes, withComponentInputBinding()),
   ],
 };

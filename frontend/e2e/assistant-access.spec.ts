@@ -27,7 +27,7 @@ test('an owner creates an assistant who then sees only what they were granted', 
   await page.getByLabel('First name').fill('Karl');
   await page.getByLabel('Last name').fill('Helfer');
   await page.getByLabel('Their email').fill(email);
-  await page.getByLabel('Expense read').check();
+  await page.getByLabel('View expenses').check();
   await page.getByRole('button', { name: /create assistant/i }).click();
 
   // The password is shown once, for the owner to pass on.

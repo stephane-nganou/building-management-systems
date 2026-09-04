@@ -1,41 +1,76 @@
-import { describe, expect, it } from 'vitest';
+import { TestBed } from '@angular/core/testing';
+import { beforeEach, describe, expect, it } from 'vitest';
 
+import { Language, TranslationService } from '../core/i18n';
 import { DayPipe, LabelPipe, MoneyPipe } from './money.pipe';
 
-describe('MoneyPipe', () => {
-  const pipe = new MoneyPipe();
+function pipes(language: Language) {
+  TestBed.resetTestingModule();
+  localStorage.setItem('bms.language', language);
+  const i18n = TestBed.inject(TranslationService);
+  return TestBed.runInInjectionContext(() => ({
+    i18n,
+    money: new MoneyPipe(),
+    day: new DayPipe(),
+    label: new LabelPipe(),
+  }));
+}
 
-  it('formats an amount as euros', () => {
-    expect(pipe.transform(1234.5)).toContain('1.234,50');
+describe('MoneyPipe', () => {
+  beforeEach(() => localStorage.clear());
+
+  it('formats an amount the English way', () => {
+    // A non breaking space separates amount from symbol, so match the digits only.
+    expect(pipes('en').money.transform(1234.5)).toContain('1,234.50');
+  });
+
+  it('formats the same amount the French way', () => {
+    expect(pipes('fr').money.transform(1234.5)).toContain('234,50');
   });
 
   it('treats a missing amount as zero', () => {
-    expect(pipe.transform(null)).toContain('0,00');
-    expect(pipe.transform(undefined)).toContain('0,00');
+    const { money } = pipes('en');
+    expect(money.transform(null)).toContain('0.00');
+    expect(money.transform(undefined)).toContain('0.00');
+  });
+
+  it('follows a language change without being rebuilt', () => {
+    const { i18n, money } = pipes('en');
+    expect(money.transform(1234.5)).toContain('1,234.50');
+
+    i18n.use('fr');
+    expect(money.transform(1234.5)).toContain('234,50');
   });
 });
 
 describe('DayPipe', () => {
-  const pipe = new DayPipe();
+  beforeEach(() => localStorage.clear());
 
-  it('formats an ISO date as day, month, year', () => {
-    expect(pipe.transform('2026-02-09')).toBe('09.02.2026');
+  it('puts the day before the month in both languages', () => {
+    expect(pipes('en').day.transform('2026-02-09')).toBe('09/02/2026');
+    expect(pipes('fr').day.transform('2026-02-09')).toBe('09/02/2026');
   });
 
   it('returns nothing for a missing date', () => {
-    expect(pipe.transform(null)).toBe('');
+    expect(pipes('en').day.transform(null)).toBe('');
   });
 });
 
 describe('LabelPipe', () => {
-  const pipe = new LabelPipe();
+  beforeEach(() => localStorage.clear());
 
-  it('turns an enum value into readable words', () => {
-    expect(pipe.transform('COLD_WATER')).toBe('Cold water');
-    expect(pipe.transform('BUILDING_READ')).toBe('Building read');
+  it('reads an enum value from the dictionary', () => {
+    expect(pipes('en').label.transform('COLD_WATER', 'invoiceType')).toBe('Cold water');
+    expect(pipes('fr').label.transform('COLD_WATER', 'invoiceType')).toBe('Eau froide');
+  });
+
+  it('tells the two meanings of MAINTENANCE apart', () => {
+    const { label } = pipes('fr');
+    expect(label.transform('MAINTENANCE', 'status')).toBe('En travaux');
+    expect(label.transform('MAINTENANCE', 'category')).toBe('Entretien');
   });
 
   it('returns nothing for a missing value', () => {
-    expect(pipe.transform(undefined)).toBe('');
+    expect(pipes('en').label.transform(undefined, 'permission')).toBe('');
   });
 });

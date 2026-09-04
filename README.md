@@ -2,7 +2,7 @@
 
 Manage apartment buildings: units, tenants, running costs, rent and cold water
 invoices as PDF, and a profit and loss statement for your tax declaration.
-Owners can delegate fine grained access to assistants.
+Owners can delegate fine grained access to assistants. In English or French.
 
 ## Run it
 
@@ -31,6 +31,10 @@ New landlords sign up at http://localhost:4200/register, reachable from
 `owner` / `owner`, or `assistant` / `assistant`. These live in
 `docker/keycloak/realm-bms.json` and exist for local development only.
 
+The app opens in French for a French browser and English for anything else;
+**EN / FR** in the sidebar changes it and the choice is remembered. The sign in
+page, the API's error messages and invoice PDFs follow the same choice.
+
 Keycloak takes about a minute on first start while it imports the realm. The
 import runs only when the realm does not exist yet, so a stack that has been
 started once will not see later changes to `docker/keycloak/realm-bms.json`.
@@ -55,6 +59,7 @@ alone, so nobody loses their account or their buildings.
 | Identity | Keycloak 26.7.3, backend as an OAuth2 resource server |
 | Invoice PDF | Thymeleaf template rendered by openhtmltopdf |
 | End to end tests | Playwright, driving the real stack |
+| Languages | English and French, switched at runtime without a reload |
 
 **Why Flyway over Liquibase:** migrations stay plain, versioned Postgres SQL that
 reads and reviews like the schema it produces. Liquibase's changelog abstraction

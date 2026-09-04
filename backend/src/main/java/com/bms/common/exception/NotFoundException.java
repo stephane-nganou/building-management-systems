@@ -2,13 +2,14 @@ package com.bms.common.exception;
 
 import java.util.UUID;
 
-public class NotFoundException extends RuntimeException {
+public class NotFoundException extends LocalizedException {
 
-    public NotFoundException(String message) {
-        super(message);
+    public NotFoundException(String code, Object... args) {
+        super(code, args);
     }
 
-    public static NotFoundException of(String entity, UUID id) {
-        return new NotFoundException(entity + " " + id + " was not found");
+    /** The code names the entity, because French does not put the words in our order. */
+    public static NotFoundException of(String code, UUID id) {
+        return new NotFoundException(code, id);
     }
 }

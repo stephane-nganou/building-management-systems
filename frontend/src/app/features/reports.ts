@@ -4,36 +4,35 @@ import { rxResource } from '@angular/core/rxjs-interop';
 
 import { BuildingsApi, ReportsApi } from '../core/api';
 import { DayPipe, LabelPipe, MoneyPipe } from '../shared/money.pipe';
+import { TranslatePipe } from '../shared/translate.pipe';
 
 @Component({
   selector: 'bms-reports',
-  imports: [FormsModule, MoneyPipe, DayPipe, LabelPipe],
+  imports: [FormsModule, MoneyPipe, DayPipe, LabelPipe, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="band">
       <div class="band-head">
         <div>
-          <h1>Profit and loss</h1>
-          <p>
-            Rent invoiced against costs incurred over a period. Use this for your tax declaration.
-          </p>
+          <h1>{{ 'reports.title' | t }}</h1>
+          <p>{{ 'reports.subtitle' | t }}</p>
         </div>
-        <button type="button" (click)="print()">Print</button>
+        <button type="button" (click)="print()">{{ 'reports.print' | t }}</button>
       </div>
 
       <div class="toolbar">
         <div class="field">
-          <label for="from">From</label>
+          <label for="from">{{ 'common.from' | t }}</label>
           <input id="from" type="date" [ngModel]="from()" (ngModelChange)="from.set($event)" />
         </div>
         <div class="field">
-          <label for="to">To</label>
+          <label for="to">{{ 'common.to' | t }}</label>
           <input id="to" type="date" [ngModel]="to()" (ngModelChange)="to.set($event)" />
         </div>
         <div class="field">
-          <label for="building">Building</label>
+          <label for="building">{{ 'common.building' | t }}</label>
           <select id="building" [ngModel]="buildingId()" (ngModelChange)="buildingId.set($event)">
-            <option value="">All buildings</option>
+            <option value="">{{ 'common.allBuildings' | t }}</option>
             @for (building of buildings.value(); track building.id) {
               <option [value]="building.id">{{ building.name }}</option>
             }
@@ -43,21 +42,21 @@ import { DayPipe, LabelPipe, MoneyPipe } from '../shared/money.pipe';
     </section>
 
     @if (report.isLoading()) {
-      <section class="band"><p class="loading">Calculating.</p></section>
+      <section class="band"><p class="loading">{{ 'reports.loading' | t }}</p></section>
     } @else if (report.error()) {
       <section class="band">
-        <p class="notice">That period could not be calculated. Check the dates are the right way round.</p>
+        <p class="notice">{{ 'reports.error' | t }}</p>
       </section>
     } @else if (report.hasValue()) {
       <section class="band">
         <div class="figures">
           <div class="figure">
             <span class="amount pos">{{ report.value()!.totalIncome | money }}</span>
-            <span class="caption">Income invoiced</span>
+            <span class="caption">{{ 'reports.income' | t }}</span>
           </div>
           <div class="figure">
             <span class="amount neg">{{ report.value()!.totalExpenses | money }}</span>
-            <span class="caption">Costs incurred</span>
+            <span class="caption">{{ 'reports.costs' | t }}</span>
           </div>
           <div class="figure">
             <span
@@ -68,28 +67,28 @@ import { DayPipe, LabelPipe, MoneyPipe } from '../shared/money.pipe';
               {{ report.value()!.netResult | money }}
             </span>
             <span class="caption">
-              {{ report.value()!.netResult >= 0 ? 'Profit' : 'Loss' }} for
-              {{ report.value()!.from | day }} to {{ report.value()!.to | day }}
+              {{ (report.value()!.netResult >= 0 ? 'reports.profit' : 'reports.loss') | t }},
+              {{ report.value()!.from | day }} - {{ report.value()!.to | day }}
             </span>
           </div>
         </div>
       </section>
 
       <section class="band">
-        <h2>By building</h2>
+        <h2>{{ 'reports.byBuilding' | t }}</h2>
         @if (report.value()!.buildings.length === 0) {
           <div class="empty">
-            <h3>Nothing booked in this period</h3>
-            <p>Record expenses, or mark invoices as sent, and they appear here.</p>
+            <h3>{{ 'reports.emptyTitle' | t }}</h3>
+            <p>{{ 'reports.emptyBody' | t }}</p>
           </div>
         } @else {
           <table class="sheet">
             <thead>
               <tr>
-                <th>Building</th>
-                <th class="right">Income</th>
-                <th class="right">Expenses</th>
-                <th class="right">Result</th>
+                <th>{{ 'common.building' | t }}</th>
+                <th class="right">{{ 'reports.incomeColumn' | t }}</th>
+                <th class="right">{{ 'reports.expensesColumn' | t }}</th>
+                <th class="right">{{ 'reports.resultColumn' | t }}</th>
               </tr>
             </thead>
             <tbody>
@@ -110,7 +109,7 @@ import { DayPipe, LabelPipe, MoneyPipe } from '../shared/money.pipe';
             </tbody>
             <tfoot>
               <tr>
-                <td class="strong">Total</td>
+                <td class="strong">{{ 'common.total' | t }}</td>
                 <td class="right strong pos">{{ report.value()!.totalIncome | money }}</td>
                 <td class="right strong neg">{{ report.value()!.totalExpenses | money }}</td>
                 <td class="right strong">{{ report.value()!.netResult | money }}</td>
@@ -122,19 +121,19 @@ import { DayPipe, LabelPipe, MoneyPipe } from '../shared/money.pipe';
 
       @if (report.value()!.expensesByCategory.length) {
         <section class="band">
-          <h2>Where the money went</h2>
+          <h2>{{ 'reports.breakdown' | t }}</h2>
           <table class="sheet">
             <thead>
               <tr>
-                <th>Category</th>
-                <th class="right">Amount</th>
-                <th class="right">Share</th>
+                <th>{{ 'reports.category' | t }}</th>
+                <th class="right">{{ 'common.amount' | t }}</th>
+                <th class="right">{{ 'reports.share' | t }}</th>
               </tr>
             </thead>
             <tbody>
               @for (row of report.value()!.expensesByCategory; track row.category) {
                 <tr>
-                  <td>{{ row.category | label }}</td>
+                  <td>{{ row.category | label: 'category' }}</td>
                   <td class="right">{{ row.amount | money }}</td>
                   <td class="right muted">{{ share(row.amount) }}%</td>
                 </tr>

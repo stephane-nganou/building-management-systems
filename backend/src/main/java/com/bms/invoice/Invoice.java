@@ -70,10 +70,10 @@ public class Invoice extends BaseEntity {
     public Invoice(Apartment apartment, Tenant tenant, String invoiceNumber, InvoiceType type,
                    LocalDate periodStart, LocalDate periodEnd, LocalDate issueDate, LocalDate dueDate, String notes) {
         if (periodEnd.isBefore(periodStart)) {
-            throw new ValidationException("Invoice period end must not be before period start");
+            throw new ValidationException("error.invoice.periodOrder");
         }
         if (dueDate.isBefore(issueDate)) {
-            throw new ValidationException("Invoice due date must not be before the issue date");
+            throw new ValidationException("error.invoice.dueBeforeIssue");
         }
         this.apartment = apartment;
         this.tenant = tenant;
@@ -100,10 +100,10 @@ public class Invoice extends BaseEntity {
      */
     public void transitionTo(InvoiceStatus target) {
         if (status == InvoiceStatus.CANCELLED) {
-            throw new ValidationException("A cancelled invoice cannot change status");
+            throw new ValidationException("error.invoice.cancelledIsFinal");
         }
         if (status == InvoiceStatus.PAID && target != InvoiceStatus.CANCELLED) {
-            throw new ValidationException("A paid invoice can only be cancelled");
+            throw new ValidationException("error.invoice.paidOnlyCancel");
         }
         this.status = target;
     }

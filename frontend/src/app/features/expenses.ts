@@ -3,8 +3,10 @@ import { FormsModule } from '@angular/forms';
 import { rxResource } from '@angular/core/rxjs-interop';
 
 import { ApartmentsApi, BuildingsApi, ExpensesApi } from '../core/api';
+import { TranslationService } from '../core/i18n';
 import { Expense, ExpenseCategory } from '../core/models';
 import { DayPipe, LabelPipe, MoneyPipe } from '../shared/money.pipe';
+import { TranslatePipe } from '../shared/translate.pipe';
 
 const CATEGORIES: ExpenseCategory[] = [
   'MAINTENANCE',
@@ -39,67 +41,69 @@ const blank = (buildingId: string): ExpenseForm => ({
 
 @Component({
   selector: 'bms-expenses',
-  imports: [FormsModule, MoneyPipe, DayPipe, LabelPipe],
+  imports: [FormsModule, MoneyPipe, DayPipe, LabelPipe, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="band">
       <div class="band-head">
         <div>
-          <h1>Expenses</h1>
-          <p>What each building costs to run, and why. These offset your rental income.</p>
+          <h1>{{ 'expenses.title' | t }}</h1>
+          <p>{{ 'expenses.subtitle' | t }}</p>
         </div>
         <button class="primary" type="button" [disabled]="!hasBuildings()" (click)="startCreate()">
-          Record expense
+          {{ 'expenses.add' | t }}
         </button>
       </div>
 
       <div class="toolbar">
         <div class="field">
-          <label for="filterBuilding">Building</label>
+          <label for="filterBuilding">{{ 'common.building' | t }}</label>
           <select
             id="filterBuilding"
             [ngModel]="filterBuilding()"
             (ngModelChange)="filterBuilding.set($event)"
           >
-            <option value="">All buildings</option>
+            <option value="">{{ 'common.allBuildings' | t }}</option>
             @for (building of buildings.value(); track building.id) {
               <option [value]="building.id">{{ building.name }}</option>
             }
           </select>
         </div>
         <div class="field">
-          <label for="from">From</label>
+          <label for="from">{{ 'common.from' | t }}</label>
           <input id="from" type="date" [ngModel]="from()" (ngModelChange)="from.set($event)" />
         </div>
         <div class="field">
-          <label for="to">To</label>
+          <label for="to">{{ 'common.to' | t }}</label>
           <input id="to" type="date" [ngModel]="to()" (ngModelChange)="to.set($event)" />
         </div>
       </div>
 
       @if (expenses.isLoading()) {
-        <p class="loading">Loading expenses.</p>
+        <p class="loading">{{ 'expenses.loading' | t }}</p>
       } @else if (!hasBuildings()) {
         <div class="empty">
-          <h3>Add a building first</h3>
-          <p>Expenses are always booked against a building.</p>
+          <h3>{{ 'expenses.needBuildingTitle' | t }}</h3>
+          <p>{{ 'expenses.needBuildingBody' | t }}</p>
         </div>
       } @else if (expenses.hasValue() && expenses.value()!.length === 0) {
         <div class="empty">
-          <h3>No expenses in this period</h3>
-          <p>Record repairs, insurance and running costs so your profit and loss is accurate.</p>
-          <button class="primary" type="button" (click)="startCreate()">Record expense</button>
+          <h3>{{ 'expenses.emptyTitle' | t }}</h3>
+          <p>{{ 'expenses.emptyBody' | t }}</p>
+          <button class="primary" type="button" (click)="startCreate()">
+            {{ 'expenses.add' | t }}
+          </button>
         </div>
       } @else if (expenses.hasValue()) {
         <table class="sheet">
           <thead>
             <tr>
-              <th>Date</th>
-              <th>Reason</th>
-              <th>Category</th>
-              <th>Building</th>
-              <th>Paid to</th>
-              <th class="right">Amount</th>
+              <th>{{ 'common.date' | t }}</th>
+              <th>{{ 'expenses.reason' | t }}</th>
+              <th>{{ 'expenses.category' | t }}</th>
+              <th>{{ 'common.building' | t }}</th>
+              <th>{{ 'expenses.vendor' | t }}</th>
+              <th class="right">{{ 'common.amount' | t }}</th>
               <th></th>
             </tr>
           </thead>
@@ -108,7 +112,7 @@ const blank = (buildingId: string): ExpenseForm => ({
               <tr>
                 <td class="muted">{{ expense.incurredOn | day }}</td>
                 <td class="strong">{{ expense.description }}</td>
-                <td>{{ expense.category | label }}</td>
+                <td>{{ expense.category | label: 'category' }}</td>
                 <td class="muted">
                   {{ expense.buildingName }}
                   @if (expense.apartmentLabel) {
@@ -118,15 +122,19 @@ const blank = (buildingId: string): ExpenseForm => ({
                 <td class="muted">{{ expense.vendor || '-' }}</td>
                 <td class="right strong neg">{{ expense.amount | money }}</td>
                 <td class="right">
-                  <button class="quiet" type="button" (click)="startEdit(expense)">Edit</button>
-                  <button class="quiet danger" type="button" (click)="remove(expense)">Delete</button>
+                  <button class="quiet" type="button" (click)="startEdit(expense)">
+                    {{ 'common.edit' | t }}
+                  </button>
+                  <button class="quiet danger" type="button" (click)="remove(expense)">
+                    {{ 'common.delete' | t }}
+                  </button>
                 </td>
               </tr>
             }
           </tbody>
           <tfoot>
             <tr>
-              <td colspan="5" class="strong">Total</td>
+              <td colspan="5" class="strong">{{ 'common.total' | t }}</td>
               <td class="right strong neg">{{ total() | money }}</td>
               <td></td>
             </tr>
@@ -143,12 +151,12 @@ const blank = (buildingId: string): ExpenseForm => ({
       <div class="scrim" (click)="cancel()">
         <div class="panel" (click)="$event.stopPropagation()">
           <header>
-            <h2>{{ editingId() ? 'Edit expense' : 'Record expense' }}</h2>
+            <h2>{{ (editingId() ? 'expenses.editTitle' : 'expenses.add') | t }}</h2>
           </header>
           <div class="body">
             <div class="grid-2">
               <div class="field">
-                <label for="building">Building</label>
+                <label for="building">{{ 'common.building' | t }}</label>
                 <select id="building" [(ngModel)]="form.buildingId" (ngModelChange)="form.apartmentId = ''">
                   @for (building of buildings.value(); track building.id) {
                     <option [value]="building.id">{{ building.name }}</option>
@@ -156,49 +164,53 @@ const blank = (buildingId: string): ExpenseForm => ({
                 </select>
               </div>
               <div class="field">
-                <label for="apartment">Apartment (optional)</label>
+                <label for="apartment">{{ 'expenses.apartmentOptional' | t }}</label>
                 <select id="apartment" [(ngModel)]="form.apartmentId">
-                  <option value="">Whole building</option>
+                  <option value="">{{ 'expenses.wholeBuilding' | t }}</option>
                   @for (apartment of apartmentsFor(form.buildingId); track apartment.id) {
                     <option [value]="apartment.id">{{ apartment.label }}</option>
                   }
                 </select>
               </div>
               <div class="field">
-                <label for="category">Category</label>
+                <label for="category">{{ 'expenses.category' | t }}</label>
                 <select id="category" [(ngModel)]="form.category">
                   @for (category of categories; track category) {
-                    <option [value]="category">{{ category | label }}</option>
+                    <option [value]="category">{{ category | label: 'category' }}</option>
                   }
                 </select>
               </div>
               <div class="field">
-                <label for="amount">Amount</label>
+                <label for="amount">{{ 'common.amount' | t }}</label>
                 <input id="amount" type="number" step="0.01" [(ngModel)]="form.amount" />
               </div>
               <div class="field">
-                <label for="incurredOn">Date</label>
+                <label for="incurredOn">{{ 'common.date' | t }}</label>
                 <input id="incurredOn" type="date" [(ngModel)]="form.incurredOn" />
               </div>
               <div class="field">
-                <label for="vendor">Paid to</label>
+                <label for="vendor">{{ 'expenses.vendor' | t }}</label>
                 <input id="vendor" [(ngModel)]="form.vendor" />
               </div>
             </div>
             <div class="field">
-              <label for="description">Reason</label>
-              <input id="description" [(ngModel)]="form.description" placeholder="Replaced boiler valve" />
+              <label for="description">{{ 'expenses.reason' | t }}</label>
+              <input
+                id="description"
+                [(ngModel)]="form.description"
+                [placeholder]="'expenses.reasonPlaceholder' | t"
+              />
             </div>
           </div>
           <footer>
-            <button type="button" (click)="cancel()">Cancel</button>
+            <button type="button" (click)="cancel()">{{ 'common.cancel' | t }}</button>
             <button
               class="primary"
               type="button"
               [disabled]="!form.description.trim()"
               (click)="save()"
             >
-              {{ editingId() ? 'Save changes' : 'Record expense' }}
+              {{ (editingId() ? 'common.saveChanges' : 'expenses.add') | t }}
             </button>
           </footer>
         </div>
@@ -210,6 +222,7 @@ export class ExpensesPage {
   private api = inject(ExpensesApi);
   private buildingsApi = inject(BuildingsApi);
   private apartmentsApi = inject(ApartmentsApi);
+  private i18n = inject(TranslationService);
 
   protected readonly categories = CATEGORIES;
   protected readonly filterBuilding = signal('');
@@ -287,14 +300,14 @@ export class ExpensesPage {
         this.expenses.reload();
       },
       error: (response) =>
-        this.error.set(response?.error?.detail ?? 'The expense could not be saved.'),
+        this.error.set(response?.error?.detail ?? this.i18n.translate('expenses.saveFailed')),
     });
   }
 
   protected remove(expense: Expense): void {
     this.api.remove(expense.id).subscribe({
       next: () => this.expenses.reload(),
-      error: () => this.error.set('The expense could not be deleted.'),
+      error: () => this.error.set(this.i18n.translate('expenses.deleteFailed')),
     });
   }
 }

@@ -52,7 +52,7 @@ public class TenantService {
         Apartment apartment = apartments.require(apartmentId, Permission.TENANT_WRITE);
         validateLease(request);
         if (request.active() && tenants.existsByApartmentIdAndActiveTrue(apartmentId)) {
-            throw new ValidationException("This apartment already has an active tenant");
+            throw new ValidationException("error.tenant.activeExists");
         }
         Tenant tenant = new Tenant(apartment, request.firstName(), request.lastName(), request.email(),
                 request.phone(), request.leaseStart(), request.leaseEnd(), request.deposit());
@@ -80,12 +80,12 @@ public class TenantService {
     @Transactional(readOnly = true)
     public Tenant require(UUID id, Permission permission) {
         return tenants.findByIdAndApartmentBuildingOwnerIdIn(id, accessControl.accessibleOwnerIds(permission))
-                .orElseThrow(() -> NotFoundException.of("Tenant", id));
+                .orElseThrow(() -> NotFoundException.of("error.notFound.tenant", id));
     }
 
     private void validateLease(TenantRequest request) {
         if (request.leaseEnd() != null && request.leaseEnd().isBefore(request.leaseStart())) {
-            throw new ValidationException("Lease end must not be before lease start");
+            throw new ValidationException("error.tenant.leaseOrder");
         }
     }
 }

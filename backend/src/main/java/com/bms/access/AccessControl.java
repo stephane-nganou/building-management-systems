@@ -38,7 +38,7 @@ public class AccessControl {
     @Transactional(readOnly = true)
     public void require(UUID ownerId, Permission permission) {
         if (!canAccess(ownerId, permission)) {
-            throw new AccessDeniedForResourceException("Missing permission " + permission + " for this data");
+            throw new AccessDeniedForResourceException("error.accessDenied", permission);
         }
     }
 

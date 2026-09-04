@@ -2,6 +2,7 @@ package com.bms.invoice;
 
 import java.io.ByteArrayOutputStream;
 import java.time.format.DateTimeFormatter;
+import java.util.Locale;
 
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
 import org.springframework.beans.factory.annotation.Value;
@@ -13,7 +14,8 @@ import org.thymeleaf.context.Context;
 @Component
 public class InvoicePdfRenderer {
 
-    private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd.MM.yyyy");
+    /** Day before month, as both languages the app speaks write it. */
+    private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
 
     private final TemplateEngine templateEngine;
     private final String issuerName;
@@ -27,8 +29,13 @@ public class InvoicePdfRenderer {
         this.currency = currency;
     }
 
-    public byte[] render(Invoice invoice) {
-        Context context = new Context();
+    /**
+     * The locale words the document. Line descriptions are not translated here:
+     * they were stored when the invoice was created, whether we generated them
+     * or the user typed them.
+     */
+    public byte[] render(Invoice invoice, Locale locale) {
+        Context context = new Context(locale);
         context.setVariable("invoice", invoice);
         context.setVariable("building", invoice.getApartment().getBuilding());
         context.setVariable("owner", invoice.getApartment().getBuilding().getOwner());

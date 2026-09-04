@@ -1,8 +1,8 @@
 package com.bms.common.exception;
 
-public class AccessDeniedForResourceException extends RuntimeException {
+public class AccessDeniedForResourceException extends LocalizedException {
 
-    public AccessDeniedForResourceException(String message) {
-        super(message);
+    public AccessDeniedForResourceException(String code, Object... args) {
+        super(code, args);
     }
 }
