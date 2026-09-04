@@ -3,7 +3,7 @@ import { expect, test } from '@playwright/test';
 import {
   DEMO_OWNER,
   chooseNewPassword,
-  navLabels,
+  expectNavLabels,
   signIn,
   signOut,
   submitSignIn,
@@ -44,7 +44,7 @@ test('an owner creates an assistant who then sees only what they were granted', 
   await chooseNewPassword(page, 'assistant-own-secret');
 
   await expect(page.locator('.spine-foot .role')).toHaveText(/assisting/i);
-  expect(await navLabels(page)).toEqual(['Expenses']);
+  await expectNavLabels(page, ['Expenses']);
 
   // Asking for a screen they were not granted takes them somewhere they may be,
   // and the Assistants screen is never theirs.

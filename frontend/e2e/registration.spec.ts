@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { navLabels, signIn, uniqueEmail } from './support';
+import { expectNavLabels, signIn, uniqueEmail } from './support';
 
 test.describe('registration', () => {
   test('the sign in page offers a way to register', async ({ page }) => {
@@ -31,7 +31,7 @@ test.describe('registration', () => {
 
     // A registered user is an owner, so every screen is theirs.
     await expect(page.locator('.spine-foot .role')).toHaveText(/owner/i);
-    expect(await navLabels(page)).toEqual([
+    await expectNavLabels(page, [
       'Overview',
       'Buildings',
       'Apartments',

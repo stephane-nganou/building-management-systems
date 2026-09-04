@@ -150,6 +150,15 @@ languages, and download the same invoice as a French and an English PDF.
   `navigator.language` on a first visit, so without `locale: 'en-GB'` in the
   Playwright config the specs would assert English against a French app wherever
   the machine happened to be set to French.
+- **The sidebar is asserted with `toHaveText`, never with a read into an array.**
+  Reading the labels and comparing the array takes one snapshot, and a snapshot
+  can be taken before the browser has applied the change the test just asked
+  for. Angular is zoneless, so setting the language schedules change detection
+  rather than doing it; the DOM catches up a tick later. Locally the read loses
+  that race every time, because it runs on the same thread as the render. On a
+  contended CI runner it does not, and the suite went red twice reading the
+  language it had just switched away from. `toHaveText` polls, so a busy machine
+  is slow rather than red.
 
 ## Not built yet
 
