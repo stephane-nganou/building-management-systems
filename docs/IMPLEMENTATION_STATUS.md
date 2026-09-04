@@ -1,7 +1,11 @@
 # Implementation status
 
-Last updated: 2026-09-04, after BM-4 (English and French across the app, the
-API, the sign in page and invoice PDFs).
+Last updated: 2026-09-05, after BM-6 (architecture diagrams).
+
+The architecture is drawn out in
+[ARCHITECTURE_DIAGRAMS.md](ARCHITECTURE_DIAGRAMS.md): containers, backend and
+frontend structure, the domain model, the schema, and the sequence of every
+main flow. This file records what is built and why it is built that way.
 
 ## Built and working end to end
 
@@ -25,6 +29,7 @@ API, the sign in page and invoice PDFs).
 | Dashboard | Done | Portfolio counts, rent roll, year to date position |
 | English and French | Done | Every screen, API error, sign in page and invoice PDF |
 | API documentation | Done | OpenAPI at `/swagger-ui.html` |
+| Architecture diagrams | Done | `docs/ARCHITECTURE_DIAGRAMS.md`, Mermaid, rendered by GitHub |
 | End to end tests | Done | Playwright against the real stack, run before every push and on every pull request |
 | CI pipeline | Done | GitHub Actions: backend, frontend and end to end |
 
@@ -160,6 +165,13 @@ languages, and download the same invoice as a French and an English PDF.
   language it had just switched away from. `toHaveText` polls, so a busy machine
   is slow rather than red.
 
+- **The diagrams are Mermaid in Markdown, not image files.** GitHub renders them
+  in the browser, so no toolchain is needed to read one, and a change shows up
+  as a readable diff rather than a new binary. An exported PNG or a `.drawio`
+  file would need a round trip through a tool nobody has installed, which is
+  how diagrams stop being updated. Note that `;` terminates a statement in a
+  Mermaid sequence diagram, so it cannot appear inside message text.
+
 ## Not built yet
 
 - OAuth 2 beyond the Keycloak resource server setup, as the ticket scopes it later.
@@ -178,6 +190,10 @@ languages, and download the same invoice as a French and an English PDF.
 - End to end coverage of invoices and the profit and loss report.
 
 ## Known rough edges
+
+- The architecture diagrams are kept by hand and nothing checks them against the
+  code, so a change to the domain model or a flow has to be carried into
+  `docs/ARCHITECTURE_DIAGRAMS.md` deliberately.
 
 - Write actions are still shown inside a screen an assistant may only read; the
   backend refuses them, but the buttons are there.
