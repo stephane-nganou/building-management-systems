@@ -87,12 +87,12 @@ import { LabelPipe } from '../shared/money.pipe';
               they sign in.
             </p>
             <div class="field">
-              <label>Email</label>
-              <input [value]="credentials.email" readonly />
+              <label for="issuedEmail">Email</label>
+              <input id="issuedEmail" [value]="credentials.email" readonly />
             </div>
             <div class="field">
-              <label>Temporary password</label>
-              <input [value]="credentials.temporaryPassword" readonly />
+              <label for="issuedPassword">Temporary password</label>
+              <input id="issuedPassword" [value]="credentials.temporaryPassword" readonly />
             </div>
           </div>
           <footer>

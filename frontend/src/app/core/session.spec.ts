@@ -5,7 +5,7 @@ import { of } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { MeApi } from './api';
-import { ownerGuard, permissionGuard } from './guards';
+import { authGuard, ownerGuard, permissionGuard } from './guards';
 import { Me, Permission } from './models';
 import { SessionService } from './session';
 
@@ -34,6 +34,10 @@ function sessionFor(me: Me | null): SessionService {
 
 /** The router passes a route, its segments and a snapshot; none of it matters here. */
 const matchArgs = [{}, [], {}] as unknown as Parameters<CanMatchFn>;
+
+function runGuard(guard: CanMatchFn): Promise<boolean> {
+  return Promise.resolve(TestBed.runInInjectionContext(() => guard(...matchArgs)) as boolean);
+}
 
 describe('SessionService', () => {
   beforeEach(() => {
@@ -73,47 +77,58 @@ describe('SessionService', () => {
     expect(session.landingRoute()).toBe('/no-access');
   });
 
-  it('leaves the registration page alone when signed out', async () => {
-    history.pushState({}, '', '/register');
-    const session = sessionFor(null);
-    await session.load();
+  it('fetches the profile once however many guards ask for it', async () => {
+    const me = profile(true, ['REPORT_READ']);
+    const get = vi.fn(() => of(me));
+    TestBed.configureTestingModule({
+      providers: [
+        { provide: Keycloak, useValue: { authenticated: true, login: signIn } },
+        { provide: MeApi, useValue: { get } },
+      ],
+    });
+    const session = TestBed.inject(SessionService);
 
-    expect(signIn).not.toHaveBeenCalled();
-    expect(session.user()).toBeNull();
-    expect(session.can('BUILDING_READ')).toBe(false);
-  });
+    await Promise.all([session.load(), session.load(), session.load()]);
 
-  it('sends a signed out visitor of any other page to sign in', async () => {
-    history.pushState({}, '', '/buildings');
-    await sessionFor(null).load();
-
-    expect(signIn).toHaveBeenCalled();
+    expect(get).toHaveBeenCalledTimes(1);
   });
 });
 
 describe('route guards', () => {
-  beforeEach(() => TestBed.resetTestingModule());
+  beforeEach(() => {
+    TestBed.resetTestingModule();
+    signIn.mockClear();
+  });
+
+  it('sends a signed out visitor to sign in, without matching the route', async () => {
+    sessionFor(null);
+
+    expect(await runGuard(authGuard)).toBe(false);
+    expect(signIn).toHaveBeenCalled();
+  });
+
+  it('lets a signed in user through, having loaded their profile first', async () => {
+    const session = sessionFor(profile(false, ['TENANT_READ']));
+
+    expect(await runGuard(authGuard)).toBe(true);
+    expect(signIn).not.toHaveBeenCalled();
+    // The guard, not the caller, is what made the permissions available.
+    expect(session.can('TENANT_READ')).toBe(true);
+  });
 
   it('matches a route only when the permission is held', async () => {
-    const session = sessionFor(profile(false, ['TENANT_READ']));
-    await session.load();
+    sessionFor(profile(false, ['TENANT_READ']));
 
-    expect(TestBed.runInInjectionContext(() => permissionGuard('TENANT_READ')(...matchArgs))).toBe(
-      true,
-    );
-    expect(TestBed.runInInjectionContext(() => permissionGuard('INVOICE_READ')(...matchArgs))).toBe(
-      false,
-    );
+    expect(await runGuard(permissionGuard('TENANT_READ'))).toBe(true);
+    expect(await runGuard(permissionGuard('INVOICE_READ'))).toBe(false);
   });
 
   it('reserves owner routes for owners', async () => {
-    const assistant = sessionFor(profile(false, ['BUILDING_READ']));
-    await assistant.load();
-    expect(TestBed.runInInjectionContext(() => ownerGuard(...matchArgs))).toBe(false);
+    sessionFor(profile(false, ['BUILDING_READ']));
+    expect(await runGuard(ownerGuard)).toBe(false);
 
     TestBed.resetTestingModule();
-    const owner = sessionFor(profile(true, ['BUILDING_READ']));
-    await owner.load();
-    expect(TestBed.runInInjectionContext(() => ownerGuard(...matchArgs))).toBe(true);
+    sessionFor(profile(true, ['BUILDING_READ']));
+    expect(await runGuard(ownerGuard)).toBe(true);
   });
 });

@@ -26,7 +26,8 @@ Pass `--wipe` (`-Wipe` on Windows) to the stop script to drop the database volum
 | API docs | http://localhost:8080/swagger-ui.html |
 | Keycloak | http://localhost:8081 (admin / admin) |
 
-New landlords sign up at http://localhost:4200/register. Demo sign in:
+New landlords sign up at http://localhost:4200/register, reachable from
+**Register here** on the sign in page. Demo sign in:
 `owner` / `owner`, or `assistant` / `assistant`. These live in
 `docker/keycloak/realm-bms.json` and exist for local development only.
 
@@ -44,6 +45,7 @@ needs `--wipe` on stop to pick up realm changes.
 | Migrations | Flyway |
 | Identity | Keycloak 26.7.3, backend as an OAuth2 resource server |
 | Invoice PDF | Thymeleaf template rendered by openhtmltopdf |
+| End to end tests | Playwright, driving the real stack |
 
 **Why Flyway over Liquibase:** migrations stay plain, versioned Postgres SQL that
 reads and reviews like the schema it produces. Liquibase's changelog abstraction
@@ -65,7 +67,23 @@ cd backend && mvn spring-boot:run
 # Frontend
 cd frontend && npm start
 cd frontend && npm test
+
+# End to end: brings the whole stack up on its own compose project, runs the
+# suite against it, then tears it down. Stop the development stack first, since
+# both use the same ports.
+scripts/e2e.sh          # mac, linux
+scripts/e2e.ps1         # windows
 ```
+
+The end to end suite runs before every push, through a hook kept in the
+repository. Install it once per clone:
+
+```bash
+scripts/install-hooks.sh    # or scripts/install-hooks.ps1
+```
+
+A hook can be skipped with `git push --no-verify`, so the same suite runs again
+on every pull request in GitHub Actions. That is the gate that always holds.
 
 The frontend reads its API and Keycloak URLs at runtime from
 `frontend/public/config.js`. The Docker image rewrites that file from the
@@ -92,8 +110,10 @@ and its code is never downloaded.
 ```
 backend/    Spring Boot service, one package per feature
 frontend/   Angular app, one lazy loaded route per feature
-docker/     Keycloak realm export and Postgres bootstrap
-scripts/    start and stop per platform
+  e2e/      Playwright specs, run against the whole stack
+docker/     Keycloak realm export, login theme and Postgres bootstrap
+scripts/    start, stop, end to end and hook installation
+.githooks/  pre-push, so a branch is never pushed broken
 docs/       implementation status
 ```
 

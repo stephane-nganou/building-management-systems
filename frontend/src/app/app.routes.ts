@@ -1,8 +1,6 @@
-import { inject } from '@angular/core';
 import { Routes } from '@angular/router';
 
-import { ownerGuard, permissionGuard } from './core/guards';
-import { SessionService } from './core/session';
+import { authGuard, ownerGuard, permissionGuard } from './core/guards';
 
 /**
  * Every screen is gated with canMatch, so a route the caller may not use is
@@ -16,52 +14,54 @@ export const routes: Routes = [
   },
   {
     path: 'dashboard',
-    canMatch: [permissionGuard('REPORT_READ')],
+    canMatch: [authGuard, permissionGuard('REPORT_READ')],
     loadComponent: () => import('./features/dashboard').then((m) => m.DashboardPage),
   },
   {
     path: 'buildings',
-    canMatch: [permissionGuard('BUILDING_READ')],
+    canMatch: [authGuard, permissionGuard('BUILDING_READ')],
     loadComponent: () => import('./features/buildings').then((m) => m.BuildingsPage),
   },
   {
     path: 'apartments',
-    canMatch: [permissionGuard('APARTMENT_READ')],
+    canMatch: [authGuard, permissionGuard('APARTMENT_READ')],
     loadComponent: () => import('./features/apartments').then((m) => m.ApartmentsPage),
   },
   {
     path: 'tenants',
-    canMatch: [permissionGuard('TENANT_READ')],
+    canMatch: [authGuard, permissionGuard('TENANT_READ')],
     loadComponent: () => import('./features/tenants').then((m) => m.TenantsPage),
   },
   {
     path: 'expenses',
-    canMatch: [permissionGuard('EXPENSE_READ')],
+    canMatch: [authGuard, permissionGuard('EXPENSE_READ')],
     loadComponent: () => import('./features/expenses').then((m) => m.ExpensesPage),
   },
   {
     path: 'invoices',
-    canMatch: [permissionGuard('INVOICE_READ')],
+    canMatch: [authGuard, permissionGuard('INVOICE_READ')],
     loadComponent: () => import('./features/invoices').then((m) => m.InvoicesPage),
   },
   {
     path: 'reports',
-    canMatch: [permissionGuard('REPORT_READ')],
+    canMatch: [authGuard, permissionGuard('REPORT_READ')],
     loadComponent: () => import('./features/reports').then((m) => m.ReportsPage),
   },
   {
     path: 'assistants',
-    canMatch: [ownerGuard],
+    canMatch: [authGuard, ownerGuard],
     loadComponent: () => import('./features/assistants').then((m) => m.AssistantsPage),
   },
   {
     path: 'no-access',
+    canMatch: [authGuard],
     loadComponent: () => import('./features/no-access').then((m) => m.NoAccessPage),
   },
   {
     path: '',
     pathMatch: 'full',
-    redirectTo: () => inject(SessionService).landingRoute(),
+    canMatch: [authGuard],
+    loadComponent: () => import('./features/landing').then((m) => m.LandingPage),
   },
   { path: '**', redirectTo: '' },
 ];

@@ -40,6 +40,8 @@ services:
       - "${KEYCLOAK_PORT:-8081}:8080"
     volumes:
       - ./docker/keycloak/realm-bms.json:/opt/keycloak/data/import/realm-bms.json:ro
+      # The sign in page links to our own registration page, so it needs a theme.
+      - ./docker/keycloak/themes/bms:/opt/keycloak/themes/bms:ro
     depends_on:
       postgres:
         condition: service_healthy

@@ -1,47 +1,33 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import Keycloak from 'keycloak-js';
-import { catchError, of, tap } from 'rxjs';
 
 import { MeApi } from './api';
 import { Me, Permission } from './models';
 import { NAV_ENTRIES, NavEntry } from './navigation';
 
-/** The only pages that open without an account. */
-const PUBLIC_PATHS = ['/register'];
-
 /**
- * Who is signed in and what they may do, resolved once before the app starts so
- * route guards can answer without waiting on a request.
+ * Who is signed in and what they may do.
+ *
+ * <p>The profile is fetched from the route guards rather than an app
+ * initializer. Angular starts every initializer at once without waiting for the
+ * one before, so an initializer here would run while Keycloak was still working
+ * out whether there is a session, read `authenticated` as false and bounce the
+ * browser back to the login page for ever. By the time a guard runs, Keycloak
+ * has finished.
  */
 @Injectable({ providedIn: 'root' })
 export class SessionService {
   private keycloak = inject(Keycloak);
   private meApi = inject(MeApi);
   private me = signal<Me | null>(null);
+  private loading: Promise<unknown> | null = null;
 
   readonly user = this.me.asReadonly();
   readonly owner = computed(() => this.me()?.owner ?? false);
 
-  /**
-   * Resolves once the profile is known. Signing in happens here rather than in
-   * a route guard, because the router forbids a guard on a redirecting route
-   * and every screen but registration needs an account anyway.
-   */
+  /** Fetches the profile the first time it is asked for, then hands out the same result. */
   load(): Promise<unknown> {
-    if (!this.keycloak.authenticated) {
-      return PUBLIC_PATHS.includes(window.location.pathname)
-        ? Promise.resolve(null)
-        : this.keycloak.login({ redirectUri: window.location.href });
-    }
-    return new Promise((resolve) => {
-      this.meApi
-        .get()
-        .pipe(
-          tap((me) => this.me.set(me)),
-          catchError(() => of(null)),
-        )
-        .subscribe(() => resolve(null));
-    });
+    return (this.loading ??= this.fetch());
   }
 
   can(permission: Permission): boolean {
@@ -62,5 +48,26 @@ export class SessionService {
   /** Where to send someone who asked for a page they may not see. */
   landingRoute(): string {
     return this.visibleEntries()[0]?.path ?? '/no-access';
+  }
+
+  private fetch(): Promise<unknown> {
+    if (!this.keycloak.authenticated) {
+      return Promise.resolve(null);
+    }
+    return new Promise((resolve) => {
+      this.meApi.get().subscribe({
+        next: (me) => {
+          this.me.set(me);
+          resolve(null);
+        },
+        // A failure is not remembered: forgetting it lets the next guard try
+        // again, rather than stranding the user on the empty page until they
+        // reload because the backend was a moment slower than the browser.
+        error: () => {
+          this.loading = null;
+          resolve(null);
+        },
+      });
+    });
   }
 }

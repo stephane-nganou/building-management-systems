@@ -2,6 +2,7 @@
   "realm": "bms",
   "enabled": true,
   "displayName": "Building Management",
+  "loginTheme": "bms",
   "registrationAllowed": false,
   "resetPasswordAllowed": true,
   "loginWithEmailAllowed": true,
