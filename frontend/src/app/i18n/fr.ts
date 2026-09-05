@@ -283,6 +283,16 @@ export const fr: Messages = {
   'register.haveAccount': "J'ai déjà un compte",
   'register.failed': "Ce compte n'a pas pu être créé.",
 
+  'password.title': 'Choisissez votre mot de passe',
+  'password.subtitle':
+    'Votre compte a été créé avec un mot de passe choisi par quelqu’un d’autre. Remplacez-le par un mot de passe que vous seul connaissez.',
+  'password.new': 'Nouveau mot de passe',
+  'password.confirm': 'Répétez-le',
+  'password.hint': 'Au moins 8 caractères.',
+  'password.submit': 'Enregistrer le mot de passe',
+  'password.saving': 'Enregistrement',
+  'password.failed': "Ce mot de passe n'a pas pu être enregistré.",
+
   'noAccess.title': 'Rien à afficher pour le moment',
   'noAccess.body':
     'Demandez au propriétaire que vous assistez de vous donner des droits, puis reconnectez-vous.',

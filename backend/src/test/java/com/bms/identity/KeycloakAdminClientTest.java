@@ -18,8 +18,8 @@ import static org.springframework.test.web.client.response.MockRestResponseCreat
  */
 class KeycloakAdminClientTest {
 
-    private static final KeycloakAdminProperties PROPERTIES =
-            new KeycloakAdminProperties("http://keycloak:8080", "bms", "bms-backend", "a-secret");
+    private static final KeycloakProperties PROPERTIES =
+            new KeycloakProperties("http://keycloak:8080", "http://localhost:8081", "bms", "bms-backend", "a-secret");
 
     @Test
     void anUnknownClientIsReportedAsAnIdentityProviderFailure() {
@@ -31,7 +31,7 @@ class KeycloakAdminClientTest {
                         .body("{\"error\":\"invalid_client\"}"));
         KeycloakAdminClient client = new KeycloakAdminClient(builder.build(), PROPERTIES);
 
-        assertThatThrownBy(() -> client.resetPassword("kc-id", "new-secret", true))
+        assertThatThrownBy(() -> client.resetPassword("kc-id", "new-secret"))
                 .isInstanceOf(IdentityProviderException.class)
                 .hasMessageContaining("bms-backend")
                 .hasMessageContaining("secret matches");
@@ -45,7 +45,7 @@ class KeycloakAdminClientTest {
                 .andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE));
         KeycloakAdminClient client = new KeycloakAdminClient(builder.build(), PROPERTIES);
 
-        assertThatThrownBy(() -> client.resetPassword("kc-id", "new-secret", true))
+        assertThatThrownBy(() -> client.resetPassword("kc-id", "new-secret"))
                 .isInstanceOf(IdentityProviderException.class);
     }
 
@@ -61,7 +61,7 @@ class KeycloakAdminClientTest {
                 .andRespond(withStatus(HttpStatus.NO_CONTENT));
         KeycloakAdminClient client = new KeycloakAdminClient(builder.build(), PROPERTIES);
 
-        client.resetPassword("kc-id", "new-secret", true);
+        client.resetPassword("kc-id", "new-secret");
 
         // Both calls were made, in order, and neither was turned into a failure.
         server.verify();

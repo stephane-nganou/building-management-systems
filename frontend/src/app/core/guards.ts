@@ -1,37 +1,34 @@
 import { inject } from '@angular/core';
-import { CanMatchFn } from '@angular/router';
-import Keycloak from 'keycloak-js';
+import { CanMatchFn, Router } from '@angular/router';
 
-import { TranslationService } from './i18n';
+import { AuthService, currentPath } from './auth';
 import { Permission } from './models';
 import { SessionService } from './session';
 
 /**
- * The page to come back to after signing in. The fragment is dropped on
- * purpose: a check-sso that finds no session leaves `#error=login_required`
- * behind, and Keycloak rejects a redirect_uri carrying it.
- */
-function currentPage(): string {
-  return window.location.origin + window.location.pathname + window.location.search;
-}
-
-/**
- * Sends anyone without a session to Keycloak, and makes sure the profile is
- * loaded before any later guard asks what they may do.
+ * Makes sure there is a session, and that the profile is loaded before any later
+ * guard asks what this user may do.
  *
  * <p>Every guard injects what it needs before awaiting anything, because
  * `inject` only works while the injection context is still on the stack.
  */
 export const authGuard: CanMatchFn = () => {
-  const keycloak = inject(Keycloak);
   const session = inject(SessionService);
-  const language = inject(TranslationService).language();
-  if (!keycloak.authenticated) {
-    // Keycloak's own sign in page speaks both languages; ui_locales picks one.
-    void keycloak.login({ redirectUri: currentPage(), locale: language });
-    return false;
-  }
-  return session.load().then(() => true);
+  const auth = inject(AuthService);
+  const router = inject(Router);
+  const path = currentPath();
+  return session.load().then(() => {
+    if (!session.signedIn()) {
+      // The profile request was refused, which the interceptor has already
+      // turned into a sign in. Nothing here should match in the meantime.
+      auth.signIn(path);
+      return false;
+    }
+    if (session.mustChangePassword()) {
+      return router.parseUrl('/password');
+    }
+    return true;
+  });
 };
 
 /**
@@ -50,4 +47,21 @@ export const permissionGuard =
 export const ownerGuard: CanMatchFn = () => {
   const session = inject(SessionService);
   return session.load().then(() => session.owner());
+};
+
+/**
+ * The change password screen, which only exists while it is required. Leaving
+ * it reachable afterwards would offer a screen the sidebar never mentions.
+ */
+export const passwordChangeGuard: CanMatchFn = () => {
+  const session = inject(SessionService);
+  const auth = inject(AuthService);
+  const path = currentPath();
+  return session.load().then(() => {
+    if (!session.signedIn()) {
+      auth.signIn(path);
+      return false;
+    }
+    return session.mustChangePassword();
+  });
 };

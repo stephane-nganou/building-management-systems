@@ -1,6 +1,6 @@
 # Architecture diagrams
 
-Last updated: 2026-09-05, after BM-6.
+Last updated: 2026-09-05, after BM-8.
 
 The diagrams are Mermaid, so GitHub renders them in the browser and a change to
 one shows up as a readable diff. Each carries a short note on what it is meant
@@ -35,41 +35,57 @@ The reasoning behind the decisions these diagrams draw lives in
 
 ## 1. Containers and their traffic
 
-Four containers from one `docker-compose.yml`. The arrows worth noticing are
-the two that leave the browser: it talks to Keycloak directly for the sign in
-redirect and the token, so no password is ever typed into a screen this
-application serves. The one exception is registration in section 9, where the
-chosen password passes through the backend on its way to Keycloak and is never
-stored on our side.
+Four containers from one `docker-compose.yml`. The arrow that matters is the one
+that is missing: nothing leaves the browser for anything but the frontend's own
+origin. nginx serves the bundle and forwards `/api` to the backend, so the
+application is same origin with its API, holds a session cookie it cannot read,
+and has no idea an identity provider exists.
+
+The browser does meet Keycloak once, on the sign in page, and it gets there
+because the backend redirected it rather than because the application knew
+where to send it. That is a navigation, not a call: no script fetches it, no
+code names it.
 
 ```mermaid
 flowchart TB
     subgraph browser["Browser"]
         spa["Angular 22 app<br/>standalone, zoneless, signals"]
+        nav["top level navigation<br/>only when the backend redirects"]
     end
 
     subgraph host["Docker host"]
-        fe["frontend<br/>nginx, published on :4200<br/>serves the built bundle"]
-        be["backend<br/>Spring Boot 4.1 :8080<br/>OAuth2 resource server"]
+        fe["frontend<br/>nginx, published on :4200<br/>serves the bundle, proxies /api"]
+        be["backend<br/>Spring Boot 4.1 :8080<br/>OAuth2 client and resource server"]
         kc["keycloak :8081<br/>realm bms, theme bms"]
         db[("postgres :5432<br/>bms + keycloak databases<br/>volume postgres-data")]
     end
 
+    other["Other clients<br/>a mobile app, say"]
+
     spa -->|"static bundle"| fe
-    spa -->|"authorization code + PKCE S256,<br/>token refresh"| kc
-    spa -->|"/api/**, Bearer token,<br/>Accept-Language"| be
-    be -->|"JWKS, validates the signature"| kc
+    spa -->|"/api/**, session cookie,<br/>XSRF header, Accept-Language"| fe
+    fe -->|"proxy_pass /api"| be
+    nav -.->|"sign in page, sign out"| kc
+    other -->|"/api/**, Bearer token"| be
+    be -->|"authorization code exchange,<br/>userinfo, JWKS"| kc
     be -->|"admin REST API,<br/>client credentials"| kc
     be -->|"JDBC, Flyway on start"| db
     kc -->|"JDBC"| db
 ```
 
-Two details here have caused real problems and are pinned deliberately:
+Three details here have caused real problems and are pinned deliberately:
 
-- **The issuer is the browser's URL, the JWKS is the internal one.** A token
-  minted for `http://localhost:8081/realms/bms` must validate against that same
-  issuer string, but the backend fetches keys over the container network at
-  `http://keycloak:8080`. `docker-compose.yml` sets the two separately.
+- **Keycloak has two addresses, and the difference is not cosmetic.** The
+  browser is sent to `http://localhost:8081`, which is therefore the `iss` claim
+  of every token; the backend exchanges the code, reads userinfo and fetches
+  keys over the container network at `http://keycloak:8080`. This is also why
+  the OAuth2 client registration is written out in `KeycloakClientConfig`
+  instead of being discovered from an `issuer-uri`: discovery yields one set of
+  URLs, and this deployment needs two.
+- **The API is proxied rather than published to the browser.** A cross origin
+  API would need `SameSite=None` cookies, would put CORS in the path of every
+  request, and would stop Angular's own forgery protection from applying, since
+  it only adds its header to same origin requests.
 - **Keycloak imports a realm only when it does not already have one.** Editing
   `docker/keycloak/realm-bms.json` changes nothing on a stack that has already
   started; `node scripts/sync-realm.mjs` applies it to a running instance.
@@ -87,7 +103,7 @@ flowchart TB
     subgraph web["Web layer, @RestController"]
         c1["BuildingController<br/>ApartmentController<br/>TenantController"]
         c2["ExpenseController<br/>InvoiceController<br/>ReportController"]
-        c3["AssistantController<br/>MeController<br/>RegistrationController"]
+        c3["AssistantController<br/>MeController<br/>AuthController"]
     end
 
     subgraph app["Application layer, @Service, @Transactional"]
@@ -112,9 +128,9 @@ flowchart TB
     end
 
     subgraph infra["Infrastructure"]
-        sec["SecurityConfig<br/>KeycloakJwtAuthenticationConverter<br/>UserProvisioningFilter"]
+        sec["SecurityConfig, session and bearer<br/>KeycloakClientConfig, written out<br/>KeycloakJwtAuthenticationConverter<br/>KeycloakAuthoritiesMapper<br/>UserProvisioningFilter"]
         exh["ApiExceptionHandler<br/>@RestControllerAdvice"]
-        fly["Flyway V1__init.sql"]
+        fly["Flyway V1__init.sql,<br/>V2__must_change_password.sql"]
     end
 
     web --> app
@@ -154,8 +170,11 @@ classDiagram
         String email
         String firstName
         String lastName
+        boolean mustChangePassword
         getFullName() String
         updateProfile(email, firstName, lastName)
+        requirePasswordChange()
+        passwordChosen()
     }
 
     class Building {
@@ -460,12 +479,17 @@ One bundle, standalone components, no NgModules, zoneless with signals. The
 core services are the only shared state; every screen is a lazily loaded
 component that injects the API classes it needs.
 
+There is no identity library here and no configuration file. Every URL is
+relative, because the API is served from this same origin, and signing in is a
+navigation to a backend endpoint rather than a flow this code runs. `auth.ts` is
+the whole of it: two navigations and an interceptor that reads a 401 as "ask the
+backend to sign me in".
+
 ```mermaid
 flowchart TB
     subgraph boot["Bootstrap"]
         main["main.ts"]
-        cfgw["public/config.js<br/>window.__BMS_CONFIG__, baked at image build"]
-        appcfg["app.config.ts<br/>provideKeycloak check-sso + PKCE<br/>provideHttpClient(interceptors)<br/>provideRouter"]
+        appcfg["app.config.ts<br/>provideHttpClient(authInterceptor,<br/>acceptLanguageInterceptor)<br/>provideRouter"]
     end
 
     subgraph shell["Shell"]
@@ -474,8 +498,9 @@ flowchart TB
     end
 
     subgraph core["core/"]
-        session["SessionService<br/>signal Me, can(), visibleEntries(), landingRoute()"]
-        guards["guards.ts<br/>authGuard, permissionGuard, ownerGuard"]
+        session["SessionService<br/>signal Me, signedIn(), can(),<br/>visibleEntries(), landingRoute()"]
+        auth["auth.ts<br/>AuthService signIn() / signOut()<br/>authInterceptor: 401 means sign in"]
+        guards["guards.ts<br/>authGuard, permissionGuard,<br/>ownerGuard, passwordChangeGuard"]
         api["api.ts<br/>BuildingsApi, ApartmentsApi, TenantsApi,<br/>ExpensesApi, InvoicesApi, ReportsApi,<br/>AssistantsApi, AuthApi, MeApi"]
         i18n["TranslationService<br/>language signal, translate()<br/>acceptLanguageInterceptor"]
         nav["navigation.ts<br/>NAV_ENTRIES"]
@@ -483,7 +508,7 @@ flowchart TB
     end
 
     subgraph features["features/, lazy loaded"]
-        pages["DashboardPage, BuildingsPage, ApartmentsPage,<br/>TenantsPage, ExpensesPage, InvoicesPage,<br/>ReportsPage, AssistantsPage,<br/>RegisterPage, LandingPage, NoAccessPage"]
+        pages["DashboardPage, BuildingsPage, ApartmentsPage,<br/>TenantsPage, ExpensesPage, InvoicesPage,<br/>ReportsPage, AssistantsPage, RegisterPage,<br/>PasswordPage, LandingPage, NoAccessPage"]
     end
 
     subgraph sharedui["shared/"]
@@ -492,10 +517,13 @@ flowchart TB
     end
 
     main --> appcfg
-    cfgw --> appcfg
     appcfg --> routes
+    appcfg --> auth
     routes --> guards
     guards --> session
+    guards --> auth
+    auth --> i18n
+    app --> auth
     app --> session
     app --> nav
     session --> api
@@ -528,6 +556,7 @@ erDiagram
         varchar email
         varchar first_name
         varchar last_name
+        boolean must_change_password "handed over, not yet replaced"
         timestamptz created_at
         timestamptz updated_at
     }
@@ -666,8 +695,9 @@ type without them, but nothing stops a row being inserted around it.
 
 ## 8. Signing in
 
-Authorization code with PKCE, run entirely in the browser by `keycloak-js`.
-Nothing here is triggered at bootstrap: the route guard is what starts it.
+The authorization code flow, run by the backend. The application's part is one
+navigation: it asks the backend to sign the browser in and says which page to
+come back to. It never learns where the browser went in between.
 
 ```mermaid
 sequenceDiagram
@@ -675,27 +705,29 @@ sequenceDiagram
     actor U as User
     participant B as Angular app
     participant G as authGuard
-    participant K as Keycloak
     participant A as Backend
+    participant K as Keycloak
     participant F as UserProvisioningFilter
     participant DB as Postgres
 
-    U->>B: opens http://localhost:4200
-    B->>K: init check-sso, PKCE S256
-    K-->>B: no session
-    Note over B: check-sso rather than login-required,<br/>so /register can open without an account
+    U->>B: opens http://localhost:4200/buildings
     B->>G: router matches a route, canMatch runs
-    G->>K: login(redirectUri = current page, locale = en or fr)
+    G->>A: GET /api/me
+    A-->>G: 401, never a redirect
+    Note over G,A: A redirect to another host is unreadable to a<br/>background request. The browser would follow it<br/>and hand back an opaque failure.
+    G->>A: navigate to /api/auth/login/keycloak<br/>?redirect=/buildings&ui_locales=fr
+    A->>A: LoginReturnPathFilter keeps the path in the session
+    A-->>K: 302 to /protocol/openid-connect/auth<br/>code + PKCE S256, ui_locales
     K-->>U: sign in page, bms theme, in that language
     U->>K: credentials
-    K-->>B: redirect back with the authorization code
-    B->>K: code + verifier
-    K-->>B: access token, refresh token
-    G->>B: session.load()
-    B->>A: GET /api/me, Bearer token
-    A->>K: JWKS (cached)
-    A->>A: validate signature, issuer, expiry
-    A->>A: realm_access.roles to ROLE_OWNER / ROLE_ASSISTANT
+    K-->>A: 302 to /api/auth/callback/keycloak with the code
+    A->>K: code + verifier, client secret
+    K-->>A: ID token, access token
+    A->>K: userinfo
+    A->>A: realm_access.roles from the ID token<br/>to ROLE_OWNER / ROLE_ASSISTANT
+    A-->>B: 302 to http://localhost:4200/buildings<br/>Set-Cookie: JSESSIONID, HttpOnly
+    B->>G: guards run again, now with a session
+    G->>A: GET /api/me, cookie only
     A->>F: filter chain, /api/** only
     F->>DB: find app_user by keycloak_id
     alt no local record yet
@@ -704,45 +736,97 @@ sequenceDiagram
         F->>DB: update email and name
     end
     A->>DB: read delegations for this user
-    A-->>B: MeResponse: owner flag, effective permissions, delegations
+    A-->>B: MeResponse: owner flag, permissions,<br/>mustChangePassword, delegations
     B->>B: session signal set, sidebar renders
     G-->>B: true, the route matches
 ```
 
-The profile is loaded by the guards and not by an app initializer. Angular
-starts every initializer at once without waiting for the one before, so an
-initializer here ran while Keycloak was still deciding whether there was a
-session, read `authenticated` as false, and bounced the browser between the app
-and the login page for ever. Guards run after bootstrap, when Keycloak has
-finished. A failed `/api/me` is not remembered either, so the next guard tries
+No token is ever handed to the page. That is the point of the shape: an
+injected script can act as the user for as long as the tab is open, which no
+architecture prevents, but it cannot carry a credential away and use it
+somewhere else afterwards. The cookie is `HttpOnly`, so it is not readable, and
+`SameSite` keeps it from riding another site's request; the writes that a
+cookie alone could otherwise authorize are covered by the forgery token in
+section 10.
+
+The profile is still loaded by the guards rather than an app initializer.
+Angular starts every initializer at once without waiting for the one before,
+and a failed `/api/me` is deliberately not remembered, so the next guard tries
 again rather than stranding the user because the backend was a moment slower to
 start than the browser.
 
+**First sign in with a password somebody else chose.** An owner creates an
+assistant and reads them a generated password. Keycloak would normally handle
+that with a required action on its own account page, which is exactly the page
+this application no longer sends anyone to, so the obligation is a column on
+`app_user` instead and the screen is ours.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor H as Assistant
+    participant B as Angular app
+    participant G as authGuard
+    participant P as PasswordPage
+    participant A as AuthController
+    participant S as AccountService
+    participant K as Keycloak
+    participant DB as Postgres
+
+    H->>B: signs in with the handed over password
+    Note over H,K: An ordinary password as far as Keycloak is<br/>concerned, so the flow in section 8 just works.
+    B->>G: canMatch on /expenses
+    G->>A: GET /api/me
+    A-->>G: mustChangePassword: true
+    G-->>B: UrlTree to /password, no other screen matches
+    H->>P: new password, twice
+    P->>A: POST /api/auth/password, XSRF header
+    A->>S: changePassword(userId, newPassword)
+    S->>DB: load app_user inside this transaction
+    S->>K: PUT reset-password, temporary false
+    S->>DB: must_change_password = false
+    A-->>P: 204
+    P->>A: GET /api/me again
+    P-->>H: lands on the first screen they may see
+```
+
+The current password is not asked for. Proving it would mean sending it back to
+Keycloak through the direct access grant this system deliberately leaves
+disabled, and the caller has already proved as much as that would: a session
+cookie no script can read, or an access token of their own.
+
+`AccountService.changePassword` takes an id rather than the record, because
+`CurrentUserService.require` reads it in a transaction of its own that has
+already committed. Flipping the flag on that detached entity would take the
+change no further than memory.
+
 ## 9. Registering as an owner
 
-The one endpoint reachable without a token. It has to assign the `owner` realm
-role, which only the backend can do, which is why Keycloak's own registration
-stays switched off and the themed sign in page links here instead.
+The one endpoint reachable without signing in. It has to assign the `owner`
+realm role, which only the backend can do, which is why Keycloak's own
+registration stays switched off and the themed sign in page links here instead.
+It is also the one place a password passes through this application at all, on
+its way to Keycloak, and it is never stored on our side.
 
 ```mermaid
 sequenceDiagram
     autonumber
     actor U as New landlord
     participant B as RegisterPage
-    participant A as RegistrationController
+    participant A as AuthController
     participant S as AccountService
     participant KC as KeycloakAdminClient
     participant K as Keycloak
     participant DB as Postgres
 
     U->>B: name, email, password
-    B->>A: POST /api/auth/register, no token
+    B->>A: POST /api/auth/register, no session
     A->>S: createOwner(email, first, last, password)
     S->>DB: find by email, ignoring case
     alt the email is already taken
         S-->>B: 422, error.account.exists in the caller's language
     else free
-        S->>KC: createUser(..., temporary = false, role = owner)
+        S->>KC: createUser(..., role = owner)
         KC->>K: POST /token, client_credentials as bms-backend
         K-->>KC: service account token
         KC->>K: POST /admin/realms/bms/users
@@ -772,6 +856,12 @@ endpoint that needs no sign in.
 Listing buildings, which is the shape of every read in the application. The
 point of the diagram is where the owner scoping happens: inside the query.
 
+It is also where the two kinds of caller meet. A browser presents the session
+cookie this backend gave it; anything else presents its own access token. The
+security chain resolves either into an authenticated principal carrying the
+same realm roles, and `CurrentUserService` reads claims rather than a
+particular kind of token, so nothing below this point knows the difference.
+
 ```mermaid
 sequenceDiagram
     autonumber
@@ -785,10 +875,14 @@ sequenceDiagram
     participant R as BuildingRepository
     participant DB as Postgres
 
-    B->>SEC: GET /api/buildings, Bearer token, Accept-Language: fr
-    SEC->>SEC: validate the JWT against the cached JWKS
-    SEC->>SEC: realm roles to authorities, JwtAuthenticationToken
-    SEC->>F: authenticated
+    B->>SEC: GET /api/buildings, Accept-Language: fr<br/>session cookie, or Bearer token
+    alt a browser this backend signed in
+        SEC->>SEC: read the session, OidcUser principal
+    else any other client
+        SEC->>SEC: validate the JWT against the cached JWKS
+        SEC->>SEC: realm roles to authorities, JwtAuthenticationToken
+    end
+    SEC->>F: authenticated, same authorities either way
     F->>DB: create or refresh app_user
     F->>C: chain continues
     C->>S: list()
@@ -803,6 +897,12 @@ sequenceDiagram
     C-->>B: 200, JSON
 ```
 
+A write takes the same path with one addition: a request carrying the session
+cookie must also carry the forgery token, which the backend sets as a readable
+cookie and Angular returns in `X-XSRF-TOKEN`. A request carrying a bearer token
+is exempt, because it brought its own credential rather than an ambient one and
+no other site can make the browser attach it.
+
 An assistant with no `BUILDING_READ` grant gets an empty list, not a 403,
 because the query simply matches nothing. A 403 is raised only where a specific
 resource was named: `AccessControl.require` and the `require(id, permission)`
@@ -816,8 +916,9 @@ the only place a list endpoint could have gone quadratic.
 ## 11. Creating an assistant
 
 An owner adds an assistant by email. If that email is already someone's
-account, they are simply granted access; if it is not, an account is created
-and a temporary password comes back once and never again.
+account, they are simply granted access; if it is not, an account is created and
+a generated password comes back once and never again, to be handed over and then
+replaced on the screen in section 8.
 
 ```mermaid
 sequenceDiagram
@@ -840,11 +941,11 @@ sequenceDiagram
     else brand new person
         S->>AS: createAssistant(email, first, last)
         AS->>AS: GeneratedPassword.next()
-        AS->>K: create user, temporary password, role assistant
+        AS->>K: create user, ordinary password, role assistant
         AS->>DB: insert app_user
         AS-->>S: account + the generated password
         S->>DB: insert assistant_assignment with the permissions
-        S-->>B: assistant + temporary password, shown once
+        S-->>B: assistant + password, shown once,<br/>must_change_password on the new record
     end
     B-->>O: hand the password over
 
@@ -1016,16 +1117,26 @@ and `MAINTENANCE`, set directly by the user.
 The sidebar and the router read the same list, `NAV_ENTRIES`, so a screen can
 never be advertised in the navigation while its route refuses to load.
 
+"Signed in" is not a flag the page can read any more, because the session is a
+cookie it cannot see. It is a question with one answer: whether `/api/me`
+replies. That is also why the password screen is guarded from both sides, so it
+exists exactly while it is required and not a moment longer.
+
 ```mermaid
 flowchart TB
-    start(["Router matches a path"]) --> auth{"authGuard:<br/>keycloak.authenticated?"}
-    auth -->|no| login["keycloak.login(redirectUri, locale)"]
+    start(["Router matches a path"]) --> load["authGuard: session.load(),<br/>once per session"]
+    load --> signed{"did /api/me answer?"}
+    signed -->|"no, it was 401"| login["AuthService.signIn(currentPath)<br/>navigates to /api/auth/login/keycloak"]
     login --> stop1(["route does not match"])
-    auth -->|yes| load["session.load(), once per session"]
-    load --> kind{"guard on this route"}
+    signed -->|yes| handed{"mustChangePassword?"}
+    handed -->|yes| pw(["UrlTree to /password,<br/>the only screen there is"])
+    handed -->|no| kind{"guard on this route"}
     kind -->|"permissionGuard(P)"| perm{"session.can(P)?"}
     kind -->|"ownerGuard"| own{"session.owner()?"}
     kind -->|"authGuard only"| ok(["component chunk is fetched"])
+    kind -->|"passwordChangeGuard"| pwdone{"still required?"}
+    pwdone -->|yes| ok
+    pwdone -->|no| fall
     perm -->|yes| ok
     own -->|yes| ok
     perm -->|no| fall["falls through to the empty path"]

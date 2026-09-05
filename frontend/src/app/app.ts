@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import Keycloak from 'keycloak-js';
 
+import { AuthService } from './core/auth';
 import { SessionService } from './core/session';
 import { LanguageSwitcher } from './shared/language-switcher';
 import { TranslatePipe } from './shared/translate.pipe';
@@ -11,7 +11,7 @@ import { TranslatePipe } from './shared/translate.pipe';
   imports: [RouterOutlet, RouterLink, RouterLinkActive, LanguageSwitcher, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    @if (me()) {
+    @if (me() && !session.mustChangePassword()) {
       <div class="shell">
         <aside class="spine">
           <div class="spine-mark">
@@ -49,13 +49,13 @@ import { TranslatePipe } from './shared/translate.pipe';
   `,
 })
 export class App {
-  private keycloak = inject(Keycloak);
+  private auth = inject(AuthService);
 
   protected readonly session = inject(SessionService);
   protected readonly me = this.session.user;
   protected readonly entries = computed(() => (this.me() ? this.session.visibleEntries() : []));
 
   protected signOut(): void {
-    void this.keycloak.logout({ redirectUri: window.location.origin });
+    this.auth.signOut();
   }
 }
