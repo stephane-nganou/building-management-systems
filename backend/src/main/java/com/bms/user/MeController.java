@@ -48,6 +48,7 @@ public class MeController {
                 user.getFullName(),
                 owner,
                 effectivePermissions(owner, delegations),
+                user.isMustChangePassword(),
                 delegations);
     }
 

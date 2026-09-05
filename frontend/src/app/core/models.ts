@@ -156,6 +156,8 @@ export interface Me {
   name: string;
   owner: boolean;
   permissions: Permission[];
+  /** True while this account still holds a password its owner chose for it. */
+  mustChangePassword: boolean;
   assistingFor: { ownerId: string; ownerName: string; permissions: Permission[] }[];
 }
 

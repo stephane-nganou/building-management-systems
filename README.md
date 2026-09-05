@@ -56,7 +56,7 @@ alone, so nobody loses their account or their buildings.
 | Frontend | Angular 22, standalone and zoneless, signals |
 | Database | Postgres 18, persisted in a Docker volume |
 | Migrations | Flyway |
-| Identity | Keycloak 26.7.3, backend as an OAuth2 resource server |
+| Identity | Keycloak 26.7.3, behind the backend: OAuth2 client for the browser, resource server for everyone else |
 | Invoice PDF | Thymeleaf template rendered by openhtmltopdf |
 | End to end tests | Playwright, driving the real stack |
 | Languages | English and French, switched at runtime without a reload |
@@ -99,9 +99,11 @@ scripts/install-hooks.sh    # or scripts/install-hooks.ps1
 A hook can be skipped with `git push --no-verify`, so the same suite runs again
 on every pull request in GitHub Actions. That is the gate that always holds.
 
-The frontend reads its API and Keycloak URLs at runtime from
-`frontend/public/config.js`. The Docker image rewrites that file from the
-`API_URL` and `KEYCLOAK_URL` build arguments.
+The frontend has nothing to configure. nginx serves the bundle and forwards
+`/api` to the backend, so every URL the application uses is relative and the
+browser only ever talks to one origin. `BACKEND_ORIGIN` on the frontend
+container says where `/api` goes; `ng serve` uses `frontend/proxy.conf.json`
+for the same purpose.
 
 ## How access works
 
@@ -111,9 +113,28 @@ permission, such as `EXPENSE_READ` or `INVOICE_WRITE`.
 
 Landlords register themselves and get the `owner` realm role. Assistants never
 sign up: an owner creates them under **Assistants**, and the app returns a
-temporary password once, to hand over. Keycloak makes them choose their own at
-first sign in. Both accounts are created through the Keycloak admin API by the
-`bms-backend` service account client.
+password once, to hand over. The app then makes them choose their own before
+showing them anything else. Both accounts are created through the Keycloak admin
+API by the `bms-backend` client.
+
+**The Angular app knows one host: its own.** It never names Keycloak, holds no
+token and carries no identity library. Signing in is a navigation to
+`/api/auth/login/keycloak`, where the backend runs the authorization code flow
+and hands back an `HttpOnly` session cookie; the sign in page itself is the only
+part of Keycloak anybody sees, and the browser gets there because the backend
+redirected it. Writes carry a forgery token, since a cookie alone travels
+whether or not the user meant it to.
+
+The same API serves clients that are not this browser. A mobile application does
+its own authorization code flow with Keycloak, as native apps should, and sends
+`Authorization: Bearer` to exactly these endpoints; the backend resolves a
+session and a token to the same user, roles and permissions.
+
+This is a deliberate trade. Keeping tokens out of the page is what the OAuth 2.0
+browser-based-apps guidance recommends, because no token JavaScript can read
+survives cross site scripting. What it buys is containment rather than
+prevention: an injected script can still act as the user while the tab is open,
+but it cannot carry a credential away and keep using it.
 
 In the browser an assistant is shown only the screens their permissions cover.
 The route guards are `canMatch`, so a screen they may not use is never matched
@@ -125,7 +146,7 @@ and its code is never downloaded.
 backend/    Spring Boot service, one package per feature
 frontend/   Angular app, one lazy loaded route per feature
   e2e/      Playwright specs, run against the whole stack
-docker/     Keycloak realm export, login theme and Postgres bootstrap
+docker/     Keycloak realm export, sign in theme and Postgres bootstrap
 scripts/    start, stop, end to end, realm sync and hook installation
 .githooks/  pre-push, so a branch is never pushed broken
 docs/       implementation status and architecture diagrams

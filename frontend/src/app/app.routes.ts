@@ -1,6 +1,6 @@
 import { Routes } from '@angular/router';
 
-import { authGuard, ownerGuard, permissionGuard } from './core/guards';
+import { authGuard, ownerGuard, passwordChangeGuard, permissionGuard } from './core/guards';
 
 /**
  * Every screen is gated with canMatch, so a route the caller may not use is
@@ -11,6 +11,11 @@ export const routes: Routes = [
   {
     path: 'register',
     loadComponent: () => import('./features/register').then((m) => m.RegisterPage),
+  },
+  {
+    path: 'password',
+    canMatch: [passwordChangeGuard],
+    loadComponent: () => import('./features/password').then((m) => m.PasswordPage),
   },
   {
     path: 'dashboard',
