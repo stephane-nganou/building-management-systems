@@ -128,8 +128,10 @@ frontend/   Angular app, one lazy loaded route per feature
 docker/     Keycloak realm export, login theme and Postgres bootstrap
 scripts/    start, stop, end to end, realm sync and hook installation
 .githooks/  pre-push, so a branch is never pushed broken
-docs/       implementation status
+docs/       implementation status and architecture diagrams
 ```
 
 See [docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md) for what is
-built and what is still open.
+built and what is still open, and
+[docs/ARCHITECTURE_DIAGRAMS.md](docs/ARCHITECTURE_DIAGRAMS.md) for the
+containers, the domain model, the schema and the main flows drawn out.
