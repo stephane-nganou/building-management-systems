@@ -2,7 +2,6 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
-import { api } from './config';
 import {
   Apartment,
   Assistant,
@@ -34,23 +33,23 @@ export class BuildingsApi {
   private http = inject(HttpClient);
 
   list(): Observable<Building[]> {
-    return this.http.get<Building[]>(api('/api/buildings'));
+    return this.http.get<Building[]>('/api/buildings');
   }
 
   get(id: string): Observable<Building> {
-    return this.http.get<Building>(api(`/api/buildings/${id}`));
+    return this.http.get<Building>(`/api/buildings/${id}`);
   }
 
   create(body: unknown): Observable<Building> {
-    return this.http.post<Building>(api('/api/buildings'), body);
+    return this.http.post<Building>('/api/buildings', body);
   }
 
   update(id: string, body: unknown): Observable<Building> {
-    return this.http.put<Building>(api(`/api/buildings/${id}`), body);
+    return this.http.put<Building>(`/api/buildings/${id}`, body);
   }
 
   remove(id: string): Observable<void> {
-    return this.http.delete<void>(api(`/api/buildings/${id}`));
+    return this.http.delete<void>(`/api/buildings/${id}`);
   }
 }
 
@@ -59,19 +58,19 @@ export class ApartmentsApi {
   private http = inject(HttpClient);
 
   list(buildingId?: string): Observable<Apartment[]> {
-    return this.http.get<Apartment[]>(api('/api/apartments'), { params: params({ buildingId }) });
+    return this.http.get<Apartment[]>('/api/apartments', { params: params({ buildingId }) });
   }
 
   create(buildingId: string, body: unknown): Observable<Apartment> {
-    return this.http.post<Apartment>(api(`/api/buildings/${buildingId}/apartments`), body);
+    return this.http.post<Apartment>(`/api/buildings/${buildingId}/apartments`, body);
   }
 
   update(id: string, body: unknown): Observable<Apartment> {
-    return this.http.put<Apartment>(api(`/api/apartments/${id}`), body);
+    return this.http.put<Apartment>(`/api/apartments/${id}`, body);
   }
 
   remove(id: string): Observable<void> {
-    return this.http.delete<void>(api(`/api/apartments/${id}`));
+    return this.http.delete<void>(`/api/apartments/${id}`);
   }
 }
 
@@ -80,19 +79,19 @@ export class TenantsApi {
   private http = inject(HttpClient);
 
   list(apartmentId?: string): Observable<Tenant[]> {
-    return this.http.get<Tenant[]>(api('/api/tenants'), { params: params({ apartmentId }) });
+    return this.http.get<Tenant[]>('/api/tenants', { params: params({ apartmentId }) });
   }
 
   create(apartmentId: string, body: unknown): Observable<Tenant> {
-    return this.http.post<Tenant>(api(`/api/apartments/${apartmentId}/tenants`), body);
+    return this.http.post<Tenant>(`/api/apartments/${apartmentId}/tenants`, body);
   }
 
   update(id: string, body: unknown): Observable<Tenant> {
-    return this.http.put<Tenant>(api(`/api/tenants/${id}`), body);
+    return this.http.put<Tenant>(`/api/tenants/${id}`, body);
   }
 
   remove(id: string): Observable<void> {
-    return this.http.delete<void>(api(`/api/tenants/${id}`));
+    return this.http.delete<void>(`/api/tenants/${id}`);
   }
 }
 
@@ -106,19 +105,19 @@ export class ExpensesApi {
     from?: string;
     to?: string;
   }): Observable<Expense[]> {
-    return this.http.get<Expense[]>(api('/api/expenses'), { params: params(filters) });
+    return this.http.get<Expense[]>('/api/expenses', { params: params(filters) });
   }
 
   create(body: unknown): Observable<Expense> {
-    return this.http.post<Expense>(api('/api/expenses'), body);
+    return this.http.post<Expense>('/api/expenses', body);
   }
 
   update(id: string, body: unknown): Observable<Expense> {
-    return this.http.put<Expense>(api(`/api/expenses/${id}`), body);
+    return this.http.put<Expense>(`/api/expenses/${id}`, body);
   }
 
   remove(id: string): Observable<void> {
-    return this.http.delete<void>(api(`/api/expenses/${id}`));
+    return this.http.delete<void>(`/api/expenses/${id}`);
   }
 }
 
@@ -132,25 +131,25 @@ export class InvoicesApi {
     from?: string;
     to?: string;
   }): Observable<Invoice[]> {
-    return this.http.get<Invoice[]>(api('/api/invoices'), { params: params(filters) });
+    return this.http.get<Invoice[]>('/api/invoices', { params: params(filters) });
   }
 
   create(body: unknown): Observable<Invoice> {
-    return this.http.post<Invoice>(api('/api/invoices'), body);
+    return this.http.post<Invoice>('/api/invoices', body);
   }
 
   changeStatus(id: string, status: InvoiceStatus): Observable<Invoice> {
-    return this.http.post<Invoice>(api(`/api/invoices/${id}/status`), null, {
+    return this.http.post<Invoice>(`/api/invoices/${id}/status`, null, {
       params: params({ status }),
     });
   }
 
   remove(id: string): Observable<void> {
-    return this.http.delete<void>(api(`/api/invoices/${id}`));
+    return this.http.delete<void>(`/api/invoices/${id}`);
   }
 
   downloadPdf(id: string): Observable<Blob> {
-    return this.http.get(api(`/api/invoices/${id}/pdf`), { responseType: 'blob' });
+    return this.http.get(`/api/invoices/${id}/pdf`, { responseType: 'blob' });
   }
 }
 
@@ -159,11 +158,11 @@ export class ReportsApi {
   private http = inject(HttpClient);
 
   summary(): Observable<DashboardSummary> {
-    return this.http.get<DashboardSummary>(api('/api/reports/summary'));
+    return this.http.get<DashboardSummary>('/api/reports/summary');
   }
 
   profitLoss(from: string, to: string, buildingId?: string): Observable<ProfitLossReport> {
-    return this.http.get<ProfitLossReport>(api('/api/reports/profit-loss'), {
+    return this.http.get<ProfitLossReport>('/api/reports/profit-loss', {
       params: params({ from, to, buildingId }),
     });
   }
@@ -174,11 +173,11 @@ export class AssistantsApi {
   private http = inject(HttpClient);
 
   list(): Observable<Assistant[]> {
-    return this.http.get<Assistant[]>(api('/api/assistants'));
+    return this.http.get<Assistant[]>('/api/assistants');
   }
 
   permissions(): Observable<Permission[]> {
-    return this.http.get<Permission[]>(api('/api/assistants/permissions'));
+    return this.http.get<Permission[]>('/api/assistants/permissions');
   }
 
   grant(
@@ -187,7 +186,7 @@ export class AssistantsApi {
     lastName: string,
     permissions: Permission[],
   ): Observable<Assistant> {
-    return this.http.post<Assistant>(api('/api/assistants'), {
+    return this.http.post<Assistant>('/api/assistants', {
       email,
       firstName,
       lastName,
@@ -196,15 +195,15 @@ export class AssistantsApi {
   }
 
   update(id: string, permissions: Permission[]): Observable<Assistant> {
-    return this.http.put<Assistant>(api(`/api/assistants/${id}`), { permissions });
+    return this.http.put<Assistant>(`/api/assistants/${id}`, { permissions });
   }
 
   resetPassword(id: string): Observable<Assistant> {
-    return this.http.post<Assistant>(api(`/api/assistants/${id}/password`), null);
+    return this.http.post<Assistant>(`/api/assistants/${id}/password`, null);
   }
 
   revoke(id: string): Observable<void> {
-    return this.http.delete<void>(api(`/api/assistants/${id}`));
+    return this.http.delete<void>(`/api/assistants/${id}`);
   }
 }
 
@@ -212,9 +211,14 @@ export class AssistantsApi {
 export class AuthApi {
   private http = inject(HttpClient);
 
-  /** The only call made without a token. */
+  /** The only call made without a session. */
   register(body: Registration): Observable<unknown> {
-    return this.http.post(api('/api/auth/register'), body);
+    return this.http.post('/api/auth/register', body);
+  }
+
+  /** Replaces the caller's own password. Signing in is a navigation, not a call. */
+  changePassword(newPassword: string): Observable<void> {
+    return this.http.post<void>('/api/auth/password', { newPassword });
   }
 }
 
@@ -223,6 +227,6 @@ export class MeApi {
   private http = inject(HttpClient);
 
   get(): Observable<Me> {
-    return this.http.get<Me>(api('/api/me'));
+    return this.http.get<Me>('/api/me');
   }
 }

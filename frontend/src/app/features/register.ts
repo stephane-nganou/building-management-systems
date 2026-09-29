@@ -1,8 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import Keycloak from 'keycloak-js';
 
 import { AuthApi } from '../core/api';
+import { AuthService } from '../core/auth';
 import { TranslationService } from '../core/i18n';
 import { LanguageSwitcher } from '../shared/language-switcher';
 import { TranslatePipe } from '../shared/translate.pipe';
@@ -103,7 +103,7 @@ import { TranslatePipe } from '../shared/translate.pipe';
 })
 export class RegisterPage {
   private api = inject(AuthApi);
-  private keycloak = inject(Keycloak);
+  private auth = inject(AuthService);
   private i18n = inject(TranslationService);
 
   protected readonly saving = signal(false);
@@ -148,9 +148,6 @@ export class RegisterPage {
   }
 
   protected signIn(): void {
-    void this.keycloak.login({
-      redirectUri: window.location.origin,
-      locale: this.i18n.language(),
-    });
+    this.auth.signIn('/');
   }
 }

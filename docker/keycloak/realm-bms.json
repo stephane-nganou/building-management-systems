@@ -4,7 +4,10 @@
   "displayName": "Building Management",
   "loginTheme": "bms",
   "internationalizationEnabled": true,
-  "supportedLocales": ["en", "fr"],
+  "supportedLocales": [
+    "en",
+    "fr"
+  ],
   "defaultLocale": "en",
   "registrationAllowed": false,
   "resetPasswordAllowed": true,
@@ -26,18 +29,18 @@
   },
   "clients": [
     {
-      "clientId": "bms-frontend",
-      "name": "Building Management Frontend",
+      "clientId": "bms-backend",
+      "name": "Building Management Backend",
+      "description": "The only client. Signs the browser in on the application's behalf, and holds the service account that creates owner and assistant accounts.",
       "protocol": "openid-connect",
-      "publicClient": true,
+      "publicClient": false,
+      "secret": "bms-backend-secret",
       "standardFlowEnabled": true,
-      "directAccessGrantsEnabled": true,
-      "serviceAccountsEnabled": false,
+      "directAccessGrantsEnabled": false,
+      "serviceAccountsEnabled": true,
+      "authorizationServicesEnabled": false,
       "redirectUris": [
-        "http://localhost:4200/*"
-      ],
-      "webOrigins": [
-        "http://localhost:4200"
+        "http://localhost:4200/api/auth/callback/*"
       ],
       "attributes": {
         "post.logout.redirect.uris": "http://localhost:4200/*",
@@ -50,19 +53,23 @@
         "profile",
         "roles",
         "email"
+      ],
+      "protocolMappers": [
+        {
+          "name": "realm roles in id token",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-usermodel-realm-role-mapper",
+          "consentRequired": false,
+          "config": {
+            "multivalued": "true",
+            "claim.name": "realm_access.roles",
+            "jsonType.label": "String",
+            "id.token.claim": "true",
+            "access.token.claim": "true",
+            "userinfo.token.claim": "true"
+          }
+        }
       ]
-    },
-    {
-      "clientId": "bms-backend",
-      "name": "Building Management Backend",
-      "description": "Service account the backend uses to create owner and assistant accounts",
-      "protocol": "openid-connect",
-      "publicClient": false,
-      "secret": "bms-backend-secret",
-      "standardFlowEnabled": false,
-      "directAccessGrantsEnabled": false,
-      "serviceAccountsEnabled": true,
-      "authorizationServicesEnabled": false
     }
   ],
   "users": [

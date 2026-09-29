@@ -1,32 +1,41 @@
 import { TestBed } from '@angular/core/testing';
-import { CanMatchFn } from '@angular/router';
-import Keycloak from 'keycloak-js';
-import { of } from 'rxjs';
+import { CanMatchFn, UrlTree, provideRouter } from '@angular/router';
+import { of, throwError } from 'rxjs';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { MeApi } from './api';
-import { authGuard, ownerGuard, permissionGuard } from './guards';
+import { AuthService } from './auth';
+import { authGuard, ownerGuard, passwordChangeGuard, permissionGuard } from './guards';
 import { Me, Permission } from './models';
 import { SessionService } from './session';
 
-function profile(owner: boolean, permissions: Permission[]): Me {
+function profile(owner: boolean, permissions: Permission[], mustChangePassword = false): Me {
   return {
     id: 'u1',
     email: 'someone@example.com',
     name: 'Someone',
     owner,
     permissions,
+    mustChangePassword,
     assistingFor: [],
   };
 }
 
-const signIn = vi.fn(() => Promise.resolve());
+const signIn = vi.fn();
 
+/**
+ * A session is a cookie the page cannot read, so "signed out" is not a flag to
+ * check but a profile request that comes back refused.
+ */
 function sessionFor(me: Me | null): SessionService {
   TestBed.configureTestingModule({
     providers: [
-      { provide: Keycloak, useValue: { authenticated: me !== null, login: signIn } },
-      { provide: MeApi, useValue: { get: () => of(me) } },
+      provideRouter([]),
+      { provide: AuthService, useValue: { signIn, signOut: vi.fn() } },
+      {
+        provide: MeApi,
+        useValue: { get: () => (me === null ? throwError(() => new Error('401')) : of(me)) },
+      },
     ],
   });
   return TestBed.inject(SessionService);
@@ -35,8 +44,10 @@ function sessionFor(me: Me | null): SessionService {
 /** The router passes a route, its segments and a snapshot; none of it matters here. */
 const matchArgs = [{}, [], {}] as unknown as Parameters<CanMatchFn>;
 
-function runGuard(guard: CanMatchFn): Promise<boolean> {
-  return Promise.resolve(TestBed.runInInjectionContext(() => guard(...matchArgs)) as boolean);
+function runGuard(guard: CanMatchFn): Promise<boolean | UrlTree> {
+  return Promise.resolve(
+    TestBed.runInInjectionContext(() => guard(...matchArgs)) as boolean | UrlTree,
+  );
 }
 
 describe('SessionService', () => {
@@ -77,12 +88,20 @@ describe('SessionService', () => {
     expect(session.landingRoute()).toBe('/no-access');
   });
 
+  it('reads a refused profile as nobody being signed in', async () => {
+    const session = sessionFor(null);
+    await session.load();
+
+    expect(session.signedIn()).toBe(false);
+  });
+
   it('fetches the profile once however many guards ask for it', async () => {
     const me = profile(true, ['REPORT_READ']);
     const get = vi.fn(() => of(me));
     TestBed.configureTestingModule({
       providers: [
-        { provide: Keycloak, useValue: { authenticated: true, login: signIn } },
+        provideRouter([]),
+        { provide: AuthService, useValue: { signIn, signOut: vi.fn() } },
         { provide: MeApi, useValue: { get } },
       ],
     });
@@ -91,6 +110,23 @@ describe('SessionService', () => {
     await Promise.all([session.load(), session.load(), session.load()]);
 
     expect(get).toHaveBeenCalledTimes(1);
+  });
+
+  it('reads the profile again once it is asked to reload', async () => {
+    const get = vi.fn(() => of(profile(true, ['REPORT_READ'])));
+    TestBed.configureTestingModule({
+      providers: [
+        provideRouter([]),
+        { provide: AuthService, useValue: { signIn, signOut: vi.fn() } },
+        { provide: MeApi, useValue: { get } },
+      ],
+    });
+    const session = TestBed.inject(SessionService);
+
+    await session.load();
+    await session.reload();
+
+    expect(get).toHaveBeenCalledTimes(2);
   });
 });
 
@@ -130,5 +166,23 @@ describe('route guards', () => {
     TestBed.resetTestingModule();
     sessionFor(profile(true, ['BUILDING_READ']));
     expect(await runGuard(ownerGuard)).toBe(true);
+  });
+
+  it('holds an account still on a handed over password at the password screen', async () => {
+    sessionFor(profile(false, ['EXPENSE_READ'], true));
+
+    const result = await runGuard(authGuard);
+
+    expect(result).toBeInstanceOf(UrlTree);
+    expect(String(result)).toBe('/password');
+  });
+
+  it('offers the password screen only while it is required', async () => {
+    sessionFor(profile(false, ['EXPENSE_READ'], true));
+    expect(await runGuard(passwordChangeGuard)).toBe(true);
+
+    TestBed.resetTestingModule();
+    sessionFor(profile(false, ['EXPENSE_READ']));
+    expect(await runGuard(passwordChangeGuard)).toBe(false);
   });
 });

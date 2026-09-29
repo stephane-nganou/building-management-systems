@@ -40,7 +40,8 @@ services:
       - "${KEYCLOAK_PORT:-8081}:8080"
     volumes:
       - ./docker/keycloak/realm-bms.json:/opt/keycloak/data/import/realm-bms.json:ro
-      # The sign in page links to our own registration page, so it needs a theme.
+      # The sign in page is the one page of Keycloak a user still sees, and it
+      # links to our own registration page, so it needs a theme.
       - ./docker/keycloak/themes/bms:/opt/keycloak/themes/bms:ro
     depends_on:
       postgres:
@@ -61,13 +62,13 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-bms}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-bms}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-bms}
-      # Issuer must match the "iss" claim the browser-issued token carries,
-      # while the signing keys are fetched over the internal network.
-      BMS_KEYCLOAK_ISSUER_URI: http://localhost:${KEYCLOAK_PORT:-8081}/realms/bms
-      BMS_KEYCLOAK_JWK_SET_URI: http://keycloak:8080/realms/bms/protocol/openid-connect/certs
-      # The admin API is called server to server, so it uses the internal host.
-      # The secret matches the bms-backend client in the realm export.
+      # Two addresses for one Keycloak. The browser is sent to the public one,
+      # which is also the issuer every token claims; the token exchange, the
+      # signing keys and the admin API go over the internal network.
+      BMS_KEYCLOAK_PUBLIC_URL: http://localhost:${KEYCLOAK_PORT:-8081}
       BMS_KEYCLOAK_SERVER_URL: http://keycloak:8080
+      # Where the browser comes back to after signing in or out.
+      BMS_FRONTEND_BASE_URL: http://localhost:${FRONTEND_PORT:-4200}
       BMS_CORS_ALLOWED_ORIGINS: http://localhost:${FRONTEND_PORT:-4200}
     ports:
       - "${BACKEND_PORT:-8080}:8080"
@@ -80,10 +81,11 @@ services:
   frontend:
     build:
       context: ./frontend
-      args:
-        KEYCLOAK_URL: http://localhost:${KEYCLOAK_PORT:-8081}
-        API_URL: http://localhost:${BACKEND_PORT:-8080}
     container_name: bms-frontend
+    environment:
+      # nginx serves the application and forwards /api to the backend, so the
+      # browser only ever talks to one origin.
+      BACKEND_ORIGIN: http://backend:8080
     ports:
       - "${FRONTEND_PORT:-4200}:80"
     depends_on:

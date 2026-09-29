@@ -18,21 +18,30 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: ${BMS_KEYCLOAK_ISSUER_URI:http://localhost:8081/realms/bms}
+          # The issuer a token claims is the public one, whoever fetched it.
+          issuer-uri: ${bms.keycloak.public-url}/realms/${bms.keycloak.realm}
           # Set explicitly so the application does not perform OIDC discovery at startup,
-          # which would make boot order depend on Keycloak being reachable.
-          jwk-set-uri: ${BMS_KEYCLOAK_JWK_SET_URI:http://localhost:8081/realms/bms/protocol/openid-connect/certs}
+          # which would make boot order depend on Keycloak being reachable. The keys
+          # are read over the internal network.
+          jwk-set-uri: ${bms.keycloak.server-url}/realms/${bms.keycloak.realm}/protocol/openid-connect/certs
 
 bms:
+  frontend:
+    # Every redirect back to the browser application is built from this, never
+    # from the incoming request's own Host header.
+    base-url: ${BMS_FRONTEND_BASE_URL:http://localhost:4200}
   cors:
+    # The application is served from the same origin as this API, so this is only
+    # for other web clients.
     allowed-origins: ${BMS_CORS_ALLOWED_ORIGINS:http://localhost:4200}
   keycloak:
-    admin:
-      # Reached over the internal network, so this is not the public issuer URL.
-      server-url: ${BMS_KEYCLOAK_SERVER_URL:http://localhost:8081}
-      realm: ${BMS_KEYCLOAK_REALM:bms}
-      client-id: ${BMS_KEYCLOAK_ADMIN_CLIENT_ID:bms-backend}
-      client-secret: ${BMS_KEYCLOAK_ADMIN_CLIENT_SECRET:bms-backend-secret}
+    # Reached over the internal network, for anything the browser does not see.
+    server-url: ${BMS_KEYCLOAK_SERVER_URL:http://localhost:8081}
+    # Reached by the browser, and so the host in every token's issuer claim.
+    public-url: ${BMS_KEYCLOAK_PUBLIC_URL:http://localhost:8081}
+    realm: ${BMS_KEYCLOAK_REALM:bms}
+    client-id: ${BMS_KEYCLOAK_CLIENT_ID:bms-backend}
+    client-secret: ${BMS_KEYCLOAK_CLIENT_SECRET:bms-backend-secret}
   invoice:
     issuer-name: ${BMS_INVOICE_ISSUER_NAME:Building Management}
     currency: ${BMS_INVOICE_CURRENCY:EUR}

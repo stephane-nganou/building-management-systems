@@ -1,6 +1,6 @@
 # Implementation status
 
-Last updated: 2026-09-05, after BM-6 (architecture diagrams).
+Last updated: 2026-09-05, after BM-8 (the frontend knows only the backend).
 
 The architecture is drawn out in
 [ARCHITECTURE_DIAGRAMS.md](ARCHITECTURE_DIAGRAMS.md): containers, backend and
@@ -14,10 +14,10 @@ main flow. This file records what is built and why it is built that way.
 | Docker stack | Done | Postgres, Keycloak, backend and frontend; one command to start |
 | Start and stop scripts | Done | mac, linux, windows |
 | Database schema | Done | Flyway `V1__init.sql`, validated against JPA mappings by every integration test |
-| Authentication | Done | Keycloak realm import, backend as OAuth2 resource server, PKCE in the browser |
+| Authentication | Done | The backend runs the authorization code flow and gives the browser a session cookie; other clients present a bearer token to the same API |
 | Registration | Done | Public `/register` page and `POST /api/auth/register`; new users get the `owner` realm role |
-| Sign in page | Done | Keycloak login theme in `docker/keycloak/themes/bms`, linking to our registration page |
-| Assistant accounts | Done | The owner creates them; a temporary password is returned once |
+| Sign in page | Done | Keycloak login theme in `docker/keycloak/themes/bms`, linking to our registration page; reached only because the backend redirects there |
+| Assistant accounts | Done | The owner creates them; a password is returned once, and the app makes the assistant replace it on its own screen |
 | Permission aware UI | Done | `canMatch` guards and a filtered sidebar; a denied screen is never downloaded |
 | Owner and assistant access | Done | Per owner scoping plus 11 delegatable permissions |
 | Buildings | Done | Full CRUD, API and UI |
@@ -37,30 +37,42 @@ Verified against the running stack: sign in, create a building, apartment and
 tenant, issue a rent invoice, download its PDF, record an expense and read the
 profit and loss. For BM-3, against a throwaway stack: register from the browser,
 sign in with the new account and see the `owner` role in its token, create an
-assistant and confirm the account carries the `assistant` role and an
-`UPDATE_PASSWORD` action, and confirm the password is returned once and never
-again on a later read. For BM-4, against a throwaway stack: switch the whole app
+assistant and confirm the account carries the `assistant` role, and confirm the
+password is returned once and never again on a later read. For BM-8, against a
+throwaway stack: sign in without the application ever naming Keycloak, walk
+every screen while watching the wire for a call that leaves our own origin,
+create an assistant and watch them replace the handed over password on our own
+screen, and sign out at both ends. For BM-4, against a throwaway stack: switch the whole app
 to French and back and watch it hold across a reload, land on a French
 registration page from a French browser, read the Keycloak sign in page in both
 languages, and download the same invoice as a French and an English PDF.
 
 ## Tests
 
-- Backend: 40 tests. Unit tests for invoice totals, rounding and status rules;
+- Backend: 50 tests. Unit tests for invoice totals, rounding and status rules;
   integration tests on a real Postgres 18 via Testcontainers covering the API,
   owner isolation, assistant permissions, registration, PDF rendering and the
   report maths. The language ones read the words back out of a rendered PDF
   with PDFBox, since a template that resolved no messages would still be a
-  valid PDF. The Keycloak admin client is mocked there.
-- Frontend: 27 unit tests, for the formatting pipes, the translation service and
+  valid PDF. `AuthenticationIntegrationTest` covers the half a token cannot
+  reach: a browser session established through `oidcLogin()` resolves to the
+  same user and roles a bearer token does, an unauthenticated call is refused
+  rather than redirected, the forgery token is required of a session and not of
+  a token, and the handed over password obligation is set and cleared. The
+  Keycloak admin client is mocked there.
+- Frontend: 31 unit tests, for the formatting pipes, the translation service and
   its dictionaries, and for the session and route guard logic that decides which
-  screens exist.
-- End to end: 7 Playwright specs against the running stack, covering the link
+  screens exist, including that a refused profile is what "signed out" means and
+  that an account owing us a password reaches no screen but the one that takes
+  it.
+- End to end: 8 Playwright specs against the running stack, covering the link
   from the sign in page to registration, signing up and landing on a full
   portfolio, the duplicate email refusal, an owner creating an assistant who
   then has to choose a password and sees only their one granted screen, adding a
-  building with an apartment in it, switching the app to French and back, and a
-  French browser landing on a French registration page. `scripts/e2e` starts the
+  building with an apartment in it, switching the app to French and back, a
+  French browser landing on a French registration page, and a walk through every
+  screen that watches the wire and fails if a call leaves our own origin or
+  anything at all reaches Keycloak. `scripts/e2e` starts the
   stack on its own compose project, waits for every part, runs them and tears it
   down.
 
@@ -75,10 +87,10 @@ languages, and download the same invoice as a French and an English PDF.
   transaction opens. Creating it lazily inside a service silently did nothing
   when the caller's outermost transaction was read only, because Hibernate does
   not flush there.
-- **Keycloak's `basic` client scope is required.** Without it the access token
-  carries no `sub` claim, which is the only stable user identifier.
+- **Keycloak's `basic` client scope is required.** Without it the token carries
+  no `sub` claim, which is the only stable user identifier.
 - **Accounts are created through the Keycloak admin REST API** with a plain
-  `RestClient`, driven by the `bms-backend` service account client. The official
+  `RestClient`, driven by the `bms-backend` client's service account. The official
   admin client would pull a whole JAX-RS stack in for four calls. Note that Boot
   4 does not auto configure a `RestClient.Builder` bean here, so the client is
   built directly.
@@ -91,16 +103,17 @@ languages, and download the same invoice as a French and an English PDF.
   the empty path is a small component that navigates on, rather than a redirect.
 - **The profile is loaded by the guards, not an app initializer.** Angular
   starts every initializer at once without waiting for the one before, so an
-  initializer here ran while Keycloak was still deciding whether there was a
-  session, read `authenticated` as false and bounced the browser between the app
-  and the login page for ever. Guards run after bootstrap, when Keycloak is
-  ready. The end to end suite is what caught this.
+  initializer here bounced the browser between the app and the sign in page for
+  ever. Guards run after bootstrap and can await an answer. The end to end suite
+  is what caught this.
 - **A failed profile request is not remembered**, so the next guard tries again
   rather than stranding the user on the empty page because the backend was a
   moment slower to start than the browser.
-- **The sign in page is themed rather than replaced.** Keycloak's own
-  registration stays off, because signing up has to assign the owner role, which
-  only our backend does. The theme copies one 56 line template from
+- **The sign in page is themed rather than replaced.** It is the one page of
+  Keycloak anyone still sees, and the browser reaches it because the backend
+  redirected there, not because the application knew where to send it.
+  Keycloak's own registration stays off, because signing up has to assign the
+  owner role, which only our backend does. The theme copies one 56 line template from
   `keycloak.v2` and changes its footer to point at our page.
 - **Syncing the realm never overwrites a role.** Keycloak's partial import
   replaces a role by deleting and recreating it, which drops it from every user
@@ -165,6 +178,91 @@ languages, and download the same invoice as a French and an English PDF.
   language it had just switched away from. `toHaveText` polls, so a busy machine
   is slow rather than red.
 
+- **The browser is signed in by the backend, not by the page.** The application
+  navigates to `/api/auth/login/keycloak` and Spring Security runs the
+  authorization code flow, so the Angular source names no identity provider,
+  carries no identity library and holds no token. What it gets back is an
+  `HttpOnly` session cookie it cannot read.
+
+  The alternative was a sign in form of our own posting to the backend, which
+  would have been prettier. It needs the resource owner password credentials
+  grant, which OAuth 2.1 removes outright: it hands the user's password to the
+  client, cannot carry multi factor or federation, and trains people to type
+  credentials into pages the identity provider did not serve. Redirecting from
+  the backend satisfies "the frontend knows only the backend" without giving
+  that up.
+
+- **No token in the page, deliberately.** The browser based apps guidance is
+  blunt that nothing JavaScript can read survives cross site scripting, and that
+  the storage choice, `localStorage` or memory or IndexedDB, changes nothing. A
+  backend for frontend does not prevent that either: an injected script can act
+  as the user for as long as the tab is open. What it prevents is exfiltration,
+  a credential carried off and used elsewhere, later. Containment, not immunity.
+
+- **The API is proxied, not published.** nginx serves the bundle and forwards
+  `/api` to the backend, so the application and its API are one origin. Three
+  things follow that are awkward otherwise: the session cookie needs no
+  `SameSite=None`, CORS leaves the browser's path entirely, and Angular's own
+  forgery protection applies, since it only adds its header to relative URLs.
+  `frontend/proxy.conf.json` does the same for `ng serve`.
+
+- **Forgery protection is on, and exempts bearer callers.** A session cookie is
+  ambient: the browser attaches it whether or not the user meant to make the
+  request. The token cookie a script has to read and echo is what proves intent.
+  A caller holding a bearer token brought its own credential, which no other site
+  can make a browser attach, so it is exempt. The plain request handler is used
+  rather than the XOR default, whose encoding assumes the token is rendered into
+  a server side template; here it has to survive a round trip through a cookie
+  unchanged.
+
+- **The OAuth2 client registration is written out, not discovered.** An
+  `issuer-uri` would make Spring fetch Keycloak's discovery document at startup,
+  which couples boot order to Keycloak being up. Worse, discovery yields one set
+  of URLs and this deployment needs two: the browser is sent to
+  `http://localhost:8081` while the code exchange, userinfo and keys go over the
+  container network. `KeycloakClientConfig` sets each endpoint to the right one
+  of the two, and supplies `end_session_endpoint` by hand so signing out can
+  still end the session at Keycloak.
+
+- **Realm roles are put into the ID token by a mapper in the realm export.**
+  Keycloak writes them to the access token by default but not the ID token, and
+  the ID token is what backs a browser session. Without that mapper every signed
+  in owner would arrive holding no role, and since an owner is anyone whose token
+  does not say `assistant`, the failure would have been silent rather than loud.
+
+- **`CurrentUserService` reads claims, not a token type.** A browser's principal
+  is an `OidcUser` and a mobile client's is a `Jwt`; both are `ClaimAccessor`s
+  over the same Keycloak claims. Unifying on that interface is what lets one API
+  serve both without a single service, permission check or existing test knowing
+  which arrived.
+
+- **The obligation to change a handed over password is ours, not Keycloak's.**
+  Keycloak discharges a required action on its own account pages, which is
+  precisely where this application no longer sends anyone. `must_change_password`
+  on `app_user` is set when an owner creates or resets an assistant, reported by
+  `/api/me`, and cleared by `POST /api/auth/password`. That endpoint does not ask
+  for the current password: proving it would mean sending it to Keycloak through
+  the direct access grant we deliberately leave disabled, and the caller has
+  already proved as much as that would.
+
+- **`AccountService.changePassword` takes an id, not the record.**
+  `CurrentUserService.require` reads the user in a transaction of its own, which
+  has committed by the time the writing one begins. Flipping the flag on that
+  detached entity would take the change no further than memory.
+
+- **The sign in return path is a path, never a URL.** It is stashed in the
+  session on the way out and joined to the configured frontend address on the way
+  back, and anything not beginning with a single slash is dropped. A value that
+  cannot name a host cannot turn our sign in link into someone else's redirect.
+  `ui_locales` is checked against the two languages we have, for the same reason.
+
+- **An unauthenticated request gets 401, never a redirect.** A 302 towards
+  another host is unreadable to a background request: the browser follows it and
+  hands back an opaque failure, so the application could not tell "signed out"
+  from "broken". The application turns that 401 into a sign in itself, once,
+  guarded by a flag so that a refused request and the guard behind it do not each
+  start a navigation.
+
 - **The diagrams are Mermaid in Markdown, not image files.** GitHub renders them
   in the browser, so no toolchain is needed to read one, and a change shows up
   as a readable diff rather than a new binary. An exported PNG or a `.drawio`
@@ -174,7 +272,11 @@ languages, and download the same invoice as a French and an English PDF.
 
 ## Not built yet
 
-- OAuth 2 beyond the Keycloak resource server setup, as the ticket scopes it later.
+- Sender constrained tokens. DPoP would make a stolen access token useless to
+  anyone but its holder, which is the remaining hardening for the clients that
+  do carry one. The browser does not, so it gains nothing there.
+- A mobile client. The API accepts a bearer token today and the realm would
+  need a public client with PKCE for one to exist.
 - Languages beyond English and French. Adding one is a dictionary, a
   `messages_xx.properties`, a locale in `LocaleConfig` and an entry in the
   realm's `supportedLocales`.
@@ -197,6 +299,9 @@ languages, and download the same invoice as a French and an English PDF.
 
 - Write actions are still shown inside a screen an assistant may only read; the
   backend refuses them, but the buttons are there.
+- Signing out is a `GET`, so that ending the Keycloak session stays one browser
+  navigation. A forged sign out is possible and costs the user nothing beyond
+  the annoyance of signing in again.
 - Changing the realm export does not change a realm Keycloak already has, since
   it only imports one that is absent. `node scripts/sync-realm.mjs` applies the
   export to a running Keycloak; `--wipe` is the alternative, at the cost of the
@@ -207,13 +312,23 @@ languages, and download the same invoice as a French and an English PDF.
   committed without it fails on Linux and macOS, including in CI.
 - The end to end stack uses the same ports as the development one, because the
   realm's redirect URIs name them, so the two cannot run at once.
-- `docker/keycloak/themes/bms` hardcodes the registration URL, for the same
-  reason `frontend/public/config.js` hardcodes the API host.
+- `docker/keycloak/themes/bms` hardcodes the registration URL. Keycloak's
+  templates have no way to reach our configuration.
 - The `bms-backend` client secret is a literal in the realm export, matched by a
   default in `application.yml`. Fine locally; a deployment has to set
-  `BMS_KEYCLOAK_ADMIN_CLIENT_SECRET` and a realm to match.
-- `frontend/public/config.js` is baked at image build, so changing the API or
-  Keycloak URL needs an image rebuild rather than a container restart.
+  `BMS_KEYCLOAK_CLIENT_SECRET` and a realm to match. That client now signs the
+  browser in as well as creating accounts, so the secret matters more than it
+  did.
+- The session lives in the backend's memory. A second replica would hand a
+  browser a session the other one has never heard of, so scaling out needs
+  Spring Session backed by Postgres or Redis before it can work.
+- Removing the `bms-frontend` client from the realm export does not remove it
+  from a realm Keycloak already has: `scripts/sync-realm.mjs` overwrites the
+  clients in the export and leaves anything else alone. It is inert either way,
+  since nothing holds its id any more.
+- The webfont in `styles.css` is still fetched from Google. It is the one
+  request that leaves our origin, which is why `origins.spec.ts` asserts on
+  calls rather than on every request.
 - Error messages already on screen are plain strings, so switching language
   leaves the last one in the language it was raised in. The next action replaces
   it.

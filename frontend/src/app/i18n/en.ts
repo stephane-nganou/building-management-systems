@@ -270,6 +270,16 @@ export const en = {
   'register.haveAccount': 'I already have an account',
   'register.failed': 'That account could not be created.',
 
+  'password.title': 'Choose your password',
+  'password.subtitle':
+    'Your account was set up with a password somebody else chose. Replace it with one only you know.',
+  'password.new': 'New password',
+  'password.confirm': 'Repeat it',
+  'password.hint': 'At least 8 characters.',
+  'password.submit': 'Save password',
+  'password.saving': 'Saving',
+  'password.failed': 'That password could not be saved.',
+
   'noAccess.title': 'Nothing to show yet',
   'noAccess.body': 'Ask the owner you assist to give you access, then sign in again.',
 } as const;

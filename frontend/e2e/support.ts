@@ -9,8 +9,12 @@ export function uniqueEmail(prefix: string): string {
 }
 
 /**
- * Fills Keycloak's sign in form. Where that lands depends on the account: the
- * app for most, the update password page for one signing in the first time.
+ * Fills the sign in form.
+ *
+ * <p>This is the one page of Keycloak anybody still sees, and the application
+ * does not send anyone here itself: it asks the backend to sign the browser in,
+ * and the backend is what redirects. Where it lands depends on the account: the
+ * portfolio for most, our own password screen for one signing in the first time.
  */
 export async function submitSignIn(page: Page, username: string, password: string): Promise<void> {
   await page.getByLabel(/username or email/i).fill(username);
@@ -25,19 +29,24 @@ export async function signIn(page: Page, username: string, password: string): Pr
 }
 
 /**
- * Keycloak makes an account with a temporary password choose a new one before
- * it lets them in, which is exactly what an assistant meets on their first
- * sign in.
+ * An assistant signs in holding a password their owner read out to them, and the
+ * application shows them nothing else until they have replaced it. The screen is
+ * ours, not Keycloak's: the obligation is recorded on our own record, so that
+ * nobody has to leave the application to discharge it.
  */
 export async function chooseNewPassword(page: Page, password: string): Promise<void> {
-  await expect(page.getByRole('heading', { name: /update password/i })).toBeVisible();
-  await page.getByLabel('New Password', { exact: true }).fill(password);
-  await page.getByLabel(/confirm password/i).fill(password);
-  await page.getByRole('button', { name: /submit/i }).click();
-  await page.waitForURL(/localhost:4200/);
+  await expect(page.getByRole('heading', { name: /choose your password/i })).toBeVisible();
+  await page.getByLabel('New password', { exact: true }).fill(password);
+  await page.getByLabel('Repeat it').fill(password);
+  await page.getByRole('button', { name: /save password/i }).click();
+  await expect(page.locator('aside.spine')).toBeVisible();
 }
 
-/** Signs out through the app, landing back on Keycloak's sign in page. */
+/**
+ * Signs out through the app. The backend ends the session at both ends, and the
+ * browser comes back to an application that has nobody signed in, which asks to
+ * sign in again.
+ */
 export async function signOut(page: Page): Promise<void> {
   await page.getByRole('button', { name: /sign out/i }).click();
   await page.waitForURL(/\/realms\/bms\/protocol\/openid-connect/);

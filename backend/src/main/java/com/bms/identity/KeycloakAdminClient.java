@@ -28,17 +28,17 @@ import org.springframework.web.client.RestClientException;
 public class KeycloakAdminClient {
 
     private final RestClient http;
-    private final KeycloakAdminProperties properties;
+    private final KeycloakProperties properties;
 
     // Named explicitly: a second constructor exists for tests, and Spring will not
     // guess between them.
     @Autowired
-    public KeycloakAdminClient(KeycloakAdminProperties properties) {
+    public KeycloakAdminClient(KeycloakProperties properties) {
         this(RestClient.create(properties.serverUrl()), properties);
     }
 
     /** Lets a test supply a client bound to a mock server. */
-    KeycloakAdminClient(RestClient http, KeycloakAdminProperties properties) {
+    KeycloakAdminClient(RestClient http, KeycloakProperties properties) {
         this.http = http;
         this.properties = properties;
     }
@@ -47,17 +47,16 @@ public class KeycloakAdminClient {
      * Creates an enabled account and returns its Keycloak id, which is the
      * {@code sub} claim of every token it will later carry.
      */
-    public String createUser(String email, String firstName, String lastName, String password,
-                             boolean temporaryPassword, String realmRole) {
+    public String createUser(String email, String firstName, String lastName, String password, String realmRole) {
         String token = accessToken();
         String userId = createAccount(token, email, firstName, lastName);
-        setPassword(token, userId, password, temporaryPassword);
+        setPassword(token, userId, password);
         assignRealmRole(token, userId, realmRole);
         return userId;
     }
 
-    public void resetPassword(String keycloakId, String password, boolean temporary) {
-        setPassword(accessToken(), keycloakId, password, temporary);
+    public void resetPassword(String keycloakId, String password) {
+        setPassword(accessToken(), keycloakId, password);
     }
 
     private String createAccount(String token, String email, String firstName, String lastName) {
@@ -86,12 +85,17 @@ public class KeycloakAdminClient {
         return path.substring(path.lastIndexOf('/') + 1);
     }
 
-    private void setPassword(String token, String userId, String password, boolean temporary) {
+    /**
+     * Always a permanent password. Keycloak's temporary ones are discharged on
+     * its own account pages, which this application never sends anyone to; where
+     * a password still has to be replaced, {@code app_user} records it.
+     */
+    private void setPassword(String token, String userId, String password) {
         http.put()
                 .uri("/admin/realms/{realm}/users/{id}/reset-password", properties.realm(), userId)
                 .headers(headers -> headers.setBearerAuth(token))
                 .contentType(MediaType.APPLICATION_JSON)
-                .body(Map.of("type", "password", "value", password, "temporary", temporary))
+                .body(Map.of("type", "password", "value", password, "temporary", false))
                 .exchange((request, response) -> {
                     failOnError(response.getStatusCode(), "set the password");
                     return null;

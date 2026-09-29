@@ -139,7 +139,7 @@ class AssistantAccessIntegrationTest extends AbstractIntegrationTest {
     @Test
     void addingAnUnknownEmailCreatesTheAccountAndReturnsItsPasswordOnce() throws Exception {
         given(keycloak.createUser(eq("new-assistant@example.com"), eq("Nora"), eq("New"),
-                anyString(), eq(true), eq("assistant"))).willReturn("kc-new-assistant");
+                anyString(), eq("assistant"))).willReturn("kc-new-assistant");
         mockMvc.perform(get("/api/me").with(OWNER)).andExpect(status().isOk());
 
         String created = mockMvc.perform(post("/api/assistants").with(OWNER)
@@ -162,7 +162,9 @@ class AssistantAccessIntegrationTest extends AbstractIntegrationTest {
         mockMvc.perform(post("/api/assistants/" + assignmentId + "/password").with(OWNER))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.temporaryPassword").isNotEmpty());
-        verify(keycloak).resetPassword(eq("kc-new-assistant"), anyString(), eq(true));
+        // Never a temporary password in Keycloak: the obligation to replace it
+        // is ours, and it is discharged on our own screen.
+        verify(keycloak).resetPassword(eq("kc-new-assistant"), anyString());
     }
 
     @Test
