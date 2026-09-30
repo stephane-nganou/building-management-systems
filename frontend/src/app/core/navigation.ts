@@ -1,4 +1,5 @@
 import { MessageKey } from '../i18n/en';
+import { IconName } from '../shared/icon';
 import { Permission } from './models';
 
 /**
@@ -9,17 +10,18 @@ import { Permission } from './models';
 export interface NavEntry {
   path: string;
   label: MessageKey;
+  icon: IconName;
   permission?: Permission;
   ownerOnly?: boolean;
 }
 
 export const NAV_ENTRIES: NavEntry[] = [
-  { path: '/dashboard', label: 'nav.dashboard', permission: 'REPORT_READ' },
-  { path: '/buildings', label: 'nav.buildings', permission: 'BUILDING_READ' },
-  { path: '/apartments', label: 'nav.apartments', permission: 'APARTMENT_READ' },
-  { path: '/tenants', label: 'nav.tenants', permission: 'TENANT_READ' },
-  { path: '/expenses', label: 'nav.expenses', permission: 'EXPENSE_READ' },
-  { path: '/invoices', label: 'nav.invoices', permission: 'INVOICE_READ' },
-  { path: '/reports', label: 'nav.reports', permission: 'REPORT_READ' },
-  { path: '/assistants', label: 'nav.assistants', ownerOnly: true },
+  { path: '/dashboard', label: 'nav.dashboard', icon: 'dashboard', permission: 'REPORT_READ' },
+  { path: '/buildings', label: 'nav.buildings', icon: 'building', permission: 'BUILDING_READ' },
+  { path: '/apartments', label: 'nav.apartments', icon: 'door', permission: 'APARTMENT_READ' },
+  { path: '/tenants', label: 'nav.tenants', icon: 'users', permission: 'TENANT_READ' },
+  { path: '/expenses', label: 'nav.expenses', icon: 'receipt', permission: 'EXPENSE_READ' },
+  { path: '/invoices', label: 'nav.invoices', icon: 'invoice', permission: 'INVOICE_READ' },
+  { path: '/reports', label: 'nav.reports', icon: 'chart', permission: 'REPORT_READ' },
+  { path: '/assistants', label: 'nav.assistants', icon: 'assistant', ownerOnly: true },
 ];

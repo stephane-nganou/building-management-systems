@@ -1,0 +1,106 @@
+/*
+  Lights on. A landlord's portfolio seen as it is from the street at dusk:
+  night sky around the buildings, and a lamp in every window that is let.
+  Lamplight is reserved for exactly that meaning, and for where focus is.
+*/
+
+@font-face {
+  font-family: 'Mona Sans';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 900;
+  font-stretch: 75% 125%;
+  src: url('/fonts/mona-sans-latin-standard-normal.woff2') format('woff2-variations');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+    U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Mona Sans';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 900;
+  font-stretch: 75% 125%;
+  src: url('/fonts/mona-sans-latin-ext-standard-normal.woff2') format('woff2-variations');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308,
+    U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113,
+    U+2C60-2C7F, U+A720-A7FF;
+}
+
+:root {
+  /* the palette */
+  --night: #1c1f3a;
+  --night-raised: #272b4d;
+  --lamplight: #f0b43c;
+  --limestone: #f4f5f7;
+  --plaster: #ffffff;
+  --ledger: #18794e;
+  --brick: #b93a2e;
+
+  /* derived roles */
+  --ground: var(--limestone);
+  --surface: var(--plaster);
+  --surface-sunk: #f8f9fb;
+  --ink: #1c1f3a;
+  --ink-2: #4a4f6a;
+  --ink-3: #6e7390;
+  --line: #e3e5ec;
+  --line-strong: #cfd2dc;
+  --primary: var(--night);
+  --primary-ink: #ffffff;
+  --primary-hover: var(--night-raised);
+  --pos: var(--ledger);
+  --neg: var(--brick);
+  --window-dark: #d5d8e3;
+  --window-frame: #1c1f3a;
+  --wash: rgb(28 31 58 / 0.5);
+
+  --font: 'Mona Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --wide: 118%;
+  --wider: 125%;
+
+  /* a modular scale on 1.25 from 15px */
+  --step--1: 0.8125rem;
+  --step-0: 0.9375rem;
+  --step-1: 1.1875rem;
+  --step-2: 1.5rem;
+  --step-3: 2rem;
+  --step-4: 2.5rem;
+
+  --radius-s: 6px;
+  --radius: 10px;
+  --radius-l: 16px;
+  --rail: 256px;
+  --shadow: 0 1px 2px rgb(28 31 58 / 0.06), 0 8px 24px rgb(28 31 58 / 0.06);
+  --shadow-lift: 0 24px 64px rgb(28 31 58 / 0.28);
+
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --night: #111327;
+    --night-raised: #1d2140;
+    --ledger: #4cc38a;
+    --brick: #f07b6d;
+
+    --ground: #161a2e;
+    --surface: #1e2238;
+    --surface-sunk: #1a1e33;
+    --ink: #eceef8;
+    --ink-2: #b8bcd4;
+    --ink-3: #8b90ad;
+    --line: #2c3150;
+    --line-strong: #3b4166;
+    --primary: #e6e8f7;
+    --primary-ink: #1c1f3a;
+    --primary-hover: #ffffff;
+    --window-dark: #33385a;
+    --window-frame: #8b90ad;
+    --wash: rgb(5 6 16 / 0.66);
+    --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.2);
+    --shadow-lift: 0 24px 64px rgb(0 0 0 / 0.55);
+
+    color-scheme: dark;
+  }
+}

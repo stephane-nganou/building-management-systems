@@ -72,6 +72,7 @@ describe('the dictionaries', () => {
         'common.notes',
         'common.date',
         'common.description',
+        'common.actions',
         'tenants.contact',
         'invoices.type',
         'assistants.title',

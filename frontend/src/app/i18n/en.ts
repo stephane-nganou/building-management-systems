@@ -9,6 +9,9 @@ export const en = {
   'app.role.assisting': 'Assisting {count} owner(s)',
   'app.signOut': 'Sign out',
   'app.language': 'Language',
+  'app.openMenu': 'Open menu',
+  'app.navigation': 'Main',
+  'gate.pitch': 'Rent, costs and invoices for every building you own, in one place.',
 
   'nav.dashboard': 'Overview',
   'nav.buildings': 'Buildings',
@@ -20,6 +23,8 @@ export const en = {
   'nav.assistants': 'Assistants',
 
   'common.cancel': 'Cancel',
+  'common.close': 'Close',
+  'common.actions': 'Actions',
   'common.saveChanges': 'Save changes',
   'common.edit': 'Edit',
   'common.delete': 'Delete',
@@ -39,6 +44,19 @@ export const en = {
   'common.to': 'To',
   'common.date': 'Date',
   'common.description': 'Description',
+
+  'confirm.deleteTitle': 'Delete {name}?',
+  'confirm.deleteBody': 'This removes it for good and cannot be undone.',
+  'confirm.removeAssistantTitle': 'Remove {name}?',
+  'confirm.removeAssistantBody': 'They lose access to your buildings straight away.',
+
+  'toast.saved': '{name} saved',
+  'toast.deleted': '{name} deleted',
+  'toast.invoiceCreated': 'Invoice created',
+  'toast.invoiceStatus': 'Invoice {number}: {status}',
+  'toast.assistantRemoved': '{name} no longer has access',
+
+  'facade.label': '{occupied} of {total} apartments let',
 
   'enum.status.VACANT': 'Vacant',
   'enum.status.OCCUPIED': 'Occupied',
@@ -81,6 +99,8 @@ export const en = {
   'dashboard.spent': 'Spent',
   'dashboard.net': 'Net result',
   'dashboard.rentRoll': 'Rent roll each month',
+  'dashboard.street': 'Your buildings',
+  'dashboard.streetSubtitle': 'Each window is an apartment. {occupied} of {total} are lit, because they are let.',
   'dashboard.byBuilding': 'Position by building',
   'dashboard.byBuildingSubtitle': 'Rent collected against what each building cost to run.',
   'dashboard.portfolio': 'Portfolio',
@@ -195,6 +215,7 @@ export const en = {
   'invoices.due': 'Due',
   'invoices.markSent': 'Mark sent',
   'invoices.markPaid': 'Mark paid',
+  'invoices.downloadPdf': 'Download PDF',
   'invoices.periodStart': 'Period from',
   'invoices.periodEnd': 'Period to',
   'invoices.issueDate': 'Issued',
@@ -250,6 +271,8 @@ export const en = {
   'assistants.handOverBody':
     'This password is shown once. {name} has to change it the first time they sign in.',
   'assistants.temporaryPassword': 'Temporary password',
+  'assistants.copy': 'Copy',
+  'assistants.copied': 'Password copied',
   'assistants.theirEmail': 'Their email',
   'assistants.emailHint': 'We create the account and give you a password to pass on.',
   'assistants.mayDo': 'What they may do',

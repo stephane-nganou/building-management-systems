@@ -5,7 +5,13 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { BuildingsApi, InvoicesApi, TenantsApi } from '../core/api';
 import { TranslationService } from '../core/i18n';
 import { Invoice, InvoiceStatus, InvoiceType } from '../core/models';
+import { MessageKey } from '../i18n/en';
+import { ConfirmService } from '../shared/confirm';
+import { Dialog } from '../shared/dialog';
+import { Facade } from '../shared/facade';
+import { Icon } from '../shared/icon';
 import { DayPipe, LabelPipe, MoneyPipe } from '../shared/money.pipe';
+import { ToastService } from '../shared/toasts';
 import { TranslatePipe } from '../shared/translate.pipe';
 
 const STATUSES: InvoiceStatus[] = ['DRAFT', 'SENT', 'PAID', 'CANCELLED'];
@@ -54,7 +60,7 @@ const blank = (): InvoiceForm => {
 
 @Component({
   selector: 'bms-invoices',
-  imports: [FormsModule, MoneyPipe, DayPipe, LabelPipe, TranslatePipe],
+  imports: [FormsModule, Dialog, Facade, Icon, MoneyPipe, DayPipe, LabelPipe, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="band">
@@ -64,6 +70,7 @@ const blank = (): InvoiceForm => {
           <p>{{ 'invoices.subtitle' | t }}</p>
         </div>
         <button class="primary" type="button" [disabled]="!hasTenants()" (click)="startCreate()">
+          <bms-icon name="plus" />
           {{ 'invoices.add' | t }}
         </button>
       </div>
@@ -101,163 +108,186 @@ const blank = (): InvoiceForm => {
         <p class="loading">{{ 'invoices.loading' | t }}</p>
       } @else if (!hasTenants()) {
         <div class="empty">
-          <h3>{{ 'invoices.needTenantTitle' | t }}</h3>
-          <p>{{ 'invoices.needTenantBody' | t }}</p>
+          <bms-facade [units]="[]" [scale]="2" />
+          <div>
+            <h3>{{ 'invoices.needTenantTitle' | t }}</h3>
+            <p>{{ 'invoices.needTenantBody' | t }}</p>
+          </div>
         </div>
       } @else if (invoices.hasValue() && invoices.value()!.length === 0) {
         <div class="empty">
-          <h3>{{ 'invoices.emptyTitle' | t }}</h3>
-          <p>{{ 'invoices.emptyBody' | t }}</p>
-          <button class="primary" type="button" (click)="startCreate()">
-            {{ 'invoices.add' | t }}
-          </button>
+          <bms-facade [units]="[]" [scale]="2" />
+          <div>
+            <h3>{{ 'invoices.emptyTitle' | t }}</h3>
+            <p>{{ 'invoices.emptyBody' | t }}</p>
+            <button class="primary" type="button" (click)="startCreate()">
+              <bms-icon name="plus" />
+              {{ 'invoices.add' | t }}
+            </button>
+          </div>
         </div>
       } @else if (invoices.hasValue()) {
-        <table class="sheet">
-          <thead>
-            <tr>
-              <th>{{ 'invoices.number' | t }}</th>
-              <th>{{ 'invoices.tenant' | t }}</th>
-              <th>{{ 'invoices.unit' | t }}</th>
-              <th>{{ 'invoices.type' | t }}</th>
-              <th>{{ 'invoices.period' | t }}</th>
-              <th>{{ 'invoices.due' | t }}</th>
-              <th class="right">{{ 'common.total' | t }}</th>
-              <th>{{ 'common.status' | t }}</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (invoice of invoices.value(); track invoice.id) {
+        <div class="sheet-frame">
+          <table class="sheet">
+            <thead>
               <tr>
-                <td class="strong">{{ invoice.invoiceNumber }}</td>
-                <td>{{ invoice.tenantName }}</td>
-                <td class="muted">{{ invoice.buildingName }} - {{ invoice.apartmentLabel }}</td>
-                <td>{{ invoice.type | label: 'invoiceType' }}</td>
-                <td class="muted">{{ invoice.periodStart | day }} - {{ invoice.periodEnd | day }}</td>
-                <td class="muted">{{ invoice.dueDate | day }}</td>
-                <td class="right strong">{{ invoice.total | money }}</td>
-                <td>
-                  <span class="mark {{ invoice.status.toLowerCase() }}">
-                    {{ invoice.status | label: 'invoiceStatus' }}
-                  </span>
-                </td>
-                <td class="right">
-                  <button class="quiet" type="button" (click)="download(invoice)">PDF</button>
-                  @if (invoice.status === 'DRAFT') {
-                    <button class="quiet" type="button" (click)="setStatus(invoice, 'SENT')">
-                      {{ 'invoices.markSent' | t }}
-                    </button>
-                  }
-                  @if (invoice.status === 'SENT') {
-                    <button class="quiet" type="button" (click)="setStatus(invoice, 'PAID')">
-                      {{ 'invoices.markPaid' | t }}
-                    </button>
-                  }
-                  @if (invoice.status === 'DRAFT') {
-                    <button class="quiet danger" type="button" (click)="remove(invoice)">
-                      {{ 'common.delete' | t }}
-                    </button>
-                  }
-                </td>
+                <th>{{ 'invoices.number' | t }}</th>
+                <th>{{ 'invoices.tenant' | t }}</th>
+                <th>{{ 'invoices.unit' | t }}</th>
+                <th>{{ 'invoices.type' | t }}</th>
+                <th>{{ 'invoices.period' | t }}</th>
+                <th>{{ 'invoices.due' | t }}</th>
+                <th class="right">{{ 'common.total' | t }}</th>
+                <th>{{ 'common.status' | t }}</th>
+                <th><span class="visually-hidden">{{ 'common.actions' | t }}</span></th>
               </tr>
-            }
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              @for (invoice of invoices.value(); track invoice.id) {
+                <tr>
+                  <td class="strong">{{ invoice.invoiceNumber }}</td>
+                  <td>{{ invoice.tenantName }}</td>
+                  <td class="muted">{{ invoice.buildingName }} - {{ invoice.apartmentLabel }}</td>
+                  <td>{{ invoice.type | label: 'invoiceType' }}</td>
+                  <td class="muted">{{ invoice.periodStart | day }} - {{ invoice.periodEnd | day }}</td>
+                  <td class="muted">{{ invoice.dueDate | day }}</td>
+                  <td class="right strong">{{ invoice.total | money }}</td>
+                  <td>
+                    <span class="mark {{ invoice.status.toLowerCase() }}">
+                      {{ invoice.status | label: 'invoiceStatus' }}
+                    </span>
+                  </td>
+                  <td class="actions-cell">
+                    <span class="row-actions">
+                      @if (invoice.status === 'DRAFT') {
+                        <button class="quiet" type="button" (click)="setStatus(invoice, 'SENT')">
+                          <bms-icon name="send" [size]="16" />
+                          {{ 'invoices.markSent' | t }}
+                        </button>
+                      }
+                      @if (invoice.status === 'SENT') {
+                        <button class="quiet" type="button" (click)="setStatus(invoice, 'PAID')">
+                          <bms-icon name="paid" [size]="16" />
+                          {{ 'invoices.markPaid' | t }}
+                        </button>
+                      }
+                      <button
+                        class="icon"
+                        type="button"
+                        [attr.aria-label]="'invoices.downloadPdf' | t"
+                        [title]="'invoices.downloadPdf' | t"
+                        (click)="download(invoice)"
+                      >
+                        <bms-icon name="download" />
+                      </button>
+                      @if (invoice.status === 'DRAFT') {
+                        <button
+                          class="icon danger"
+                          type="button"
+                          [attr.aria-label]="'common.delete' | t"
+                          [title]="'common.delete' | t"
+                          (click)="remove(invoice)"
+                        >
+                          <bms-icon name="trash" />
+                        </button>
+                      }
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
       }
 
       @if (error()) {
-        <p class="notice">{{ error() }}</p>
+        <p class="notice" role="alert"><bms-icon name="alert" />{{ error() }}</p>
       }
     </section>
 
     @if (editing()) {
-      <div class="scrim" (click)="cancel()">
-        <div class="panel" (click)="$event.stopPropagation()">
-          <header>
-            <h2>{{ 'invoices.add' | t }}</h2>
-          </header>
-          <div class="body">
-            <div class="grid-2">
-              <div class="field">
-                <label for="tenant">{{ 'invoices.tenant' | t }}</label>
-                <select id="tenant" [(ngModel)]="form.tenantId">
-                  @for (tenant of tenants.value(); track tenant.id) {
-                    <option [value]="tenant.id">
-                      {{ tenant.firstName }} {{ tenant.lastName }} - {{ tenant.apartmentLabel }}
-                    </option>
-                  }
-                </select>
-              </div>
-              <div class="field">
-                <label for="type">{{ 'invoices.type' | t }}</label>
-                <select id="type" [(ngModel)]="form.type">
-                  @for (type of types; track type) {
-                    <option [value]="type">{{ type | label: 'invoiceType' }}</option>
-                  }
-                </select>
-              </div>
-              <div class="field">
-                <label for="periodStart">{{ 'invoices.periodStart' | t }}</label>
-                <input id="periodStart" type="date" [(ngModel)]="form.periodStart" />
-              </div>
-              <div class="field">
-                <label for="periodEnd">{{ 'invoices.periodEnd' | t }}</label>
-                <input id="periodEnd" type="date" [(ngModel)]="form.periodEnd" />
-              </div>
-              <div class="field">
-                <label for="issueDate">{{ 'invoices.issueDate' | t }}</label>
-                <input id="issueDate" type="date" [(ngModel)]="form.issueDate" />
-              </div>
-              <div class="field">
-                <label for="dueDate">{{ 'invoices.dueDate' | t }}</label>
-                <input id="dueDate" type="date" [(ngModel)]="form.dueDate" />
-              </div>
+      <bms-dialog [heading]="'invoices.add' | t" (closed)="cancel()">
+        <div class="grid-2">
+          <div class="field">
+            <label for="tenant">{{ 'invoices.tenant' | t }}</label>
+            <select id="tenant" [(ngModel)]="form.tenantId">
+              @for (tenant of tenants.value(); track tenant.id) {
+                <option [value]="tenant.id">
+                  {{ tenant.firstName }} {{ tenant.lastName }} - {{ tenant.apartmentLabel }}
+                </option>
+              }
+            </select>
+          </div>
+          <div class="field">
+            <label for="type">{{ 'invoices.type' | t }}</label>
+            <select id="type" [(ngModel)]="form.type">
+              @for (type of types; track type) {
+                <option [value]="type">{{ type | label: 'invoiceType' }}</option>
+              }
+            </select>
+          </div>
+          <div class="field">
+            <label for="periodStart">{{ 'invoices.periodStart' | t }}</label>
+            <input id="periodStart" type="date" [(ngModel)]="form.periodStart" />
+          </div>
+          <div class="field">
+            <label for="periodEnd">{{ 'invoices.periodEnd' | t }}</label>
+            <input id="periodEnd" type="date" [(ngModel)]="form.periodEnd" />
+          </div>
+          <div class="field">
+            <label for="issueDate">{{ 'invoices.issueDate' | t }}</label>
+            <input id="issueDate" type="date" [(ngModel)]="form.issueDate" />
+          </div>
+          <div class="field">
+            <label for="dueDate">{{ 'invoices.dueDate' | t }}</label>
+            <input id="dueDate" type="date" [(ngModel)]="form.dueDate" />
+          </div>
+        </div>
+
+        @if (form.type === 'RENT' && form.lines.length === 0) {
+          <p class="muted">{{ 'invoices.rentHint' | t }}</p>
+        }
+        @if (form.type === 'COLD_WATER' && form.lines.length === 0) {
+          <p class="muted">{{ 'invoices.coldWaterHint' | t }}</p>
+        }
+
+        @for (line of form.lines; track $index) {
+          <div class="grid-2">
+            <div class="field">
+              <label>{{ 'common.description' | t }}</label>
+              <input [(ngModel)]="line.description" [name]="'d' + $index" />
             </div>
-
-            @if (form.type === 'RENT' && form.lines.length === 0) {
-              <p class="muted">{{ 'invoices.rentHint' | t }}</p>
-            }
-            @if (form.type === 'COLD_WATER' && form.lines.length === 0) {
-              <p class="muted">{{ 'invoices.coldWaterHint' | t }}</p>
-            }
-
-            @for (line of form.lines; track $index) {
-              <div class="grid-2">
-                <div class="field">
-                  <label>{{ 'common.description' | t }}</label>
-                  <input [(ngModel)]="line.description" [name]="'d' + $index" />
-                </div>
-                <div class="field">
-                  <label>{{ 'invoices.lineUnit' | t }}</label>
-                  <input [(ngModel)]="line.unit" [name]="'u' + $index" placeholder="m3" />
-                </div>
-                <div class="field">
-                  <label>{{ 'invoices.lineQuantity' | t }}</label>
-                  <input type="number" step="0.001" [(ngModel)]="line.quantity" [name]="'q' + $index" />
-                </div>
-                <div class="field">
-                  <label>{{ 'invoices.lineUnitPrice' | t }}</label>
-                  <input type="number" step="0.01" [(ngModel)]="line.unitPrice" [name]="'p' + $index" />
-                </div>
-              </div>
-            }
-
-            <button type="button" (click)="addLine()">{{ 'invoices.addLine' | t }}</button>
-
-            <div class="field" style="margin-top:14px">
-              <label for="notes">{{ 'common.notes' | t }}</label>
-              <input id="notes" [(ngModel)]="form.notes" />
+            <div class="field">
+              <label>{{ 'invoices.lineUnit' | t }}</label>
+              <input [(ngModel)]="line.unit" [name]="'u' + $index" placeholder="m3" />
+            </div>
+            <div class="field">
+              <label>{{ 'invoices.lineQuantity' | t }}</label>
+              <input type="number" step="0.001" [(ngModel)]="line.quantity" [name]="'q' + $index" />
+            </div>
+            <div class="field">
+              <label>{{ 'invoices.lineUnitPrice' | t }}</label>
+              <input type="number" step="0.01" [(ngModel)]="line.unitPrice" [name]="'p' + $index" />
             </div>
           </div>
-          <footer>
-            <button type="button" (click)="cancel()">{{ 'common.cancel' | t }}</button>
-            <button class="primary" type="button" [disabled]="!form.tenantId" (click)="save()">
-              {{ 'invoices.add' | t }}
-            </button>
-          </footer>
+        }
+
+        <button type="button" (click)="addLine()">
+          <bms-icon name="plus" [size]="16" />
+          {{ 'invoices.addLine' | t }}
+        </button>
+
+        <div class="field notes-field">
+          <label for="notes">{{ 'common.notes' | t }}</label>
+          <input id="notes" [(ngModel)]="form.notes" />
         </div>
-      </div>
+        <ng-container actions>
+          <button type="button" (click)="cancel()">{{ 'common.cancel' | t }}</button>
+          <button class="primary" type="button" [disabled]="!form.tenantId" (click)="save()">
+            {{ 'invoices.add' | t }}
+          </button>
+        </ng-container>
+      </bms-dialog>
     }
   `,
 })
@@ -266,6 +296,8 @@ export class InvoicesPage {
   private buildingsApi = inject(BuildingsApi);
   private tenantsApi = inject(TenantsApi);
   private i18n = inject(TranslationService);
+  private confirm = inject(ConfirmService);
+  private toasts = inject(ToastService);
 
   protected readonly statuses = STATUSES;
   protected readonly types = TYPES;
@@ -322,6 +354,7 @@ export class InvoicesPage {
       next: () => {
         this.editing.set(false);
         this.error.set(null);
+        this.toasts.show(this.i18n.translate('toast.invoiceCreated'));
         this.invoices.reload();
       },
       error: (response) =>
@@ -331,15 +364,27 @@ export class InvoicesPage {
 
   protected setStatus(invoice: Invoice, status: InvoiceStatus): void {
     this.api.changeStatus(invoice.id, status).subscribe({
-      next: () => this.invoices.reload(),
+      next: () => {
+        const label = this.i18n.translate(`enum.invoiceStatus.${status}` as MessageKey).toLowerCase();
+        this.toasts.show(
+          this.i18n.translate('toast.invoiceStatus', { number: invoice.invoiceNumber, status: label }),
+        );
+        this.invoices.reload();
+      },
       error: (response) =>
         this.error.set(response?.error?.detail ?? this.i18n.translate('invoices.statusFailed')),
     });
   }
 
-  protected remove(invoice: Invoice): void {
+  protected async remove(invoice: Invoice): Promise<void> {
+    if (!(await this.confirm.delete(invoice.invoiceNumber))) {
+      return;
+    }
     this.api.remove(invoice.id).subscribe({
-      next: () => this.invoices.reload(),
+      next: () => {
+        this.toasts.show(this.i18n.translate('toast.deleted', { name: invoice.invoiceNumber }));
+        this.invoices.reload();
+      },
       error: (response) =>
         this.error.set(response?.error?.detail ?? this.i18n.translate('invoices.deleteFailed')),
     });

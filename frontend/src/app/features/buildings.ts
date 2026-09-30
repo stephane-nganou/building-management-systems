@@ -1,10 +1,16 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { rxResource } from '@angular/core/rxjs-interop';
 
-import { BuildingsApi } from '../core/api';
+import { ApartmentsApi, BuildingsApi } from '../core/api';
 import { TranslationService } from '../core/i18n';
 import { Building } from '../core/models';
+import { SessionService } from '../core/session';
+import { ConfirmService } from '../shared/confirm';
+import { Dialog } from '../shared/dialog';
+import { Facade, Unit } from '../shared/facade';
+import { Icon } from '../shared/icon';
+import { ToastService } from '../shared/toasts';
 import { TranslatePipe } from '../shared/translate.pipe';
 
 interface BuildingForm {
@@ -27,7 +33,7 @@ const blank = (): BuildingForm => ({
 
 @Component({
   selector: 'bms-buildings',
-  imports: [FormsModule, TranslatePipe],
+  imports: [FormsModule, Dialog, Facade, Icon, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="band">
@@ -37,6 +43,7 @@ const blank = (): BuildingForm => ({
           <p>{{ 'buildings.subtitle' | t }}</p>
         </div>
         <button class="primary" type="button" (click)="startCreate()">
+          <bms-icon name="plus" />
           {{ 'buildings.add' | t }}
         </button>
       </div>
@@ -45,101 +52,145 @@ const blank = (): BuildingForm => ({
         <p class="loading">{{ 'buildings.loading' | t }}</p>
       } @else if (buildings.hasValue() && buildings.value()!.length === 0) {
         <div class="empty">
-          <h3>{{ 'buildings.emptyTitle' | t }}</h3>
-          <p>{{ 'buildings.emptyBody' | t }}</p>
-          <button class="primary" type="button" (click)="startCreate()">
-            {{ 'buildings.add' | t }}
-          </button>
+          <bms-facade [units]="[]" [scale]="2" />
+          <div>
+            <h3>{{ 'buildings.emptyTitle' | t }}</h3>
+            <p>{{ 'buildings.emptyBody' | t }}</p>
+            <button class="primary" type="button" (click)="startCreate()">
+              <bms-icon name="plus" />
+              {{ 'buildings.add' | t }}
+            </button>
+          </div>
         </div>
       } @else if (buildings.hasValue()) {
-        <table class="sheet">
-          <thead>
-            <tr>
-              <th>{{ 'common.name' | t }}</th>
-              <th>{{ 'buildings.address' | t }}</th>
-              <th class="right">{{ 'buildings.apartments' | t }}</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (building of buildings.value(); track building.id) {
+        <div class="sheet-frame">
+          <table class="sheet">
+            <thead>
               <tr>
-                <td class="strong">{{ building.name }}</td>
-                <td class="muted">{{ address(building) }}</td>
-                <td class="right">{{ building.apartmentCount }}</td>
-                <td class="right">
-                  <button class="quiet" type="button" (click)="startEdit(building)">
-                    {{ 'common.edit' | t }}
-                  </button>
-                  <button class="quiet danger" type="button" (click)="remove(building)">
-                    {{ 'common.delete' | t }}
-                  </button>
-                </td>
+                <th>{{ 'common.name' | t }}</th>
+                <th>{{ 'buildings.address' | t }}</th>
+                <th class="right">{{ 'buildings.apartments' | t }}</th>
+                <th><span class="visually-hidden">{{ 'common.actions' | t }}</span></th>
               </tr>
-            }
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              @for (building of buildings.value(); track building.id) {
+                <tr>
+                  <td>
+                    <span class="name-cell">
+                      @if (seesApartments) {
+                        <bms-facade [units]="unitsOf(building.id)" [scale]="0.8" />
+                      }
+                      <strong>{{ building.name }}</strong>
+                    </span>
+                  </td>
+                  <td class="muted">{{ address(building) }}</td>
+                  <td class="right">{{ building.apartmentCount }}</td>
+                  <td class="actions-cell">
+                    <span class="row-actions">
+                      <button
+                        class="icon"
+                        type="button"
+                        [attr.aria-label]="'common.edit' | t"
+                        [title]="'common.edit' | t"
+                        (click)="startEdit(building)"
+                      >
+                        <bms-icon name="edit" />
+                      </button>
+                      <button
+                        class="icon danger"
+                        type="button"
+                        [attr.aria-label]="'common.delete' | t"
+                        [title]="'common.delete' | t"
+                        (click)="remove(building)"
+                      >
+                        <bms-icon name="trash" />
+                      </button>
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
       }
 
       @if (error()) {
-        <p class="notice">{{ error() }}</p>
+        <p class="notice" role="alert"><bms-icon name="alert" />{{ error() }}</p>
       }
     </section>
 
     @if (editing()) {
-      <div class="scrim" (click)="cancel()">
-        <div class="panel" (click)="$event.stopPropagation()">
-          <header>
-            <h2>{{ (editingId() ? 'buildings.editTitle' : 'buildings.add') | t }}</h2>
-          </header>
-          <div class="body">
-            <div class="field">
-              <label for="name">{{ 'common.name' | t }}</label>
-              <input id="name" name="name" [(ngModel)]="form.name" placeholder="Hauptstrasse 1" />
-            </div>
-            <div class="grid-2">
-              <div class="field">
-                <label for="street">{{ 'buildings.street' | t }}</label>
-                <input id="street" name="street" [(ngModel)]="form.street" />
-              </div>
-              <div class="field">
-                <label for="postalCode">{{ 'buildings.postalCode' | t }}</label>
-                <input id="postalCode" name="postalCode" [(ngModel)]="form.postalCode" />
-              </div>
-              <div class="field">
-                <label for="city">{{ 'buildings.city' | t }}</label>
-                <input id="city" name="city" [(ngModel)]="form.city" />
-              </div>
-              <div class="field">
-                <label for="country">{{ 'buildings.country' | t }}</label>
-                <input id="country" name="country" [(ngModel)]="form.country" />
-              </div>
-            </div>
-            <div class="field">
-              <label for="notes">{{ 'common.notes' | t }}</label>
-              <textarea id="notes" name="notes" rows="3" [(ngModel)]="form.notes"></textarea>
-            </div>
-          </div>
-          <footer>
-            <button type="button" (click)="cancel()">{{ 'common.cancel' | t }}</button>
-            <button class="primary" type="button" [disabled]="!form.name.trim()" (click)="save()">
-              {{ (editingId() ? 'common.saveChanges' : 'buildings.add') | t }}
-            </button>
-          </footer>
+      <bms-dialog [heading]="(editingId() ? 'buildings.editTitle' : 'buildings.add') | t" (closed)="cancel()">
+        <div class="field">
+          <label for="name">{{ 'common.name' | t }}</label>
+          <input id="name" name="name" [(ngModel)]="form.name" placeholder="Hauptstrasse 1" />
         </div>
-      </div>
+        <div class="grid-2">
+          <div class="field">
+            <label for="street">{{ 'buildings.street' | t }}</label>
+            <input id="street" name="street" [(ngModel)]="form.street" />
+          </div>
+          <div class="field">
+            <label for="postalCode">{{ 'buildings.postalCode' | t }}</label>
+            <input id="postalCode" name="postalCode" [(ngModel)]="form.postalCode" />
+          </div>
+          <div class="field">
+            <label for="city">{{ 'buildings.city' | t }}</label>
+            <input id="city" name="city" [(ngModel)]="form.city" />
+          </div>
+          <div class="field">
+            <label for="country">{{ 'buildings.country' | t }}</label>
+            <input id="country" name="country" [(ngModel)]="form.country" />
+          </div>
+        </div>
+        <div class="field">
+          <label for="notes">{{ 'common.notes' | t }}</label>
+          <textarea id="notes" name="notes" rows="3" [(ngModel)]="form.notes"></textarea>
+        </div>
+        <ng-container actions>
+          <button type="button" (click)="cancel()">{{ 'common.cancel' | t }}</button>
+          <button class="primary" type="button" [disabled]="!form.name.trim()" (click)="save()">
+            {{ (editingId() ? 'common.saveChanges' : 'buildings.add') | t }}
+          </button>
+        </ng-container>
+      </bms-dialog>
     }
   `,
 })
 export class BuildingsPage {
   private api = inject(BuildingsApi);
+  private apartmentsApi = inject(ApartmentsApi);
   private i18n = inject(TranslationService);
+  private confirm = inject(ConfirmService);
+  private toasts = inject(ToastService);
+
+  /** The facades need the apartments, which an assistant may not be allowed to read. */
+  protected readonly seesApartments = inject(SessionService).can('APARTMENT_READ');
 
   protected readonly buildings = rxResource({ stream: () => this.api.list() });
+  protected readonly apartments = rxResource({
+    params: () => (this.seesApartments ? {} : undefined),
+    stream: () => this.apartmentsApi.list(),
+    defaultValue: [],
+  });
+
   protected readonly editing = signal(false);
   protected readonly editingId = signal<string | null>(null);
   protected readonly error = signal<string | null>(null);
   protected form: BuildingForm = blank();
+
+  private readonly unitsByBuilding = computed(() => {
+    const units = new Map<string, Unit[]>();
+    for (const apartment of this.apartments.value()) {
+      units.set(apartment.buildingId, [...(units.get(apartment.buildingId) ?? []), apartment]);
+    }
+    return units;
+  });
+
+  protected unitsOf(buildingId: string): Unit[] {
+    return this.unitsByBuilding().get(buildingId) ?? [];
+  }
 
   protected address(building: Building): string {
     return [building.street, [building.postalCode, building.city].filter(Boolean).join(' '), building.country]
@@ -174,18 +225,25 @@ export class BuildingsPage {
     const id = this.editingId();
     const request = id ? this.api.update(id, this.form) : this.api.create(this.form);
     request.subscribe({
-      next: () => {
+      next: (saved) => {
         this.editing.set(false);
         this.error.set(null);
+        this.toasts.show(this.i18n.translate('toast.saved', { name: saved.name }));
         this.buildings.reload();
       },
       error: () => this.error.set(this.i18n.translate('buildings.saveFailed')),
     });
   }
 
-  protected remove(building: Building): void {
+  protected async remove(building: Building): Promise<void> {
+    if (!(await this.confirm.delete(building.name))) {
+      return;
+    }
     this.api.remove(building.id).subscribe({
-      next: () => this.buildings.reload(),
+      next: () => {
+        this.toasts.show(this.i18n.translate('toast.deleted', { name: building.name }));
+        this.buildings.reload();
+      },
       error: () =>
         this.error.set(this.i18n.translate('buildings.deleteFailed', { name: building.name })),
     });

@@ -5,7 +5,12 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { ApartmentsApi, TenantsApi } from '../core/api';
 import { TranslationService } from '../core/i18n';
 import { Tenant } from '../core/models';
+import { ConfirmService } from '../shared/confirm';
+import { Dialog } from '../shared/dialog';
+import { Facade } from '../shared/facade';
+import { Icon } from '../shared/icon';
 import { DayPipe, MoneyPipe } from '../shared/money.pipe';
+import { ToastService } from '../shared/toasts';
 import { TranslatePipe } from '../shared/translate.pipe';
 
 interface TenantForm {
@@ -32,7 +37,7 @@ const blank = (): TenantForm => ({
 
 @Component({
   selector: 'bms-tenants',
-  imports: [FormsModule, MoneyPipe, DayPipe, TranslatePipe],
+  imports: [FormsModule, Dialog, Facade, Icon, MoneyPipe, DayPipe, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="band">
@@ -42,6 +47,7 @@ const blank = (): TenantForm => ({
           <p>{{ 'tenants.subtitle' | t }}</p>
         </div>
         <button class="primary" type="button" [disabled]="!hasApartments()" (click)="startCreate()">
+          <bms-icon name="plus" />
           {{ 'tenants.add' | t }}
         </button>
       </div>
@@ -50,135 +56,151 @@ const blank = (): TenantForm => ({
         <p class="loading">{{ 'tenants.loading' | t }}</p>
       } @else if (!hasApartments()) {
         <div class="empty">
-          <h3>{{ 'tenants.needApartmentTitle' | t }}</h3>
-          <p>{{ 'tenants.needApartmentBody' | t }}</p>
+          <bms-facade [units]="[]" [scale]="2" />
+          <div>
+            <h3>{{ 'tenants.needApartmentTitle' | t }}</h3>
+            <p>{{ 'tenants.needApartmentBody' | t }}</p>
+          </div>
         </div>
       } @else if (tenants.hasValue() && tenants.value()!.length === 0) {
         <div class="empty">
-          <h3>{{ 'tenants.emptyTitle' | t }}</h3>
-          <p>{{ 'tenants.emptyBody' | t }}</p>
-          <button class="primary" type="button" (click)="startCreate()">
-            {{ 'tenants.add' | t }}
-          </button>
+          <bms-facade [units]="[]" [scale]="2" />
+          <div>
+            <h3>{{ 'tenants.emptyTitle' | t }}</h3>
+            <p>{{ 'tenants.emptyBody' | t }}</p>
+            <button class="primary" type="button" (click)="startCreate()">
+              <bms-icon name="plus" />
+              {{ 'tenants.add' | t }}
+            </button>
+          </div>
         </div>
       } @else if (tenants.hasValue()) {
-        <table class="sheet">
-          <thead>
-            <tr>
-              <th>{{ 'common.name' | t }}</th>
-              <th>{{ 'tenants.unit' | t }}</th>
-              <th>{{ 'tenants.contact' | t }}</th>
-              <th>{{ 'tenants.lease' | t }}</th>
-              <th class="right">{{ 'tenants.deposit' | t }}</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody>
-            @for (tenant of tenants.value(); track tenant.id) {
+        <div class="sheet-frame">
+          <table class="sheet">
+            <thead>
               <tr>
-                <td class="strong">
-                  {{ tenant.firstName }} {{ tenant.lastName }}
-                  @if (!tenant.active) {
-                    <span class="mark">{{ 'tenants.past' | t }}</span>
-                  }
-                </td>
-                <td class="muted">{{ tenant.buildingName }} - {{ tenant.apartmentLabel }}</td>
-                <td class="muted">{{ tenant.email || tenant.phone || '-' }}</td>
-                <td class="muted">
-                  {{ tenant.leaseStart | day }}
-                  @if (tenant.leaseEnd) {
-                    - {{ tenant.leaseEnd | day }}
-                  } @else {
-                    {{ 'tenants.onwards' | t }}
-                  }
-                </td>
-                <td class="right">{{ tenant.deposit | money }}</td>
-                <td class="right">
-                  <button class="quiet" type="button" (click)="startEdit(tenant)">
-                    {{ 'common.edit' | t }}
-                  </button>
-                  <button class="quiet danger" type="button" (click)="remove(tenant)">
-                    {{ 'common.delete' | t }}
-                  </button>
-                </td>
+                <th>{{ 'common.name' | t }}</th>
+                <th>{{ 'tenants.unit' | t }}</th>
+                <th>{{ 'tenants.contact' | t }}</th>
+                <th>{{ 'tenants.lease' | t }}</th>
+                <th class="right">{{ 'tenants.deposit' | t }}</th>
+                <th><span class="visually-hidden">{{ 'common.actions' | t }}</span></th>
               </tr>
-            }
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              @for (tenant of tenants.value(); track tenant.id) {
+                <tr>
+                  <td class="strong">
+                    {{ tenant.firstName }} {{ tenant.lastName }}
+                    @if (!tenant.active) {
+                      <span class="mark">{{ 'tenants.past' | t }}</span>
+                    }
+                  </td>
+                  <td class="muted">{{ tenant.buildingName }} - {{ tenant.apartmentLabel }}</td>
+                  <td class="muted">{{ tenant.email || tenant.phone || '-' }}</td>
+                  <td class="muted">
+                    {{ tenant.leaseStart | day }}
+                    @if (tenant.leaseEnd) {
+                      - {{ tenant.leaseEnd | day }}
+                    } @else {
+                      {{ 'tenants.onwards' | t }}
+                    }
+                  </td>
+                  <td class="right">{{ tenant.deposit | money }}</td>
+                  <td class="actions-cell">
+                    <span class="row-actions">
+                      <button
+                        class="icon"
+                        type="button"
+                        [attr.aria-label]="'common.edit' | t"
+                        [title]="'common.edit' | t"
+                        (click)="startEdit(tenant)"
+                      >
+                        <bms-icon name="edit" />
+                      </button>
+                      <button
+                        class="icon danger"
+                        type="button"
+                        [attr.aria-label]="'common.delete' | t"
+                        [title]="'common.delete' | t"
+                        (click)="remove(tenant)"
+                      >
+                        <bms-icon name="trash" />
+                      </button>
+                    </span>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
       }
 
       @if (error()) {
-        <p class="notice">{{ error() }}</p>
+        <p class="notice" role="alert"><bms-icon name="alert" />{{ error() }}</p>
       }
     </section>
 
     @if (editing()) {
-      <div class="scrim" (click)="cancel()">
-        <div class="panel" (click)="$event.stopPropagation()">
-          <header>
-            <h2>{{ (editingId() ? 'tenants.editTitle' : 'tenants.add') | t }}</h2>
-          </header>
-          <div class="body">
-            @if (!editingId()) {
-              <div class="field">
-                <label for="apartment">{{ 'common.apartment' | t }}</label>
-                <select id="apartment" [(ngModel)]="targetApartmentId">
-                  @for (apartment of apartments.value(); track apartment.id) {
-                    <option [value]="apartment.id">
-                      {{ apartment.buildingName }} - {{ apartment.label }}
-                    </option>
-                  }
-                </select>
-              </div>
-            }
-            <div class="grid-2">
-              <div class="field">
-                <label for="firstName">{{ 'common.firstName' | t }}</label>
-                <input id="firstName" [(ngModel)]="form.firstName" />
-              </div>
-              <div class="field">
-                <label for="lastName">{{ 'common.lastName' | t }}</label>
-                <input id="lastName" [(ngModel)]="form.lastName" />
-              </div>
-              <div class="field">
-                <label for="email">{{ 'common.email' | t }}</label>
-                <input id="email" type="email" [(ngModel)]="form.email" />
-              </div>
-              <div class="field">
-                <label for="phone">{{ 'tenants.phone' | t }}</label>
-                <input id="phone" [(ngModel)]="form.phone" />
-              </div>
-              <div class="field">
-                <label for="leaseStart">{{ 'tenants.leaseStart' | t }}</label>
-                <input id="leaseStart" type="date" [(ngModel)]="form.leaseStart" />
-              </div>
-              <div class="field">
-                <label for="leaseEnd">{{ 'tenants.leaseEnd' | t }}</label>
-                <input id="leaseEnd" type="date" [(ngModel)]="form.leaseEnd" />
-              </div>
-              <div class="field">
-                <label for="deposit">{{ 'tenants.deposit' | t }}</label>
-                <input id="deposit" type="number" step="0.01" [(ngModel)]="form.deposit" />
-              </div>
-            </div>
-            <div class="check">
-              <input id="active" type="checkbox" [(ngModel)]="form.active" />
-              <label for="active">{{ 'tenants.living' | t }}</label>
-            </div>
+      <bms-dialog [heading]="(editingId() ? 'tenants.editTitle' : 'tenants.add') | t" (closed)="cancel()">
+        @if (!editingId()) {
+          <div class="field">
+            <label for="apartment">{{ 'common.apartment' | t }}</label>
+            <select id="apartment" [(ngModel)]="targetApartmentId">
+              @for (apartment of apartments.value(); track apartment.id) {
+                <option [value]="apartment.id">
+                  {{ apartment.buildingName }} - {{ apartment.label }}
+                </option>
+              }
+            </select>
           </div>
-          <footer>
-            <button type="button" (click)="cancel()">{{ 'common.cancel' | t }}</button>
-            <button
-              class="primary"
-              type="button"
-              [disabled]="!form.firstName.trim() || !form.lastName.trim()"
-              (click)="save()"
-            >
-              {{ (editingId() ? 'common.saveChanges' : 'tenants.add') | t }}
-            </button>
-          </footer>
+        }
+        <div class="grid-2">
+          <div class="field">
+            <label for="firstName">{{ 'common.firstName' | t }}</label>
+            <input id="firstName" [(ngModel)]="form.firstName" />
+          </div>
+          <div class="field">
+            <label for="lastName">{{ 'common.lastName' | t }}</label>
+            <input id="lastName" [(ngModel)]="form.lastName" />
+          </div>
+          <div class="field">
+            <label for="email">{{ 'common.email' | t }}</label>
+            <input id="email" type="email" [(ngModel)]="form.email" />
+          </div>
+          <div class="field">
+            <label for="phone">{{ 'tenants.phone' | t }}</label>
+            <input id="phone" [(ngModel)]="form.phone" />
+          </div>
+          <div class="field">
+            <label for="leaseStart">{{ 'tenants.leaseStart' | t }}</label>
+            <input id="leaseStart" type="date" [(ngModel)]="form.leaseStart" />
+          </div>
+          <div class="field">
+            <label for="leaseEnd">{{ 'tenants.leaseEnd' | t }}</label>
+            <input id="leaseEnd" type="date" [(ngModel)]="form.leaseEnd" />
+          </div>
+          <div class="field">
+            <label for="deposit">{{ 'tenants.deposit' | t }}</label>
+            <input id="deposit" type="number" step="0.01" [(ngModel)]="form.deposit" />
+          </div>
         </div>
-      </div>
+        <div class="check">
+          <input id="active" type="checkbox" [(ngModel)]="form.active" />
+          <label for="active">{{ 'tenants.living' | t }}</label>
+        </div>
+        <ng-container actions>
+          <button type="button" (click)="cancel()">{{ 'common.cancel' | t }}</button>
+          <button
+            class="primary"
+            type="button"
+            [disabled]="!form.firstName.trim() || !form.lastName.trim()"
+            (click)="save()"
+          >
+            {{ (editingId() ? 'common.saveChanges' : 'tenants.add') | t }}
+          </button>
+        </ng-container>
+      </bms-dialog>
     }
   `,
 })
@@ -186,6 +208,8 @@ export class TenantsPage {
   private api = inject(TenantsApi);
   private apartmentsApi = inject(ApartmentsApi);
   private i18n = inject(TranslationService);
+  private confirm = inject(ConfirmService);
+  private toasts = inject(ToastService);
 
   protected readonly editing = signal(false);
   protected readonly editingId = signal<string | null>(null);
@@ -237,9 +261,12 @@ export class TenantsPage {
       ? this.api.update(id, body)
       : this.api.create(this.targetApartmentId, body);
     request.subscribe({
-      next: () => {
+      next: (saved) => {
         this.editing.set(false);
         this.error.set(null);
+        this.toasts.show(
+          this.i18n.translate('toast.saved', { name: `${saved.firstName} ${saved.lastName}` }),
+        );
         this.tenants.reload();
       },
       error: (response) =>
@@ -247,10 +274,16 @@ export class TenantsPage {
     });
   }
 
-  protected remove(tenant: Tenant): void {
+  protected async remove(tenant: Tenant): Promise<void> {
     const name = `${tenant.firstName} ${tenant.lastName}`;
+    if (!(await this.confirm.delete(name))) {
+      return;
+    }
     this.api.remove(tenant.id).subscribe({
-      next: () => this.tenants.reload(),
+      next: () => {
+        this.toasts.show(this.i18n.translate('toast.deleted', { name }));
+        this.tenants.reload();
+      },
       error: () => this.error.set(this.i18n.translate('tenants.deleteFailed', { name })),
     });
   }
