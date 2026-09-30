@@ -39,7 +39,11 @@ class ReadOnlyIntegrationTest extends AbstractIntegrationTest {
     private static final RequestPostProcessor OTHER_OWNER = asUser("owner-b", "owner-b@example.com");
     private static final RequestPostProcessor ASSISTANT = asAssistant("assistant-a", "assistant-a@example.com");
 
-    /** Writes that belong to no owner's data, and so are never refused for a subscription. */
+    /**
+     * Writes that belong to no owner's data, and so are never refused for a
+     * subscription. The administrator's own endpoints under /api/admin are left
+     * out as a whole.
+     */
     private static final Set<String> NOT_OWNER_DATA = Set.of(
             "POST /api/auth/register",
             "POST /api/auth/password");
@@ -87,7 +91,7 @@ class ReadOnlyIntegrationTest extends AbstractIntegrationTest {
         mappings.getHandlerMethods().keySet().forEach(info -> info.getMethodsCondition().getMethods().stream()
                 .filter(method -> !method.name().equals("GET"))
                 .forEach(method -> info.getPathPatternsCondition().getPatternValues().stream()
-                        .filter(pattern -> pattern.startsWith("/api/"))
+                        .filter(pattern -> pattern.startsWith("/api/") && !pattern.startsWith("/api/admin/"))
                         .forEach(pattern -> routed.add(method.name() + " " + pattern))));
         routed.removeAll(NOT_OWNER_DATA);
 

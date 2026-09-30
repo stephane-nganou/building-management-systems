@@ -13,6 +13,8 @@ public interface AssistantAssignmentRepository extends JpaRepository<AssistantAs
 
     List<AssistantAssignment> findByAssistantId(UUID assistantId);
 
+    long countByOwnerId(UUID ownerId);
+
     Optional<AssistantAssignment> findByOwnerIdAndAssistantId(UUID ownerId, UUID assistantId);
 
     @Query("""

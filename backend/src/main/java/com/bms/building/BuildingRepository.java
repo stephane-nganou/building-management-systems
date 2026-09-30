@@ -11,5 +11,7 @@ public interface BuildingRepository extends JpaRepository<Building, UUID> {
 
     List<Building> findByOwnerIdInOrderByNameAsc(Collection<UUID> ownerIds);
 
+    long countByOwnerId(UUID ownerId);
+
     Optional<Building> findByIdAndOwnerIdIn(UUID id, Collection<UUID> ownerIds);
 }

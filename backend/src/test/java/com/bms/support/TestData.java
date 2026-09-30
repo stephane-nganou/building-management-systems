@@ -63,12 +63,17 @@ public class TestData {
     }
 
     /** Replaces the owner's subscription with one that ended yesterday. */
-    @Transactional
     public void expire(String keycloakId) {
+        LocalDate today = LocalDate.now();
+        setPeriod(keycloakId, today.minusDays(60), today.minusDays(1));
+    }
+
+    /** Replaces the owner's subscription with the one period given. */
+    @Transactional
+    public void setPeriod(String keycloakId, LocalDate startsOn, LocalDate endsOn) {
         AppUser owner = users.findByKeycloakId(keycloakId).orElseThrow();
         periods.deleteAll(periods.findByOwnerIdOrderByStartsOnDesc(owner.getId()));
-        LocalDate today = LocalDate.now();
-        periods.save(new SubscriptionPeriod(owner, today.minusDays(60), today.minusDays(1), "Lapsed"));
+        periods.save(new SubscriptionPeriod(owner, startsOn, endsOn, null));
     }
 
     @Transactional
