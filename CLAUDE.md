@@ -42,4 +42,10 @@ When instructed to build a feature:
 
 ## Implementation status
 
-@docs/IMPLEMENTATION_STATUS.md
+`docs/IMPLEMENTATION_STATUS.md` is the per-ticket history: one `### BM-nn`
+section per Jira ticket (~80 of them, ~360k tokens), each recording what was
+decided and why, what was measured, and what bit. **Never read it whole.** When
+a ticket touches an area, grep it for the ticket ids, routes or files involved
+and read only those sections. Its "Standing notes" at the top hold the
+verification conventions every section used to repeat. When a ticket is done,
+append its section there.
