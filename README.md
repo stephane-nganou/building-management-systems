@@ -30,7 +30,7 @@ New landlords sign up at http://localhost:4200/register, reachable from
 **Register here** on the sign in page. Demo sign in:
 `owner` / `owner`, `assistant` / `assistant`, or `admin` / `admin` for the
 administrator of the service (a user of the `bms` realm, not Keycloak's own
-console admin). These live in `docker/keycloak/realm-bms.json` and exist for
+console admin). These live in `docker/keycloak/users-demo.json` and exist for
 local development only.
 
 The app opens in French for a French browser and English for anything else;
@@ -50,6 +50,12 @@ hand:
 ```bash
 node scripts/sync-realm.mjs
 ```
+
+## Production
+
+`docker-compose.prod.yml` serves everything on one domain behind Caddy, with
+HTTPS from Let's Encrypt, nightly database backups and no demo accounts. See
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
 
 ## Stack
 

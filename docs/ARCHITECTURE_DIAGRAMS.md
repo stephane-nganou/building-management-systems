@@ -90,6 +90,43 @@ Three details here have caused real problems and are pinned deliberately:
   `docker/keycloak/realm-bms.json` changes nothing on a stack that has already
   started; `node scripts/sync-realm.mjs` applies it to a running instance.
 
+### In production
+
+`docker-compose.prod.yml` puts Caddy in front and closes everything else. The
+browser meets one origin even on the sign in page, since Keycloak is served
+under `/auth` on the application's own domain. Caddy sends `/api` to the
+backend itself rather than through nginx, so the backend sees Caddy's
+`X-Forwarded-Proto: https` and marks its cookies Secure.
+
+```mermaid
+flowchart TB
+    browser["Browser"]
+    ops["Operator<br/>over an SSH tunnel"]
+
+    subgraph host["Docker host, project hausbuch"]
+        caddy["caddy :80 :443<br/>Let's Encrypt, security headers"]
+        fe["frontend<br/>nginx, the bundle"]
+        be["backend :8080"]
+        kc["keycloak :8080 under /auth<br/>start, proxy headers"]
+        sync["keycloak-sync<br/>realm + users-prod.json, then exits"]
+        db[("postgres<br/>bms + keycloak")]
+        backup["backup<br/>pg_dump 02:00 UTC"]
+        dumps[("./backups")]
+    end
+
+    browser -->|"https://BMS_DOMAIN"| caddy
+    caddy -->|"/api/*"| be
+    caddy -->|"/auth/*, not admin or master"| kc
+    caddy -->|"everything else"| fe
+    ops -.->|"127.0.0.1:8081/auth/admin"| kc
+    sync -->|"admin REST API"| kc
+    be -->|"http://keycloak:8080/auth"| kc
+    be --> db
+    kc --> db
+    backup --> db
+    backup --> dumps
+```
+
 ## 2. Backend layers and packages
 
 The backend is packaged by feature, not by layer: `com.bms.invoice` holds the
