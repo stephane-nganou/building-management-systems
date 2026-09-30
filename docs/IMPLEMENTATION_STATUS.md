@@ -1,6 +1,6 @@
 # Implementation status
 
-Last updated: 2026-09-30, after BM-13 (a new look for the app, the sign in page and the invoice PDF).
+Last updated: 2026-09-30, after BM-14 (an administrator, and subscriptions bound to time).
 
 The architecture is drawn out in
 [ARCHITECTURE_DIAGRAMS.md](ARCHITECTURE_DIAGRAMS.md): containers, backend and
@@ -20,6 +20,8 @@ main flow. This file records what is built and why it is built that way.
 | Assistant accounts | Done | The owner creates them; a password is returned once, and the app makes the assistant replace it on its own screen |
 | Permission aware UI | Done | `canMatch` guards and a filtered sidebar; a denied screen is never downloaded |
 | Owner and assistant access | Done | Per owner scoping plus 11 delegatable permissions |
+| Subscriptions | Done | Dated periods per owner, a 30 day trial to start; outside every period the owner's data is read only, for them and their assistants |
+| Administrator | Done | `admin` realm role and an **Accounts** screen: sign owners up, add or end periods, suspend and reactivate |
 | Buildings | Done | Full CRUD, API and UI |
 | Apartments | Done | Full CRUD with room layout, rent and status; unique label per building |
 | Tenants | Done | Full CRUD, lease dates, deposit, one active tenant per apartment |
@@ -54,7 +56,14 @@ end to end suite still passes on a throwaway stack. For BM-13, against the
 development stack: every screen at 1440 wide in light and dark and at 390 wide
 on a phone, each dialog, the delete confirmation and the drawer, the sign in page
 in both languages, and an invoice PDF in both languages, read back with PyMuPDF
-for its embedded fonts and rendered to check the layout.
+for its embedded fonts and rendered to check the layout. For BM-14, against the
+development stack and its existing data: V3 and V4 applied, every non-assistant
+got a trial, and the sync added the `admin` role and user to the realm on the
+first start and skipped all six on the second. Signed in as `admin`, landed on
+Accounts alone, ended the demo owner's subscription, then signed in as that
+owner and saw the banner and a refused building with the backend's reason. The
+Keycloak disable call was replayed against Keycloak 26.7 itself: a `PUT` of
+`{"enabled": false}` answers 204 and leaves email, names and roles untouched.
 
 ## Tests
 
@@ -68,14 +77,18 @@ for its embedded fonts and rendered to check the layout.
   same user and roles a bearer token does, an unauthenticated call is refused
   rather than redirected, the forgery token is required of a session and not of
   a token, and the handed over password obligation is set and cleared. The
-  Keycloak admin client is mocked there.
-- Frontend: 38 unit tests, for the formatting pipes, the translation service and
+  Keycloak admin client is mocked there. `ReadOnlyIntegrationTest` sends every
+  write the API has as a lapsed owner and expects the refusal, and fails if a
+  non-GET route exists that its list does not name, so a new write endpoint
+  cannot quietly skip the check. Now 77 tests.
+- Frontend: 47 unit tests, for the formatting pipes, the translation service and
   its dictionaries, how a facade stacks apartments into floors and lights them,
   the delete confirmation and the toasts, and for the session and route guard logic that decides which
   screens exist, including that a refused profile is what "signed out" means and
   that an account owing us a password reaches no screen but the one that takes
-  it.
-- End to end: 8 Playwright specs against the running stack, covering the link
+  it, and that an administrator and a suspended account each see only theirs.
+- End to end: 9 Playwright specs against the running stack, covering an
+  administrator signing an owner up and ending their subscription, the link
   from the sign in page to registration, signing up and landing on a full
   portfolio, the duplicate email refusal, an owner creating an assistant who
   then has to choose a password and sees only their one granted screen, adding a
@@ -325,7 +338,65 @@ for its embedded fonts and rendered to check the layout.
   street, as the app's own register page is. The realm is now shown as
   Hausbuch.
 
+- **A subscription is a history of dated periods, both ends included (BM-14).**
+  An owner may change their data on a day some period covers; outside every
+  period it is read only, for them and for every assistant working for them.
+  There are no plans or prices, and no payment: an administrator records what
+  was paid for. "Extend" is adding the next period, so the history stays.
+
+- **An owner is anyone who has ever had a period (BM-14).** Roles live in
+  Keycloak, not in our database, so the administrator's list needs a mark of
+  its own. Every way an owner comes to exist gives them a trial: registration,
+  an administrator signing them up, and the first request of an owner made in
+  Keycloak directly, the seeded demo owner among them. Nothing ever deletes a
+  period, because that would take the owner off the list where they are
+  renewed. Ending a period on the day it began cuts it to end the day before it
+  starts, which covers no day, and V4 lets the check constraint hold that.
+
+- **The migration had to guess, and the token corrects it (BM-14).** V3 gave a
+  trial to everyone who is nobody's assistant, which also caught an assistant
+  never assigned or since revoked. When anyone whose token does not make them
+  an owner makes a request, any period they hold is removed.
+
+- **Read only is enforced where each record is loaded for writing (BM-14).**
+  Every write already went through its service's `require(id, permission)`
+  with a `*_WRITE` permission, and that now asks
+  `AccessControl.requireWritable` about the record's owner. Building creation
+  and assistant management act on the caller's own account and ask directly.
+  It is per owner: an assistant for one lapsed and one paying owner keeps
+  working for the second. The refusal is a 403 whose `detail` explains it, and
+  the screens now show `detail` when a change is refused, where several showed
+  only a generic line.
+
+- **Suspension is refused in an interceptor, not by Keycloak alone (BM-14).**
+  Disabling the account in Keycloak stops new sign ins, but a browser session
+  lives in the backend and would carry on. `SuspensionInterceptor` refuses a
+  suspended account every endpoint but `/api/me`, which the application needs
+  in order to show why. An interceptor rather than a filter, because it runs
+  after the request's language is resolved and its exception reaches
+  `ApiExceptionHandler` like any other. Keycloak is changed first, so a refusal
+  there leaves our record as it was.
+
+- **An administrator is not an owner (BM-14).** `Roles.isOwner` treats a token
+  that says `admin` like one that says `assistant`, so an administrator gets no
+  trial, no owner screens and nothing they could change. `/api/admin/**` needs
+  `ROLE_ADMIN` in `SecurityConfig`, the first role rule the chain has.
+
+- **The sync adds seeded users that are missing (BM-14).** The seeded
+  administrator came after realms already existed. Users go through the same
+  `SKIP` pass as roles, so a missing one is created and an existing one, with
+  its id and its buildings, is never replaced. The service account is left to
+  its own step.
+
+- **A bare date is a calendar day (BM-14).** `new Date('2026-10-29')` is UTC
+  midnight, which is the 28th anywhere west of Greenwich, so `DayPipe` read
+  every due date, lease date and subscription end a day early there. A date
+  with no time is now read as local midnight.
+
 ## Not built yet
+
+- Payment. An administrator records periods by hand; nothing charges an owner
+  or renews a subscription on its own, and nobody is told before one runs out.
 
 - Sender constrained tokens. DPoP would make a stolen access token useless to
   anyone but its holder, which is the remaining hardening for the clients that
@@ -396,6 +467,14 @@ for its embedded fonts and rendered to check the layout.
   adds. Everything else on the sign in page comes from Keycloak's own bundles,
   which ship both languages; a third language would need only a realm setting
   and one small file.
+- "Today" for a subscription is the backend's clock, which is UTC in the
+  container, so a period runs out at midnight UTC rather than at the owner's own
+  midnight.
+- The administrator's list asks for each owner's standing and counts one owner
+  at a time, a handful of queries each. Fine for tens of customers, worth one
+  grouped query before thousands.
+- A write button stays on screen while an owner's data is read only; pressing it
+  shows why it was refused, and the banner says so up front.
 - Native `<input type="date">` controls follow the browser's own locale, not the
   app's, so a date field can show a different separator from the dates in the
   table beside it.
