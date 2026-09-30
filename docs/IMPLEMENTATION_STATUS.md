@@ -1,6 +1,6 @@
 # Implementation status
 
-Last updated: 2026-09-30, after BM-14 (an administrator, and subscriptions bound to time).
+Last updated: 2026-09-30, after BM-12 (three themes to choose from).
 
 The architecture is drawn out in
 [ARCHITECTURE_DIAGRAMS.md](ARCHITECTURE_DIAGRAMS.md): containers, backend and
@@ -30,6 +30,7 @@ main flow. This file records what is built and why it is built that way.
 | Profit and loss | Done | Per building and total, expense breakdown by category |
 | Dashboard | Done | Portfolio counts, rent roll, year to date position |
 | Visual design | Done | "Lights on": Mona Sans served from our own origin, a night and lamplight palette, and each building drawn as its floors with a lit window per let apartment. The sign in page and the invoice PDF match |
+| Themes | Done | Classic, Magic and Ocean blue, chosen from the sidebar or the gate and remembered in the browser; Classic still follows the system's light or dark |
 | English and French | Done | Every screen, API error, sign in page and invoice PDF |
 | API documentation | Done | OpenAPI at `/swagger-ui.html` |
 | Architecture diagrams | Done | `docs/ARCHITECTURE_DIAGRAMS.md`, Mermaid, rendered by GitHub |
@@ -64,6 +65,12 @@ Accounts alone, ended the demo owner's subscription, then signed in as that
 owner and saw the banner and a refused building with the backend's reason. The
 Keycloak disable call was replayed against Keycloak 26.7 itself: a `PUT` of
 `{"enabled": false}` answers 204 and leaves email, names and roles untouched.
+For BM-12, against the development stack: every screen at 1440 wide in light
+and dark and at 390 wide on a phone, shot before and after the colours moved
+into tokens and compared pixel by pixel. Classic came out identical but for the
+switcher's own row and 2/255 of anti-aliasing noise on one select, which two
+shots of the same build also show. Then the same screens in Magic and in Ocean
+blue, with the system set to light and to dark.
 
 ## Tests
 
@@ -81,18 +88,20 @@ Keycloak disable call was replayed against Keycloak 26.7 itself: a `PUT` of
   write the API has as a lapsed owner and expects the refusal, and fails if a
   non-GET route exists that its list does not name, so a new write endpoint
   cannot quietly skip the check. Now 77 tests.
-- Frontend: 47 unit tests, for the formatting pipes, the translation service and
-  its dictionaries, how a facade stacks apartments into floors and lights them,
+- Frontend: 51 unit tests, for the formatting pipes, the translation service and
+  its dictionaries, the theme service, how a facade stacks apartments into floors and lights them,
   the delete confirmation and the toasts, and for the session and route guard logic that decides which
   screens exist, including that a refused profile is what "signed out" means and
   that an account owing us a password reaches no screen but the one that takes
   it, and that an administrator and a suspended account each see only theirs.
-- End to end: 9 Playwright specs against the running stack, covering an
+- End to end: 11 Playwright specs against the running stack, covering an
   administrator signing an owner up and ending their subscription, the link
   from the sign in page to registration, signing up and landing on a full
   portfolio, the duplicate email refusal, an owner creating an assistant who
   then has to choose a password and sees only their one granted screen, adding a
-  building with an apartment in it, switching the app to French and back, a
+  building with an apartment in it, switching the app to French and back,
+  choosing a theme in the app and on the registration page and finding it kept
+  after a reload, a
   French browser landing on a French registration page, and a walk through every
   screen that watches the wire and fails if any request leaves our own origin,
   a font or a stylesheet included, or anything at all reaches Keycloak. `scripts/e2e` starts the
@@ -388,6 +397,22 @@ Keycloak disable call was replayed against Keycloak 26.7 itself: a `PUT` of
   its id and its buildings, is never replaced. The service account is left to
   its own step.
 
+- **A theme is a set of tokens, not a stylesheet of its own (BM-12).** Every
+  colour the rail, the street, the toast, the focus ring and the logo used to
+  hardcode is now a token in `tokens.css`, and `themes.css` overrides them
+  under `:root[data-theme]`, with radii, shadows and a texture. One stylesheet
+  per theme would have repeated some 1,400 lines and fetched on every switch.
+  The lit window keeps its meaning in all three: candlelight under the stars
+  in Magic, noon sun over the harbour in Ocean blue. Neither new theme follows
+  the system's light or dark setting, so Classic's dark block names the others
+  to stay out of their way, and a fourth theme has to be added there too.
+
+- **The theme is set before the first paint (BM-12).** A one line script in
+  `index.html` copies `bms.theme` from `localStorage` onto `<html>`, so a
+  dark theme never flashes light while the bundle loads. `ThemeService` owns
+  the choice after that. It lives in the browser, like the language: a new
+  browser starts on Classic.
+
 - **A bare date is a calendar day (BM-14).** `new Date('2026-10-29')` is UTC
   midnight, which is the 28th anywhere west of Greenwich, so `DayPipe` read
   every due date, lease date and subscription end a day early there. A date
@@ -475,6 +500,9 @@ Keycloak disable call was replayed against Keycloak 26.7 itself: a `PUT` of
   grouped query before thousands.
 - A write button stays on screen while an owner's data is read only; pressing it
   shows why it was refused, and the banner says so up front.
+- The sign in page and the invoice PDF stay Classic whatever the theme. The
+  sign in page is Keycloak's and cannot read our storage, and an invoice is a
+  document for the tenant rather than a view for the owner.
 - Native `<input type="date">` controls follow the browser's own locale, not the
   app's, so a date field can show a different separator from the dates in the
   table beside it.

@@ -54,6 +54,26 @@
   --window-dark: #d5d8e3;
   --window-frame: #1c1f3a;
   --wash: rgb(28 31 58 / 0.5);
+  --focus-edge: var(--night);
+  --toast: var(--night);
+  --toast-ink: #ffffff;
+  --toast-icon: var(--lamplight);
+
+  /* the rail and the street: at dusk whatever the page around them */
+  --rail-texture: none;
+  --dusk: radial-gradient(120% 90% at 85% 0%, #2d3262 0%, transparent 60%),
+    linear-gradient(180deg, #1c1f3a 0%, #232748 100%);
+  --dusk-ink: #eceef8;
+  --dusk-bright: #ffffff;
+  --dusk-pos: #6fd6a3;
+  --dusk-neg: #ff9a8c;
+  --dusk-edge: none;
+  --pavement: #3b4166;
+  --dusk-body: #272b4d;
+  --dusk-frame: #4a5080;
+  --dusk-trim: #8b90ad;
+  --dusk-window: #171a33;
+  --dusk-unlit: #3b4166;
 
   --font: 'Mona Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --wide: 118%;
@@ -76,8 +96,9 @@
   color-scheme: light;
 }
 
+/* Classic alone follows the system; every other theme is one fixed look. */
 @media (prefers-color-scheme: dark) {
-  :root {
+  :root:not([data-theme='magic'], [data-theme='ocean']) {
     --night: #111327;
     --night-raised: #1d2140;
     --ledger: #4cc38a;
@@ -97,6 +118,11 @@
     --window-dark: #33385a;
     --window-frame: #8b90ad;
     --wash: rgb(5 6 16 / 0.66);
+    --focus-edge: var(--lamplight);
+    --toast: #eceef8;
+    --toast-ink: #1c1f3a;
+    --toast-icon: var(--night);
+    --dusk-edge: inset 0 0 0 1px rgb(255 255 255 / 0.06);
     --shadow: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px rgb(0 0 0 / 0.2);
     --shadow-lift: 0 24px 64px rgb(0 0 0 / 0.55);
 

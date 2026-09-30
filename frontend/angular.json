@@ -26,6 +26,7 @@
             ],
             "styles": [
               "src/styles/tokens.css",
+              "src/styles/themes.css",
               "src/styles/base.css",
               "src/styles/shell.css",
               "src/styles/components.css"

@@ -9,6 +9,7 @@ import { Brand } from './shared/brand';
 import { ConfirmHost } from './shared/confirm';
 import { Icon } from './shared/icon';
 import { LanguageSwitcher } from './shared/language-switcher';
+import { ThemeSwitcher } from './shared/theme-switcher';
 import { DayPipe } from './shared/money.pipe';
 import { Toasts } from './shared/toasts';
 import { TranslatePipe } from './shared/translate.pipe';
@@ -24,6 +25,7 @@ import { TranslatePipe } from './shared/translate.pipe';
     DayPipe,
     Icon,
     LanguageSwitcher,
+    ThemeSwitcher,
     Toasts,
     TranslatePipe,
   ],
@@ -75,6 +77,7 @@ import { TranslatePipe } from './shared/translate.pipe';
                 </div>
               </div>
             </div>
+            <bms-theme-switcher />
             <div class="foot-row">
               <bms-language-switcher />
               <button class="quiet" type="button" (click)="signOut()">
