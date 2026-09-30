@@ -9,6 +9,7 @@ import com.bms.apartment.ApartmentRepository;
 import com.bms.building.BuildingRepository;
 import com.bms.expense.ExpenseRepository;
 import com.bms.invoice.InvoiceRepository;
+import com.bms.subscription.SubscriptionPeriodRepository;
 import com.bms.tenant.TenantRepository;
 import com.bms.user.AppUser;
 import com.bms.user.AppUserRepository;
@@ -26,10 +27,11 @@ public class TestData {
     private final TenantRepository tenants;
     private final ExpenseRepository expenses;
     private final InvoiceRepository invoices;
+    private final SubscriptionPeriodRepository periods;
 
     public TestData(AppUserRepository users, AssistantAssignmentRepository assignments,
                     BuildingRepository buildings, ApartmentRepository apartments, TenantRepository tenants,
-                    ExpenseRepository expenses, InvoiceRepository invoices) {
+                    ExpenseRepository expenses, InvoiceRepository invoices, SubscriptionPeriodRepository periods) {
         this.users = users;
         this.assignments = assignments;
         this.buildings = buildings;
@@ -37,6 +39,7 @@ public class TestData {
         this.tenants = tenants;
         this.expenses = expenses;
         this.invoices = invoices;
+        this.periods = periods;
     }
 
     @Transactional
@@ -48,6 +51,7 @@ public class TestData {
         buildings.deleteAllInBatch();
         // Bulk delete: assistant_permission rows go with it via on delete cascade.
         assignments.deleteAllInBatch();
+        periods.deleteAllInBatch();
         users.deleteAllInBatch();
     }
 

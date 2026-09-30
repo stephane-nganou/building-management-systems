@@ -3,6 +3,7 @@ package com.bms.identity;
 import java.util.UUID;
 
 import com.bms.common.exception.ValidationException;
+import com.bms.subscription.SubscriptionService;
 import com.bms.user.AppUser;
 import com.bms.user.AppUserRepository;
 import org.springframework.stereotype.Service;
@@ -20,16 +21,21 @@ public class AccountService {
 
     private final KeycloakAdminClient keycloak;
     private final AppUserRepository users;
+    private final SubscriptionService subscriptions;
 
-    public AccountService(KeycloakAdminClient keycloak, AppUserRepository users) {
+    public AccountService(KeycloakAdminClient keycloak, AppUserRepository users,
+                          SubscriptionService subscriptions) {
         this.keycloak = keycloak;
         this.users = users;
+        this.subscriptions = subscriptions;
     }
 
-    /** Registers someone who manages their own buildings. They chose their password. */
+    /** Registers someone who manages their own buildings, on a trial. They chose their password. */
     @Transactional
     public AppUser createOwner(String email, String firstName, String lastName, String password) {
-        return create(email, firstName, lastName, password, OWNER_ROLE, false);
+        AppUser owner = create(email, firstName, lastName, password, OWNER_ROLE, false);
+        subscriptions.startTrial(owner);
+        return owner;
     }
 
     /**

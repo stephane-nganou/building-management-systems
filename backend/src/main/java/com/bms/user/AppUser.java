@@ -30,6 +30,10 @@ public class AppUser extends BaseEntity {
     @Column(name = "must_change_password", nullable = false)
     private boolean mustChangePassword;
 
+    /** Set by an administrator. The account is refused everywhere until it is cleared. */
+    @Column(name = "suspended", nullable = false)
+    private boolean suspended;
+
     protected AppUser() {
         // for JPA
     }
@@ -82,6 +86,18 @@ public class AppUser extends BaseEntity {
     /** Called once the holder has set a password only they know. */
     public void passwordChosen() {
         this.mustChangePassword = false;
+    }
+
+    public boolean isSuspended() {
+        return suspended;
+    }
+
+    public void suspend() {
+        this.suspended = true;
+    }
+
+    public void reactivate() {
+        this.suspended = false;
     }
 
     public void updateProfile(String email, String firstName, String lastName) {
