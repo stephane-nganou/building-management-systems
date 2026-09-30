@@ -9,6 +9,7 @@ import { ConfirmService } from '../shared/confirm';
 import { Dialog } from '../shared/dialog';
 import { Facade } from '../shared/facade';
 import { Icon } from '../shared/icon';
+import { IconButton } from '../shared/icon-button';
 import { DayPipe, LabelPipe, MoneyPipe } from '../shared/money.pipe';
 import { ToastService } from '../shared/toasts';
 import { TranslatePipe } from '../shared/translate.pipe';
@@ -46,7 +47,7 @@ const blank = (buildingId: string): ExpenseForm => ({
 
 @Component({
   selector: 'bms-expenses',
-  imports: [FormsModule, Dialog, Facade, Icon, MoneyPipe, DayPipe, LabelPipe, TranslatePipe],
+  imports: [FormsModule, Dialog, Facade, Icon, IconButton, MoneyPipe, DayPipe, LabelPipe, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="band">
@@ -137,24 +138,8 @@ const blank = (buildingId: string): ExpenseForm => ({
                   <td class="right strong neg">{{ expense.amount | money }}</td>
                   <td class="actions-cell">
                     <span class="row-actions">
-                      <button
-                        class="icon"
-                        type="button"
-                        [attr.aria-label]="'common.edit' | t"
-                        [title]="'common.edit' | t"
-                        (click)="startEdit(expense)"
-                      >
-                        <bms-icon name="edit" />
-                      </button>
-                      <button
-                        class="icon danger"
-                        type="button"
-                        [attr.aria-label]="'common.delete' | t"
-                        [title]="'common.delete' | t"
-                        (click)="remove(expense)"
-                      >
-                        <bms-icon name="trash" />
-                      </button>
+                      <button bmsIconButton icon="edit" [label]="'common.edit' | t" (click)="startEdit(expense)"></button>
+                      <button bmsIconButton class="danger" icon="trash" [label]="'common.delete' | t" (click)="remove(expense)"></button>
                     </span>
                   </td>
                 </tr>
@@ -177,7 +162,7 @@ const blank = (buildingId: string): ExpenseForm => ({
     </section>
 
     @if (editing()) {
-      <bms-dialog [heading]="(editingId() ? 'expenses.editTitle' : 'expenses.add') | t" (closed)="cancel()">
+      <bms-dialog [heading]="(editingId() ? 'expenses.editTitle' : 'expenses.add') | t" [error]="error()" (closed)="cancel()">
         <div class="grid-2">
           <div class="field">
             <label for="building">{{ 'common.building' | t }}</label>
@@ -290,12 +275,14 @@ export class ExpensesPage {
   }
 
   protected startCreate(): void {
+    this.error.set(null);
     this.form = blank(this.filterBuilding() || this.buildings.value()[0]?.id || '');
     this.editingId.set(null);
     this.editing.set(true);
   }
 
   protected startEdit(expense: Expense): void {
+    this.error.set(null);
     this.form = {
       buildingId: expense.buildingId,
       apartmentId: expense.apartmentId ?? '',

@@ -31,7 +31,7 @@ button:disabled {
 }
 
 button.primary,
-.btn-primary {
+.btn.primary {
   background: var(--primary);
   border-color: var(--primary);
   color: var(--primary-ink);
@@ -39,7 +39,7 @@ button.primary,
 }
 
 button.primary:hover:not(:disabled),
-.btn-primary:hover {
+.btn.primary:hover {
   background: var(--primary-hover);
   border-color: var(--primary-hover);
 }
@@ -148,12 +148,6 @@ label {
 .hint {
   font-size: var(--step--1);
   color: var(--ink-3);
-  margin-top: 6px;
-}
-
-.field-error {
-  color: var(--neg);
-  font-size: var(--step--1);
   margin-top: 6px;
 }
 
@@ -273,10 +267,6 @@ table.sheet {
   background: var(--surface-sunk);
 }
 
-.sheet .right {
-  text-align: right;
-}
-
 .sheet .strong {
   font-weight: 600;
 }
@@ -355,8 +345,7 @@ table.sheet {
   opacity: 0.8;
 }
 
-.mark.paid,
-.mark.active {
+.mark.paid {
   background: color-mix(in srgb, var(--pos) 12%, transparent);
   color: var(--pos);
 }
@@ -613,10 +602,14 @@ dialog.panel::backdrop {
 
 /* ---------- the facade ---------- */
 
-.facade {
+/* A facade drawn on plaster; a night scene sets its own colours instead. */
+:root {
   --facade-body: var(--surface-sunk);
   --facade-frame: var(--window-frame);
   --facade-window: var(--window-dark);
+}
+
+.facade {
   display: inline-flex;
   flex: none;
 }
@@ -686,17 +679,29 @@ dialog.panel::backdrop {
   white-space: nowrap;
 }
 
-/* ---------- the street: the portfolio at dusk ---------- */
+/* ---------- night scenes: the dashboard street and the gate ---------- */
+
+/* Fixed colours rather than tokens: the street is at dusk in either theme. */
+.night {
+  --pavement: #3b4166;
+  --facade-body: #272b4d;
+  --facade-frame: #4a5080;
+  --facade-window: #171a33;
+  color: #eceef8;
+  background:
+    radial-gradient(120% 90% at 85% 0%, #2d3262 0%, transparent 60%),
+    linear-gradient(180deg, #1c1f3a 0%, #232748 100%);
+}
+
+.night .pane.occupied {
+  filter: drop-shadow(0 0 5px rgb(240 180 60 / 0.55));
+}
 
 .street {
   position: relative;
   margin-bottom: 20px;
   padding: 26px 28px 0;
   border-radius: var(--radius-l);
-  color: #eceef8;
-  background:
-    radial-gradient(120% 90% at 85% 0%, #2d3262 0%, transparent 60%),
-    linear-gradient(180deg, #1c1f3a 0%, #232748 100%);
   overflow: hidden;
 }
 
@@ -727,18 +732,11 @@ dialog.panel::backdrop {
   min-width: 0;
 }
 
+/* the pavement, run on across the gap to the next lot */
 .lot .facade {
-  --facade-body: #272b4d;
-  --facade-frame: #4a5080;
-  --facade-window: #171a33;
-  /* the pavement, run on across the gap to the next lot */
   margin: 0 -18px 10px;
   padding: 0 18px;
-  border-bottom: 3px solid #3b4166;
-}
-
-.lot .pane.occupied {
-  filter: drop-shadow(0 0 5px rgb(240 180 60 / 0.55));
+  border-bottom: 3px solid var(--pavement);
 }
 
 .lot-name {

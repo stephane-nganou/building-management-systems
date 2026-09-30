@@ -9,6 +9,7 @@ import { ConfirmService } from '../shared/confirm';
 import { Dialog } from '../shared/dialog';
 import { Facade } from '../shared/facade';
 import { Icon } from '../shared/icon';
+import { IconButton } from '../shared/icon-button';
 import { LabelPipe, MoneyPipe } from '../shared/money.pipe';
 import { ToastService } from '../shared/toasts';
 import { TranslatePipe } from '../shared/translate.pipe';
@@ -45,7 +46,7 @@ const blank = (): ApartmentForm => ({
 
 @Component({
   selector: 'bms-apartments',
-  imports: [FormsModule, Dialog, Facade, Icon, MoneyPipe, LabelPipe, TranslatePipe],
+  imports: [FormsModule, Dialog, Facade, Icon, IconButton, MoneyPipe, LabelPipe, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="band">
@@ -127,24 +128,8 @@ const blank = (): ApartmentForm => ({
                   </td>
                   <td class="actions-cell">
                     <span class="row-actions">
-                      <button
-                        class="icon"
-                        type="button"
-                        [attr.aria-label]="'common.edit' | t"
-                        [title]="'common.edit' | t"
-                        (click)="startEdit(apartment)"
-                      >
-                        <bms-icon name="edit" />
-                      </button>
-                      <button
-                        class="icon danger"
-                        type="button"
-                        [attr.aria-label]="'common.delete' | t"
-                        [title]="'common.delete' | t"
-                        (click)="remove(apartment)"
-                      >
-                        <bms-icon name="trash" />
-                      </button>
+                      <button bmsIconButton icon="edit" [label]="'common.edit' | t" (click)="startEdit(apartment)"></button>
+                      <button bmsIconButton class="danger" icon="trash" [label]="'common.delete' | t" (click)="remove(apartment)"></button>
                     </span>
                   </td>
                 </tr>
@@ -160,7 +145,7 @@ const blank = (): ApartmentForm => ({
     </section>
 
     @if (editing()) {
-      <bms-dialog [heading]="(editingId() ? 'apartments.editTitle' : 'apartments.add') | t" (closed)="cancel()">
+      <bms-dialog [heading]="(editingId() ? 'apartments.editTitle' : 'apartments.add') | t" [error]="error()" (closed)="cancel()">
         @if (!editingId()) {
           <div class="field">
             <label for="building">{{ 'common.building' | t }}</label>
@@ -266,6 +251,7 @@ export class ApartmentsPage {
   }
 
   protected startCreate(): void {
+    this.error.set(null);
     this.form = blank();
     this.editingId.set(null);
     this.targetBuildingId = this.buildingFilter() || this.buildings.value()[0]?.id || '';
@@ -273,6 +259,7 @@ export class ApartmentsPage {
   }
 
   protected startEdit(apartment: Apartment): void {
+    this.error.set(null);
     this.form = {
       label: apartment.label,
       floor: apartment.floor,

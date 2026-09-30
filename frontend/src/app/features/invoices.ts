@@ -10,6 +10,7 @@ import { ConfirmService } from '../shared/confirm';
 import { Dialog } from '../shared/dialog';
 import { Facade } from '../shared/facade';
 import { Icon } from '../shared/icon';
+import { IconButton } from '../shared/icon-button';
 import { DayPipe, LabelPipe, MoneyPipe } from '../shared/money.pipe';
 import { ToastService } from '../shared/toasts';
 import { TranslatePipe } from '../shared/translate.pipe';
@@ -60,7 +61,7 @@ const blank = (): InvoiceForm => {
 
 @Component({
   selector: 'bms-invoices',
-  imports: [FormsModule, Dialog, Facade, Icon, MoneyPipe, DayPipe, LabelPipe, TranslatePipe],
+  imports: [FormsModule, Dialog, Facade, Icon, IconButton, MoneyPipe, DayPipe, LabelPipe, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="band">
@@ -171,25 +172,9 @@ const blank = (): InvoiceForm => {
                           {{ 'invoices.markPaid' | t }}
                         </button>
                       }
-                      <button
-                        class="icon"
-                        type="button"
-                        [attr.aria-label]="'invoices.downloadPdf' | t"
-                        [title]="'invoices.downloadPdf' | t"
-                        (click)="download(invoice)"
-                      >
-                        <bms-icon name="download" />
-                      </button>
+                      <button bmsIconButton icon="download" [label]="'invoices.downloadPdf' | t" (click)="download(invoice)"></button>
                       @if (invoice.status === 'DRAFT') {
-                        <button
-                          class="icon danger"
-                          type="button"
-                          [attr.aria-label]="'common.delete' | t"
-                          [title]="'common.delete' | t"
-                          (click)="remove(invoice)"
-                        >
-                          <bms-icon name="trash" />
-                        </button>
+                        <button bmsIconButton class="danger" icon="trash" [label]="'common.delete' | t" (click)="remove(invoice)"></button>
                       }
                     </span>
                   </td>
@@ -206,7 +191,7 @@ const blank = (): InvoiceForm => {
     </section>
 
     @if (editing()) {
-      <bms-dialog [heading]="'invoices.add' | t" (closed)="cancel()">
+      <bms-dialog [heading]="'invoices.add' | t" [error]="error()" (closed)="cancel()">
         <div class="grid-2">
           <div class="field">
             <label for="tenant">{{ 'invoices.tenant' | t }}</label>
@@ -328,6 +313,7 @@ export class InvoicesPage {
   }
 
   protected startCreate(): void {
+    this.error.set(null);
     this.form = blank();
     this.form.tenantId = this.tenants.value()[0]?.id ?? '';
     this.editing.set(true);

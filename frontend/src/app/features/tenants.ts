@@ -9,6 +9,7 @@ import { ConfirmService } from '../shared/confirm';
 import { Dialog } from '../shared/dialog';
 import { Facade } from '../shared/facade';
 import { Icon } from '../shared/icon';
+import { IconButton } from '../shared/icon-button';
 import { DayPipe, MoneyPipe } from '../shared/money.pipe';
 import { ToastService } from '../shared/toasts';
 import { TranslatePipe } from '../shared/translate.pipe';
@@ -37,7 +38,7 @@ const blank = (): TenantForm => ({
 
 @Component({
   selector: 'bms-tenants',
-  imports: [FormsModule, Dialog, Facade, Icon, MoneyPipe, DayPipe, TranslatePipe],
+  imports: [FormsModule, Dialog, Facade, Icon, IconButton, MoneyPipe, DayPipe, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="band">
@@ -109,24 +110,8 @@ const blank = (): TenantForm => ({
                   <td class="right">{{ tenant.deposit | money }}</td>
                   <td class="actions-cell">
                     <span class="row-actions">
-                      <button
-                        class="icon"
-                        type="button"
-                        [attr.aria-label]="'common.edit' | t"
-                        [title]="'common.edit' | t"
-                        (click)="startEdit(tenant)"
-                      >
-                        <bms-icon name="edit" />
-                      </button>
-                      <button
-                        class="icon danger"
-                        type="button"
-                        [attr.aria-label]="'common.delete' | t"
-                        [title]="'common.delete' | t"
-                        (click)="remove(tenant)"
-                      >
-                        <bms-icon name="trash" />
-                      </button>
+                      <button bmsIconButton icon="edit" [label]="'common.edit' | t" (click)="startEdit(tenant)"></button>
+                      <button bmsIconButton class="danger" icon="trash" [label]="'common.delete' | t" (click)="remove(tenant)"></button>
                     </span>
                   </td>
                 </tr>
@@ -142,7 +127,7 @@ const blank = (): TenantForm => ({
     </section>
 
     @if (editing()) {
-      <bms-dialog [heading]="(editingId() ? 'tenants.editTitle' : 'tenants.add') | t" (closed)="cancel()">
+      <bms-dialog [heading]="(editingId() ? 'tenants.editTitle' : 'tenants.add') | t" [error]="error()" (closed)="cancel()">
         @if (!editingId()) {
           <div class="field">
             <label for="apartment">{{ 'common.apartment' | t }}</label>
@@ -229,6 +214,7 @@ export class TenantsPage {
   }
 
   protected startCreate(): void {
+    this.error.set(null);
     this.form = blank();
     this.editingId.set(null);
     this.targetApartmentId = this.apartments.value()[0]?.id ?? '';
@@ -236,6 +222,7 @@ export class TenantsPage {
   }
 
   protected startEdit(tenant: Tenant): void {
+    this.error.set(null);
     this.form = {
       firstName: tenant.firstName,
       lastName: tenant.lastName,

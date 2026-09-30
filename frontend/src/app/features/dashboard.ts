@@ -44,7 +44,7 @@ interface Lot {
             <div>
               <h3>{{ 'dashboard.emptyTitle' | t }}</h3>
               <p>{{ 'dashboard.emptyBody' | t }}</p>
-              <a class="btn btn-primary" routerLink="/buildings">
+              <a class="btn primary" routerLink="/buildings">
                 <bms-icon name="plus" />
                 {{ 'dashboard.emptyAction' | t }}
               </a>
@@ -52,7 +52,7 @@ interface Lot {
           </div>
         } @else {
           @if (lots().length) {
-            <div class="street">
+            <div class="street night">
               <div class="street-head">
                 <h2>{{ 'dashboard.street' | t }}</h2>
                 <p>

@@ -43,7 +43,7 @@
   --surface-sunk: #f8f9fb;
   --ink: #1c1f3a;
   --ink-2: #4a4f6a;
-  --ink-3: #6e7390;
+  --ink-3: #656a87;
   --line: #e3e5ec;
   --line-strong: #cfd2dc;
   --primary: var(--night);
@@ -65,7 +65,6 @@
   --step-1: 1.1875rem;
   --step-2: 1.5rem;
   --step-3: 2rem;
-  --step-4: 2.5rem;
 
   --radius-s: 6px;
   --radius: 10px;

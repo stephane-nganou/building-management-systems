@@ -38,7 +38,7 @@ const STREET: Unit[][] = [
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="gate">
-      <aside class="gate-art">
+      <aside class="gate-art night">
         <bms-brand />
         <p class="gate-pitch">{{ 'gate.pitch' | t }}</p>
         <div class="gate-street" aria-hidden="true">

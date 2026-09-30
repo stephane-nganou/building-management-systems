@@ -10,6 +10,7 @@ import { ConfirmService } from '../shared/confirm';
 import { Dialog } from '../shared/dialog';
 import { Facade, Unit } from '../shared/facade';
 import { Icon } from '../shared/icon';
+import { IconButton } from '../shared/icon-button';
 import { ToastService } from '../shared/toasts';
 import { TranslatePipe } from '../shared/translate.pipe';
 
@@ -33,7 +34,7 @@ const blank = (): BuildingForm => ({
 
 @Component({
   selector: 'bms-buildings',
-  imports: [FormsModule, Dialog, Facade, Icon, TranslatePipe],
+  imports: [FormsModule, Dialog, Facade, Icon, IconButton, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="band">
@@ -88,24 +89,8 @@ const blank = (): BuildingForm => ({
                   <td class="right">{{ building.apartmentCount }}</td>
                   <td class="actions-cell">
                     <span class="row-actions">
-                      <button
-                        class="icon"
-                        type="button"
-                        [attr.aria-label]="'common.edit' | t"
-                        [title]="'common.edit' | t"
-                        (click)="startEdit(building)"
-                      >
-                        <bms-icon name="edit" />
-                      </button>
-                      <button
-                        class="icon danger"
-                        type="button"
-                        [attr.aria-label]="'common.delete' | t"
-                        [title]="'common.delete' | t"
-                        (click)="remove(building)"
-                      >
-                        <bms-icon name="trash" />
-                      </button>
+                      <button bmsIconButton icon="edit" [label]="'common.edit' | t" (click)="startEdit(building)"></button>
+                      <button bmsIconButton class="danger" icon="trash" [label]="'common.delete' | t" (click)="remove(building)"></button>
                     </span>
                   </td>
                 </tr>
@@ -121,7 +106,7 @@ const blank = (): BuildingForm => ({
     </section>
 
     @if (editing()) {
-      <bms-dialog [heading]="(editingId() ? 'buildings.editTitle' : 'buildings.add') | t" (closed)="cancel()">
+      <bms-dialog [heading]="(editingId() ? 'buildings.editTitle' : 'buildings.add') | t" [error]="error()" (closed)="cancel()">
         <div class="field">
           <label for="name">{{ 'common.name' | t }}</label>
           <input id="name" name="name" [(ngModel)]="form.name" placeholder="Hauptstrasse 1" />
@@ -199,12 +184,14 @@ export class BuildingsPage {
   }
 
   protected startCreate(): void {
+    this.error.set(null);
     this.form = blank();
     this.editingId.set(null);
     this.editing.set(true);
   }
 
   protected startEdit(building: Building): void {
+    this.error.set(null);
     this.form = {
       name: building.name,
       street: building.street ?? '',

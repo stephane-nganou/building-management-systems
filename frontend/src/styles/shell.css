@@ -205,11 +205,6 @@
   max-width: 62ch;
 }
 
-.band-head .actions {
-  display: flex;
-  gap: 10px;
-}
-
 /* ---------- small screens: the rail becomes a drawer ---------- */
 
 @media (max-width: 860px) {
@@ -310,10 +305,6 @@
   flex-direction: column;
   gap: 28px;
   padding: 36px 40px 0;
-  color: #eceef8;
-  background:
-    radial-gradient(110% 70% at 80% 10%, #2d3262 0%, transparent 60%),
-    linear-gradient(180deg, #1c1f3a 0%, #232748 100%);
   overflow: hidden;
 }
 
@@ -332,17 +323,7 @@
   display: flex;
   align-items: flex-end;
   gap: 18px;
-  border-bottom: 3px solid #3b4166;
-}
-
-.gate-street .facade {
-  --facade-body: #272b4d;
-  --facade-frame: #4a5080;
-  --facade-window: #171a33;
-}
-
-.gate-street .pane.occupied {
-  filter: drop-shadow(0 0 5px rgb(240 180 60 / 0.55));
+  border-bottom: 3px solid var(--pavement);
 }
 
 .gate-main {

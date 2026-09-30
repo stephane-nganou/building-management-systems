@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 
 import { Icon } from './icon';
+import { IconButton } from './icon-button';
 import { TranslatePipe } from './translate.pipe';
 
 let nextId = 0;
@@ -21,7 +22,7 @@ let nextId = 0;
  */
 @Component({
   selector: 'bms-dialog',
-  imports: [Icon, TranslatePipe],
+  imports: [Icon, IconButton, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <dialog
@@ -30,16 +31,18 @@ let nextId = 0;
       [class.narrow]="narrow()"
       [attr.aria-labelledby]="headingId"
       (close)="closed.emit()"
+      (mousedown)="pressedOnBackdrop = $event.target === dialog"
       (click)="closeOnBackdrop($event)"
     >
       <header>
         <h2 [id]="headingId">{{ heading() }}</h2>
-        <button class="icon" type="button" [attr.aria-label]="'common.close' | t" (click)="dialog.close()">
-          <bms-icon name="close" />
-        </button>
+        <button bmsIconButton icon="close" [label]="'common.close' | t" (click)="dialog.close()"></button>
       </header>
       <div class="body">
         <ng-content />
+        @if (error()) {
+          <p class="notice" role="alert"><bms-icon name="alert" />{{ error() }}</p>
+        }
       </div>
       <footer>
         <ng-content select="[actions]" />
@@ -50,10 +53,13 @@ let nextId = 0;
 export class Dialog implements OnDestroy {
   readonly heading = input.required<string>();
   readonly narrow = input(false);
+  /** What went wrong with the last attempt, shown where the user is looking. */
+  readonly error = input<string | null>(null);
   readonly closed = output<void>();
 
   protected readonly headingId = `dialog-heading-${nextId++}`;
   private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
+  protected pressedOnBackdrop = false;
 
   constructor() {
     afterNextRender(() => {
@@ -66,9 +72,14 @@ export class Dialog implements OnDestroy {
     });
   }
 
-  /** The dialog fills its own box, so a click on the element itself landed on the backdrop. */
+  /**
+   * The dialog fills its own box, so a click on the element itself landed on
+   * the backdrop. Both ends of it must have: a drag that starts in a field and
+   * ends outside is also delivered to the dialog, and must not throw the form
+   * away.
+   */
   protected closeOnBackdrop(event: MouseEvent): void {
-    if (event.target === this.dialog().nativeElement) {
+    if (this.pressedOnBackdrop && event.target === this.dialog().nativeElement) {
       this.dialog().nativeElement.close();
     }
   }

@@ -9,13 +9,14 @@ import { ConfirmService } from '../shared/confirm';
 import { Dialog } from '../shared/dialog';
 import { Facade } from '../shared/facade';
 import { Icon } from '../shared/icon';
+import { IconButton } from '../shared/icon-button';
 import { LabelPipe } from '../shared/money.pipe';
 import { ToastService } from '../shared/toasts';
 import { TranslatePipe } from '../shared/translate.pipe';
 
 @Component({
   selector: 'bms-assistants',
-  imports: [FormsModule, Dialog, Facade, Icon, LabelPipe, TranslatePipe],
+  imports: [FormsModule, Dialog, Facade, Icon, IconButton, LabelPipe, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="band">
@@ -76,24 +77,8 @@ import { TranslatePipe } from '../shared/translate.pipe';
                         <bms-icon name="key" [size]="16" />
                         {{ 'assistants.newPassword' | t }}
                       </button>
-                      <button
-                        class="icon"
-                        type="button"
-                        [attr.aria-label]="'assistants.change' | t"
-                        [title]="'assistants.change' | t"
-                        (click)="startEdit(assistant)"
-                      >
-                        <bms-icon name="edit" />
-                      </button>
-                      <button
-                        class="icon danger"
-                        type="button"
-                        [attr.aria-label]="'assistants.remove' | t"
-                        [title]="'assistants.remove' | t"
-                        (click)="revoke(assistant)"
-                      >
-                        <bms-icon name="trash" />
-                      </button>
+                      <button bmsIconButton icon="edit" [label]="'assistants.change' | t" (click)="startEdit(assistant)"></button>
+                      <button bmsIconButton class="danger" icon="trash" [label]="'assistants.remove' | t" (click)="revoke(assistant)"></button>
                     </span>
                   </td>
                 </tr>
@@ -134,7 +119,7 @@ import { TranslatePipe } from '../shared/translate.pipe';
     }
 
     @if (editing()) {
-      <bms-dialog [heading]="(editingId() ? 'assistants.editTitle' : 'assistants.add') | t" (closed)="cancel()">
+      <bms-dialog [heading]="(editingId() ? 'assistants.editTitle' : 'assistants.add') | t" [error]="error()" (closed)="cancel()">
         @if (!editingId()) {
           <div class="field">
             <label for="firstName">{{ 'common.firstName' | t }}</label>
@@ -222,6 +207,7 @@ export class AssistantsPage {
   }
 
   protected startGrant(): void {
+    this.error.set(null);
     this.firstName = '';
     this.lastName = '';
     this.email = '';
@@ -231,6 +217,7 @@ export class AssistantsPage {
   }
 
   protected startEdit(assistant: Assistant): void {
+    this.error.set(null);
     this.email = assistant.email;
     this.selected.set(new Set(assistant.permissions));
     this.editingId.set(assistant.id);

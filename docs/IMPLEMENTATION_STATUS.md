@@ -1,6 +1,6 @@
 # Implementation status
 
-Last updated: 2026-09-30, after BM-11 (the realm is synced on every start).
+Last updated: 2026-09-30, after BM-13 (a new look for the app, the sign in page and the invoice PDF).
 
 The architecture is drawn out in
 [ARCHITECTURE_DIAGRAMS.md](ARCHITECTURE_DIAGRAMS.md): containers, backend and
@@ -27,6 +27,7 @@ main flow. This file records what is built and why it is built that way.
 | Invoices | Done | Rent and cold water, status flow, PDF download |
 | Profit and loss | Done | Per building and total, expense breakdown by category |
 | Dashboard | Done | Portfolio counts, rent roll, year to date position |
+| Visual design | Done | "Lights on": Mona Sans served from our own origin, a night and lamplight palette, and each building drawn as its floors with a lit window per let apartment. The sign in page and the invoice PDF match |
 | English and French | Done | Every screen, API error, sign in page and invoice PDF |
 | API documentation | Done | OpenAPI at `/swagger-ui.html` |
 | Architecture diagrams | Done | `docs/ARCHITECTURE_DIAGRAMS.md`, Mermaid, rendered by GitHub |
@@ -49,7 +50,11 @@ languages, and download the same invoice as a French and an English PDF. For
 BM-11, against the development database whose realm predated BM-8: sign in
 failed with "Invalid parameter: redirect_uri", and after one start with the sync
 service `bms-backend` carries its callback URI and the sign in form loads; the
-end to end suite still passes on a throwaway stack.
+end to end suite still passes on a throwaway stack. For BM-13, against the
+development stack: every screen at 1440 wide in light and dark and at 390 wide
+on a phone, each dialog, the delete confirmation and the drawer, the sign in page
+in both languages, and an invoice PDF in both languages, read back with PyMuPDF
+for its embedded fonts and rendered to check the layout.
 
 ## Tests
 
@@ -64,8 +69,9 @@ end to end suite still passes on a throwaway stack.
   rather than redirected, the forgery token is required of a session and not of
   a token, and the handed over password obligation is set and cleared. The
   Keycloak admin client is mocked there.
-- Frontend: 31 unit tests, for the formatting pipes, the translation service and
-  its dictionaries, and for the session and route guard logic that decides which
+- Frontend: 38 unit tests, for the formatting pipes, the translation service and
+  its dictionaries, how a facade stacks apartments into floors and lights them,
+  the delete confirmation and the toasts, and for the session and route guard logic that decides which
   screens exist, including that a refused profile is what "signed out" means and
   that an account owing us a password reaches no screen but the one that takes
   it.
@@ -75,8 +81,8 @@ end to end suite still passes on a throwaway stack.
   then has to choose a password and sees only their one granted screen, adding a
   building with an apartment in it, switching the app to French and back, a
   French browser landing on a French registration page, and a walk through every
-  screen that watches the wire and fails if a call leaves our own origin or
-  anything at all reaches Keycloak. `scripts/e2e` starts the
+  screen that watches the wire and fails if any request leaves our own origin,
+  a font or a stylesheet included, or anything at all reaches Keycloak. `scripts/e2e` starts the
   stack on its own compose project, waits for every part, runs them and tears it
   down.
 
@@ -285,6 +291,40 @@ end to end suite still passes on a throwaway stack.
   users are left untouched. Wiping the volume was rejected because the same
   Postgres holds the application data.
 
+- **The facade is data, not decoration (BM-13).** One drawing carries the
+  identity: a building as its floors, one window per apartment, lit when let,
+  dark when vacant, struck through under works. Lamplight is kept for that
+  meaning and for keyboard focus, and nothing else is amber. The dashboard street
+  needs `BUILDING_READ` and `APARTMENT_READ`; without both it shows the per
+  building table instead, and the building list drops its thumbnails, rather than
+  drawing buildings as empty.
+
+- **Dialogs are the native `<dialog>` opened with `showModal` (BM-13).** It
+  traps focus, closes on Escape and hands focus back for free. `Dialog` focuses
+  the first field, or the first answer when there is none, so a confirmation
+  starts on Cancel. A backdrop click closes only when the press began on the
+  backdrop too, because a drag out of a field is also delivered to the dialog.
+  A failed save shows inside the dialog, since the page behind it is covered.
+
+- **Tabular figures are off (BM-13).** Mona Sans draws them as a monospace set
+  with a slashed zero, which read as a second typeface inside every table.
+  Right aligned proportional figures still line up well enough for money.
+
+- **The invoice PDF embeds Mona Sans without its substitution table (BM-13).**
+  PDFBox 3 applies the font's `liga` feature as it writes, so "ti", "tt" and
+  "ff" became single ligature glyphs with no character behind them, and text
+  copied or searched out of the invoice lost those letters ("Désigna on").
+  `InvoicePdfRenderer` loads each static cut itself, drops `GSUB` and hands
+  the fonts to openhtmltopdf through a document it owns. The language test now
+  looks for those words.
+
+- **The sign in page is restyled by one sheet on top of keycloak.v2 (BM-13).**
+  `theme.properties` lists the parent's `css/styles.css` then ours, and
+  PatternFly 5's own variables do most of the work, so no Keycloak template
+  beyond `login.ftl` is copied. It is pinned to light, the card on the night
+  street, as the app's own register page is. The realm is now shown as
+  Hausbuch.
+
 ## Not built yet
 
 - Sender constrained tokens. DPoP would make a stolen access token useless to
@@ -341,9 +381,14 @@ end to end suite still passes on a throwaway stack.
   from a realm Keycloak already has: `scripts/sync-realm.mjs` overwrites the
   clients in the export and leaves anything else alone. It is inert either way,
   since nothing holds its id any more.
-- The webfont in `styles.css` is still fetched from Google. It is the one
-  request that leaves our origin, which is why `origins.spec.ts` asserts on
-  calls rather than on every request.
+- Mona Sans ships three times: as variable woff2 in `frontend/public/fonts`
+  and in the Keycloak theme, and as static TTF cuts in the backend for the PDF,
+  which cannot read variable fonts. The palette is likewise repeated in the
+  theme's `bms.css` and the invoice template. A change to the look has to be
+  made in all three.
+- The Claude in Chrome screenshot tool times out while a native modal dialog is
+  open, although the page itself keeps responding. Screenshots of dialogs were
+  taken with a scratch Playwright script instead.
 - Error messages already on screen are plain strings, so switching language
   leaves the last one in the language it was raised in. The next action replaces
   it.
