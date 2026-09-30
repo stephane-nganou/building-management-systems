@@ -141,6 +141,22 @@ class AdminAccountIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$[0].endsOn").value(TODAY.minusDays(1).toString()));
     }
 
+    /** A trial that began today is cut short, not deleted: the owner stays a customer who can be renewed. */
+    @Test
+    void endingASubscriptionThatBeganTodayKeepsTheOwnerOnTheList() throws Exception {
+        testData.setPeriod("owner-a", TODAY, TODAY.plusDays(29));
+
+        mockMvc.perform(post("/api/admin/accounts/" + owner.getId() + "/periods/end").with(ADMIN))
+                .andExpect(status().isNoContent());
+
+        mockMvc.perform(get("/api/admin/accounts").with(ADMIN))
+                .andExpect(jsonPath("$.length()").value(1))
+                .andExpect(jsonPath("$[0].status").value("EXPIRED"));
+        mockMvc.perform(get("/api/admin/accounts/" + owner.getId() + "/periods").with(ADMIN))
+                .andExpect(jsonPath("$[0].startsOn").value(TODAY.toString()))
+                .andExpect(jsonPath("$[0].endsOn").value(TODAY.minusDays(1).toString()));
+    }
+
     @Test
     void suspendingDisablesTheAccountInKeycloakAndReactivatingEnablesIt() throws Exception {
         mockMvc.perform(post("/api/admin/accounts/" + owner.getId() + "/suspension").with(ADMIN))

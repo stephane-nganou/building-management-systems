@@ -58,20 +58,15 @@ public class SubscriptionService {
 
     /**
      * Makes yesterday the last day of whatever covers today. A period that only
-     * began today has no day left to keep, so it goes. Later periods stay.
+     * began today is left with no day in it, and kept: deleting an owner's only
+     * period would make them nobody's customer. Later periods stay.
      */
     @Transactional
     public void endCurrent(AppUser owner) {
-        LocalDate today = today();
+        LocalDate yesterday = today().minusDays(1);
         periods.findByOwnerIdOrderByStartsOnDesc(owner.getId()).stream()
-                .filter(period -> period.covers(today))
-                .forEach(period -> {
-                    if (period.getStartsOn().equals(today)) {
-                        periods.delete(period);
-                    } else {
-                        period.endOn(today.minusDays(1));
-                    }
-                });
+                .filter(period -> period.covers(today()))
+                .forEach(period -> period.endOn(yesterday));
     }
 
     /** A suspension outranks any subscription. */

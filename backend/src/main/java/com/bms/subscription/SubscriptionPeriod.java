@@ -11,7 +11,11 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 
-/** A stretch of days, both ends included, during which an owner may change their data. */
+/**
+ * A stretch of days, both ends included, during which an owner may change their
+ * data. One ended on the day it began ends the day before it starts, and covers
+ * no day at all.
+ */
 @Entity
 @Table(name = "subscription_period")
 public class SubscriptionPeriod extends BaseEntity {
