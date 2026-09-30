@@ -1,0 +1,105 @@
+/*
+  The sign in page in the application's own clothes: the night street behind
+  it, Mona Sans, and the same controls. Loaded after keycloak.v2's own sheet,
+  so it only restyles, through PatternFly's variables where they exist.
+*/
+
+@font-face {
+  font-family: 'Mona Sans';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 900;
+  font-stretch: 75% 125%;
+  src: url('../fonts/mona-sans-latin-standard-normal.woff2') format('woff2-variations');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304,
+    U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+@font-face {
+  font-family: 'Mona Sans';
+  font-style: normal;
+  font-display: swap;
+  font-weight: 200 900;
+  font-stretch: 75% 125%;
+  src: url('../fonts/mona-sans-latin-ext-standard-normal.woff2') format('woff2-variations');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+0304, U+0308,
+    U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113,
+    U+2C60-2C7F, U+A720-A7FF;
+}
+
+:root {
+  --pf-v5-global--FontFamily--text: 'Mona Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --pf-v5-global--FontFamily--heading: 'Mona Sans', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --pf-v5-global--primary-color--100: #1c1f3a;
+  --pf-v5-global--primary-color--200: #272b4d;
+  --pf-v5-global--link--Color: #1c1f3a;
+  --pf-v5-global--link--Color--hover: #4a4f6a;
+  --pf-v5-global--active-color--100: #1c1f3a;
+  --pf-v5-global--BorderRadius--sm: 6px;
+  --keycloak-card-top-color: transparent;
+}
+
+.login-pf body {
+  background:
+    url('../img/street.svg') no-repeat left 3vw bottom / min(400px, 80vw) auto,
+    radial-gradient(110% 70% at 80% 10%, #2d3262 0%, transparent 60%),
+    linear-gradient(180deg, #1c1f3a 0%, #232748 100%);
+  background-attachment: fixed;
+  -webkit-font-smoothing: antialiased;
+}
+
+#kc-header-wrapper {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  text-transform: none;
+  letter-spacing: -0.02em;
+  font-size: 30px;
+  font-weight: 750;
+  font-stretch: 125%;
+}
+
+#kc-header-wrapper::before {
+  content: '';
+  flex: none;
+  width: 34px;
+  height: 38px;
+  background: url('../img/mark.svg') no-repeat center / contain;
+}
+
+.pf-v5-c-login__main {
+  border-radius: 16px;
+  box-shadow: 0 24px 64px rgb(5 6 16 / 0.45);
+  overflow: hidden;
+}
+
+.pf-v5-c-login__main-header {
+  border-top: 0;
+}
+
+#kc-page-title {
+  font-weight: 700;
+  font-stretch: 118%;
+  letter-spacing: -0.015em;
+}
+
+.pf-v5-c-button.pf-m-primary {
+  --pf-v5-c-button--m-primary--BackgroundColor: #1c1f3a;
+  --pf-v5-c-button--m-primary--hover--BackgroundColor: #272b4d;
+  --pf-v5-c-button--m-primary--focus--BackgroundColor: #272b4d;
+  --pf-v5-c-button--m-primary--active--BackgroundColor: #272b4d;
+  border-radius: 6px;
+  padding-block: 10px;
+  font-weight: 600;
+}
+
+.pf-v5-c-form-control {
+  --pf-v5-c-form-control--focus--after--BorderBottomColor: #f0b43c;
+  border-radius: 6px;
+}
+
+:where(a, button, input, select):focus-visible {
+  outline: 2px solid #f0b43c;
+  outline-offset: 2px;
+}
