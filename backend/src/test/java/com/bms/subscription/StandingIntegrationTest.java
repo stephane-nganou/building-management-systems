@@ -42,6 +42,34 @@ class StandingIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.subscription.endsOn").value(LocalDate.now().minusDays(1).toString()));
     }
 
+    /** "At least a week before": the warning starts seven days ahead of the last day. */
+    @Test
+    void anOwnerIsWarnedFromAWeekBeforeTheLastDay() throws Exception {
+        mockMvc.perform(get("/api/me").with(OWNER)).andExpect(status().isOk());
+
+        testData.setPeriod("owner-a", LocalDate.now().minusDays(20), LocalDate.now().plusDays(8));
+        mockMvc.perform(get("/api/me").with(OWNER))
+                .andExpect(jsonPath("$.subscription.daysLeft").value(8))
+                .andExpect(jsonPath("$.subscription.endingSoon").value(false));
+
+        testData.setPeriod("owner-a", LocalDate.now().minusDays(20), LocalDate.now().plusDays(7));
+        mockMvc.perform(get("/api/me").with(OWNER))
+                .andExpect(jsonPath("$.subscription.daysLeft").value(7))
+                .andExpect(jsonPath("$.subscription.endingSoon").value(true));
+    }
+
+    @Test
+    void aRenewalAlreadyBookedMeansNothingIsEnding() throws Exception {
+        mockMvc.perform(get("/api/me").with(OWNER)).andExpect(status().isOk());
+        LocalDate lastDay = LocalDate.now().plusDays(3);
+        testData.setPeriod("owner-a", LocalDate.now().minusDays(20), lastDay);
+        testData.addPeriod("owner-a", lastDay.plusDays(1), lastDay.plusYears(1));
+
+        mockMvc.perform(get("/api/me").with(OWNER))
+                .andExpect(jsonPath("$.subscription.endsOn").value(lastDay.plusYears(1).toString()))
+                .andExpect(jsonPath("$.subscription.endingSoon").value(false));
+    }
+
     @Test
     void anAssistantSeesTheStandingOfEachOwnerTheyWorkFor() throws Exception {
         mockMvc.perform(get("/api/me").with(OWNER)).andExpect(status().isOk());

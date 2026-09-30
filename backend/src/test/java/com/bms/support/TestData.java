@@ -76,6 +76,12 @@ public class TestData {
         periods.save(new SubscriptionPeriod(owner, startsOn, endsOn, null));
     }
 
+    /** Books one more period, next to whatever the owner already has. */
+    @Transactional
+    public void addPeriod(String keycloakId, LocalDate startsOn, LocalDate endsOn) {
+        periods.save(new SubscriptionPeriod(users.findByKeycloakId(keycloakId).orElseThrow(), startsOn, endsOn, null));
+    }
+
     @Transactional
     public void suspend(String keycloakId) {
         users.findByKeycloakId(keycloakId).orElseThrow().suspend();
