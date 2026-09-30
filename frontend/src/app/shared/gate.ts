@@ -4,6 +4,7 @@ import { Unit } from './facade';
 import { Brand } from './brand';
 import { Facade } from './facade';
 import { LanguageSwitcher } from './language-switcher';
+import { ThemeSwitcher } from './theme-switcher';
 import { TranslatePipe } from './translate.pipe';
 
 /** A small street to stand beside the form: illustration, not anybody's data. */
@@ -34,7 +35,7 @@ const STREET: Unit[][] = [
 /** The frame for the pages seen instead of the app itself: sign up, first password, and a suspension. */
 @Component({
   selector: 'bms-gate',
-  imports: [Brand, Facade, LanguageSwitcher, TranslatePipe],
+  imports: [Brand, Facade, LanguageSwitcher, ThemeSwitcher, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="gate">
@@ -51,7 +52,10 @@ const STREET: Unit[][] = [
         <div class="gate-card">
           <ng-content />
         </div>
-        <bms-language-switcher />
+        <div class="gate-settings">
+          <bms-language-switcher />
+          <bms-theme-switcher />
+        </div>
       </main>
     </div>
   `,

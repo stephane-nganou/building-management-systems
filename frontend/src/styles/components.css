@@ -117,16 +117,8 @@ input:focus,
 select:focus,
 textarea:focus {
   outline: none;
-  border-color: var(--night);
+  border-color: var(--focus-edge);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--lamplight) 45%, transparent);
-}
-
-@media (prefers-color-scheme: dark) {
-  input:focus,
-  select:focus,
-  textarea:focus {
-    border-color: var(--lamplight);
-  }
 }
 
 input[readonly] {
@@ -221,6 +213,45 @@ button.language {
 button.language.on {
   background: var(--ink);
   color: var(--ground);
+}
+
+/* One swatch per theme, painted in that theme's colours whichever is in use:
+   its rail, its page and its lit window. */
+.themes {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+button.swatch {
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 1px solid var(--line-strong);
+  border-radius: 50%;
+}
+
+button.swatch[aria-pressed='true'] {
+  outline: 2px solid currentColor;
+  outline-offset: 2px;
+}
+
+button.swatch.classic {
+  background: linear-gradient(135deg, #1c1f3a 0 55%, #f4f5f7 55% 78%, #f0b43c 78%);
+}
+
+button.swatch.magic {
+  background: linear-gradient(135deg, #1b1233 0 55%, #a98bff 55% 78%, #ffd27a 78%);
+}
+
+button.swatch.ocean {
+  background: linear-gradient(135deg, #0b5673 0 55%, #eaf4f3 55% 78%, #ffc933 78%);
+}
+
+.theme-name {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ink-3);
 }
 
 /* ---------- tables: one plaster sheet per list ---------- */
@@ -497,26 +528,15 @@ dialog.panel::backdrop {
   gap: 10px;
   padding: 12px 16px;
   border-radius: var(--radius);
-  background: var(--night);
-  color: #fff;
+  background: var(--toast);
+  color: var(--toast-ink);
   font-weight: 550;
   box-shadow: var(--shadow-lift);
   animation: toast-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
 }
 
 .toast bms-icon {
-  color: var(--lamplight);
-}
-
-@media (prefers-color-scheme: dark) {
-  .toast {
-    background: #eceef8;
-    color: #1c1f3a;
-  }
-
-  .toast bms-icon {
-    color: var(--night);
-  }
+  color: var(--toast-icon);
 }
 
 @keyframes toast-in {
@@ -706,20 +726,17 @@ table.sheet.periods {
 
 /* ---------- night scenes: the dashboard street and the gate ---------- */
 
-/* Fixed colours rather than tokens: the street is at dusk in either theme. */
+/* Dusk tokens rather than the page's: the street is at dusk in light and dark alike. */
 .night {
-  --pavement: #3b4166;
-  --facade-body: #272b4d;
-  --facade-frame: #4a5080;
-  --facade-window: #171a33;
-  color: #eceef8;
-  background:
-    radial-gradient(120% 90% at 85% 0%, #2d3262 0%, transparent 60%),
-    linear-gradient(180deg, #1c1f3a 0%, #232748 100%);
+  --facade-body: var(--dusk-body);
+  --facade-frame: var(--dusk-frame);
+  --facade-window: var(--dusk-window);
+  color: var(--dusk-ink);
+  background: var(--dusk);
 }
 
 .night .pane.occupied {
-  filter: drop-shadow(0 0 5px rgb(240 180 60 / 0.55));
+  filter: drop-shadow(0 0 5px color-mix(in srgb, var(--lamplight) 55%, transparent));
 }
 
 .street {
@@ -728,15 +745,16 @@ table.sheet.periods {
   padding: 26px 28px 0;
   border-radius: var(--radius-l);
   overflow: hidden;
+  box-shadow: var(--dusk-edge);
 }
 
 .street-head h2 {
-  color: #fff;
+  color: var(--dusk-bright);
 }
 
 .street-head p {
   margin-top: 4px;
-  color: rgb(236 238 248 / 0.64);
+  color: color-mix(in srgb, var(--dusk-ink) 64%, transparent);
 }
 
 .lots {
@@ -766,7 +784,7 @@ table.sheet.periods {
 
 .lot-name {
   font-weight: 600;
-  color: #fff;
+  color: var(--dusk-bright);
   max-width: 22ch;
   white-space: nowrap;
   overflow: hidden;
@@ -777,16 +795,16 @@ table.sheet.periods {
   font-size: var(--step--1);
   font-weight: 600;
   font-stretch: var(--wide);
-  color: rgb(236 238 248 / 0.6);
+  color: color-mix(in srgb, var(--dusk-ink) 60%, transparent);
 }
 
 /* The ledger colours are tuned for plaster; at night they need more light. */
 .lot-net.pos {
-  color: #6fd6a3;
+  color: var(--dusk-pos);
 }
 
 .lot-net.neg {
-  color: #ff9a8c;
+  color: var(--dusk-neg);
 }
 
 /* ---------- tallies ---------- */
@@ -813,10 +831,4 @@ table.sheet.periods {
   font-size: var(--step-2);
   font-weight: 650;
   font-stretch: var(--wider);
-}
-
-@media (prefers-color-scheme: dark) {
-  .street {
-    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06);
-  }
 }

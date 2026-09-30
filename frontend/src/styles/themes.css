@@ -1,0 +1,131 @@
+/*
+  The other two looks. Each keeps the one thing that carries meaning, a lit
+  window for a let apartment, and changes the world around it. Neither follows
+  the system's light or dark setting: each is one fixed look.
+*/
+
+/* ---------- Magic: the same street, after the spell ---------- */
+
+:root[data-theme='magic'] {
+  /* starlight, in two tiles of different sizes so the repeat does not show */
+  --stars:
+    radial-gradient(1.2px 1.2px at 18px 24px, rgb(255 255 255 / 0.9) 50%, transparent 100%) 0 0 /
+      140px 110px,
+    radial-gradient(1px 1px at 76px 58px, rgb(255 236 200 / 0.7) 50%, transparent 100%) 0 0 / 140px
+      110px,
+    radial-gradient(1.4px 1.4px at 112px 16px, rgb(214 196 255 / 0.85) 50%, transparent 100%) 0 0 /
+      140px 110px,
+    radial-gradient(1px 1px at 40px 132px, rgb(255 255 255 / 0.55) 50%, transparent 100%) 0 0 /
+      190px 150px,
+    radial-gradient(1.2px 1.2px at 150px 84px, rgb(214 196 255 / 0.6) 50%, transparent 100%) 0 0 /
+      190px 150px;
+
+  --night: #120b24;
+  --night-raised: #1f1540;
+  --lamplight: #ffd27a;
+  --ledger: #72e2b4;
+  --brick: #cf3f64;
+
+  --ground: #1b1233;
+  --surface: #251a45;
+  --surface-sunk: #20163c;
+  --ink: #f1eaff;
+  --ink-2: #c7bce8;
+  --ink-3: #a093c9;
+  --line: #34285c;
+  --line-strong: #473a7a;
+  --primary: #a98bff;
+  --primary-ink: #120b24;
+  --primary-hover: #c1aaff;
+  --neg: #ff9db2;
+  --window-dark: #3a2d66;
+  --window-frame: #a093c9;
+  --wash: rgb(8 4 20 / 0.7);
+  --focus-edge: var(--lamplight);
+  --toast: #f1eaff;
+  --toast-ink: #1b1233;
+  --toast-icon: #7a5cf0;
+
+  --rail-texture: var(--stars);
+  --dusk:
+    var(--stars), radial-gradient(80% 90% at 82% 0%, #4a2f8f 0%, transparent 60%),
+    radial-gradient(60% 60% at 8% 100%, #2c1b60 0%, transparent 70%),
+    linear-gradient(180deg, #160e2e 0%, #221647 100%);
+  --dusk-ink: #efe7ff;
+  --dusk-pos: #7ff0c0;
+  --dusk-neg: #ffa6ba;
+  --dusk-edge: inset 0 0 0 1px rgb(169 139 255 / 0.2);
+  --pavement: #5b45a0;
+  --dusk-body: #2c1f55;
+  --dusk-frame: #6a54b8;
+  --dusk-trim: #a98bff;
+  --dusk-window: #140c2a;
+  --dusk-unlit: #3d2d78;
+
+  --radius-s: 8px;
+  --radius: 14px;
+  --radius-l: 22px;
+  --shadow: 0 1px 2px rgb(0 0 0 / 0.35), 0 10px 30px rgb(80 40 170 / 0.22);
+  --shadow-lift: 0 24px 70px rgb(60 20 140 / 0.55);
+
+  color-scheme: dark;
+}
+
+/* ---------- Ocean blue: a harbour town at noon ---------- */
+
+:root[data-theme='ocean'] {
+  /* a swell of three wave lines, drawn inline so nothing is fetched */
+  --wave: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='18'%3E%3Cpath d='M0 9 Q15 3 30 9 T60 9 T90 9 T120 9' fill='none' stroke='white' stroke-opacity='.18' stroke-width='1.5'/%3E%3C/svg%3E");
+  --swell:
+    var(--wave) left 0 bottom 58px / 120px 18px repeat-x,
+    var(--wave) left 40px bottom 34px / 120px 18px repeat-x,
+    var(--wave) left 80px bottom 10px / 120px 18px repeat-x;
+
+  --night: #0b4a64;
+  --night-raised: #0e5a78;
+  --lamplight: #ffc933;
+  --ledger: #1d7657;
+  --brick: #c0392b;
+
+  --ground: #eaf4f3;
+  --surface: #fbfefd;
+  --surface-sunk: #f2f8f7;
+  --ink: #0c3547;
+  --ink-2: #3a5f6f;
+  --ink-3: #4f7282;
+  --line: #d3e5e4;
+  --line-strong: #b5d0d0;
+  --primary: #0b5673;
+  --primary-ink: #ffffff;
+  --primary-hover: #0e6a8c;
+  --window-dark: #cfe2e3;
+  --window-frame: #0c3547;
+  --wash: rgb(6 40 54 / 0.5);
+  --focus-edge: var(--primary);
+  --toast: #0b4a64;
+  --toast-ink: #ffffff;
+  --toast-icon: var(--lamplight);
+
+  /* deeper toward the foot; the waves stay in the street, clear of the controls */
+  --rail-texture: linear-gradient(180deg, #0e5a78 0%, #0b4a64 45%, #083a50 100%);
+  --dusk:
+    var(--swell), radial-gradient(90% 80% at 85% 0%, rgb(255 201 51 / 0.2) 0%, transparent 55%),
+    linear-gradient(180deg, #0e6a8c 0%, #0b4a64 60%, #083a50 100%);
+  --dusk-ink: #e6f4f4;
+  --dusk-pos: #86e8bf;
+  --dusk-neg: #ffb3a7;
+  --pavement: #e9d8b4;
+  --dusk-body: #13637f;
+  --dusk-frame: #4d93ad;
+  --dusk-trim: #a9d4df;
+  --dusk-window: #0a3e54;
+  --dusk-unlit: #1d7a99;
+
+  --radius-s: 8px;
+  --radius: 12px;
+  --radius-l: 20px;
+  --shadow: 0 1px 2px rgb(11 74 100 / 0.08), 0 10px 28px rgb(11 74 100 / 0.1);
+  --shadow-lift: 0 24px 64px rgb(11 74 100 / 0.3);
+
+  color-scheme: light;
+}
