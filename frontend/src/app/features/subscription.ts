@@ -37,7 +37,7 @@ import { TranslatePipe } from '../shared/translate.pipe';
           </div>
           <div class="figure">
             <span class="caption">
-              {{ (mine.standing.status === 'ACTIVE' ? 'subscription.runsUntil' : 'subscription.ended') | t }}
+              {{ (mine.standing.status === 'EXPIRED' ? 'subscription.ended' : 'subscription.runsUntil') | t }}
             </span>
             <span class="amount">{{ mine.standing.endsOn | day }}</span>
           </div>
@@ -49,7 +49,7 @@ import { TranslatePipe } from '../shared/translate.pipe';
           }
         </div>
 
-        <h2 class="section-title">{{ 'subscription.history' | t }}</h2>
+        <h2 class="gap-above">{{ 'subscription.history' | t }}</h2>
         <div class="sheet-frame">
           <table class="sheet">
             <thead>
@@ -71,7 +71,7 @@ import { TranslatePipe } from '../shared/translate.pipe';
           </table>
         </div>
 
-        <p class="muted section-title">{{ 'subscription.renewHint' | t }}</p>
+        <p class="muted gap-above">{{ 'subscription.renewHint' | t }}</p>
         <bms-support-card [contacts]="mine.support" />
       }
     </section>

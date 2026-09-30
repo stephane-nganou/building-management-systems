@@ -603,7 +603,8 @@ table.sheet.periods {
   margin-left: 4px;
 }
 
-.section-title {
+/* Sets a block off from the one above it inside a band. */
+.gap-above {
   margin: 32px 0 12px;
 }
 

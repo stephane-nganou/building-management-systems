@@ -128,6 +128,11 @@ manages owners under **Accounts**: signs them up, adds or ends periods, and
 suspends an account, which disables it in Keycloak and refuses its open
 sessions too.
 
+From a week before the last day (`BMS_SUBSCRIPTION_WARNING_DAYS`), every owner
+screen says when the subscription ends and links to **Subscription**, where the
+owner sees their standing, every period and how to reach customer service. The
+contacts are `BMS_SUPPORT_EMAIL`, `BMS_SUPPORT_PHONE` and `BMS_SUPPORT_HOURS`.
+
 **The Angular app knows one host: its own.** It never names Keycloak, holds no
 token and carries no identity library. Signing in is a navigation to
 `/api/auth/login/keycloak`, where the backend runs the authorization code flow

@@ -1,6 +1,6 @@
 # Implementation status
 
-Last updated: 2026-09-30, after BM-14 (an administrator, and subscriptions bound to time).
+Last updated: 2026-09-30, after BM-15 (a reminder before a subscription ends, and a screen to manage it).
 
 The architecture is drawn out in
 [ARCHITECTURE_DIAGRAMS.md](ARCHITECTURE_DIAGRAMS.md): containers, backend and
@@ -21,6 +21,7 @@ main flow. This file records what is built and why it is built that way.
 | Permission aware UI | Done | `canMatch` guards and a filtered sidebar; a denied screen is never downloaded |
 | Owner and assistant access | Done | Per owner scoping plus 11 delegatable permissions |
 | Subscriptions | Done | Dated periods per owner, a 30 day trial to start; outside every period the owner's data is read only, for them and their assistants |
+| Subscription reminder | Done | From a week before the last day every owner screen says so; **Subscription** shows the standing, every period and the customer service contacts |
 | Administrator | Done | `admin` realm role and an **Accounts** screen: sign owners up, add or end periods, suspend and reactivate |
 | Buildings | Done | Full CRUD, API and UI |
 | Apartments | Done | Full CRUD with room layout, rent and status; unique label per building |
@@ -64,6 +65,9 @@ Accounts alone, ended the demo owner's subscription, then signed in as that
 owner and saw the banner and a refused building with the backend's reason. The
 Keycloak disable call was replayed against Keycloak 26.7 itself: a `PUT` of
 `{"enabled": false}` answers 204 and leaves email, names and roles untouched.
+For BM-15, against the development stack: the demo owner, five days from their
+last day, saw the reminder on every screen and the Subscription screen with its
+figures, periods and customer service card, in English and in French.
 
 ## Tests
 
@@ -80,15 +84,16 @@ Keycloak disable call was replayed against Keycloak 26.7 itself: a `PUT` of
   Keycloak admin client is mocked there. `ReadOnlyIntegrationTest` sends every
   write the API has as a lapsed owner and expects the refusal, and fails if a
   non-GET route exists that its list does not name, so a new write endpoint
-  cannot quietly skip the check. Now 77 tests.
-- Frontend: 47 unit tests, for the formatting pipes, the translation service and
+  cannot quietly skip the check. Now 88 tests.
+- Frontend: 49 unit tests, for the formatting pipes, the translation service and
   its dictionaries, how a facade stacks apartments into floors and lights them,
   the delete confirmation and the toasts, and for the session and route guard logic that decides which
   screens exist, including that a refused profile is what "signed out" means and
   that an account owing us a password reaches no screen but the one that takes
   it, and that an administrator and a suspended account each see only theirs.
-- End to end: 9 Playwright specs against the running stack, covering an
-  administrator signing an owner up and ending their subscription, the link
+- End to end: 10 Playwright specs against the running stack, covering an
+  administrator signing an owner up and ending their subscription, an owner
+  reminded three days before the end who follows it to Subscription, the link
   from the sign in page to registration, signing up and landing on a full
   portfolio, the duplicate email refusal, an owner creating an assistant who
   then has to choose a password and sees only their one granted screen, adding a
@@ -393,10 +398,30 @@ Keycloak disable call was replayed against Keycloak 26.7 itself: a `PUT` of
   every due date, lease date and subscription end a day early there. A date
   with no time is now read as local midnight.
 
+- **A subscription ends where its unbroken run of periods ends (BM-15).** While
+  active, the last day shown is found by walking from the period that covers
+  today through every period that overlaps it or starts the day after, so a
+  renewal the administrator booked in advance means nothing is ending. The
+  profile carries `daysLeft` and `endingSoon`, worked out on the server against
+  the same clock as the read only check, so the reminder and the refusal can
+  never disagree about the day.
+
+- **The reminder is in the app, not in a mailbox (BM-15).** It sits above every
+  owner screen from a week before the last day until a renewal is booked, and
+  cannot be dismissed. Email would need an SMTP server this stack does not
+  have. Only owners see it: an assistant manages no subscription and is told
+  once the owner's has lapsed.
+
+- **The contacts are configuration, and open to a suspended account (BM-15).**
+  `GET /api/support` and an owner's `GET /api/subscription` stay outside the
+  suspension interceptor, because a suspended owner is the one who most needs
+  to know whom to call. Both only read.
+
 ## Not built yet
 
-- Payment. An administrator records periods by hand; nothing charges an owner
-  or renews a subscription on its own, and nobody is told before one runs out.
+- Payment. An administrator records periods by hand, and nothing charges an
+  owner or renews a subscription on its own.
+- Reminders by email.
 
 - Sender constrained tokens. DPoP would make a stolen access token useless to
   anyone but its holder, which is the remaining hardening for the clients that
@@ -473,6 +498,8 @@ Keycloak disable call was replayed against Keycloak 26.7 itself: a `PUT` of
 - The administrator's list asks for each owner's standing and counts one owner
   at a time, a handful of queries each. Fine for tens of customers, worth one
   grouped query before thousands.
+- The customer service hours and a period's note are shown as written, in one
+  language, since they come from configuration and from the administrator.
 - A write button stays on screen while an owner's data is read only; pressing it
   shows why it was refused, and the banner says so up front.
 - Native `<input type="date">` controls follow the browser's own locale, not the

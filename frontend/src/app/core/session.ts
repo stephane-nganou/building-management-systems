@@ -40,7 +40,7 @@ export class SessionService {
     return subscription && subscription.status !== 'ACTIVE' ? (subscription.endsOn ?? '') : null;
   });
 
-  /** An owner's standing while their last day is a week away or closer; null otherwise. */
+  /** An owner's standing while their last day is close enough to warn about; null otherwise. */
   readonly endingSoon = computed(() => {
     const subscription = this.me()?.subscription;
     return subscription?.endingSoon ? subscription : null;

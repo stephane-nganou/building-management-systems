@@ -40,6 +40,7 @@ test.describe('registration', () => {
       'Invoices',
       'Profit and loss',
       'Assistants',
+      'Subscription',
     ]);
   });
 

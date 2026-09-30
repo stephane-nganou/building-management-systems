@@ -15,7 +15,7 @@ import { TranslatePipe } from './translate.pipe';
         <dt>{{ 'common.email' | t }}</dt>
         <dd><a [href]="'mailto:' + contacts().email">{{ contacts().email }}</a></dd>
         <dt>{{ 'support.phone' | t }}</dt>
-        <dd><a [href]="'tel:' + contacts().phone">{{ contacts().phone }}</a></dd>
+        <dd><a [href]="'tel:' + contacts().phone.replaceAll(' ', '')">{{ contacts().phone }}</a></dd>
         <dt>{{ 'support.hours' | t }}</dt>
         <dd>{{ contacts().hours }}</dd>
       </dl>

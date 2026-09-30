@@ -160,7 +160,7 @@ export interface Standing {
   endsOn: string | null;
   /** Days after today still covered, zero on the last day; null unless active. */
   daysLeft: number | null;
-  /** True from a week before the last day. */
+  /** True once the last day is close enough to warn about (BMS_SUBSCRIPTION_WARNING_DAYS). */
   endingSoon: boolean;
 }
 
