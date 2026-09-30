@@ -1,10 +1,21 @@
 package com.bms.invoice;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Locale;
 
+import com.openhtmltopdf.outputdevice.helper.BaseRendererBuilder.FontStyle;
+import com.openhtmltopdf.pdfboxout.PDFontSupplier;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
+import org.apache.fontbox.ttf.TTFParser;
+import org.apache.fontbox.ttf.TrueTypeFont;
+import org.apache.pdfbox.io.RandomAccessReadBuffer;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.pdmodel.font.PDFont;
+import org.apache.pdfbox.pdmodel.font.PDType0Font;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import org.thymeleaf.TemplateEngine;
@@ -16,6 +27,15 @@ public class InvoicePdfRenderer {
 
     /** Day before month, as both languages the app speaks write it. */
     private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
+
+    /** A static cut of the app's typeface; the PDF renderer cannot read variable fonts. */
+    private record Face(String file, String family, int weight) {
+    }
+
+    private static final List<Face> FACES = List.of(
+            new Face("MonaSans-Regular.ttf", "Mona Sans", 400),
+            new Face("MonaSans-SemiBold.ttf", "Mona Sans", 600),
+            new Face("MonaSansExpanded-Bold.ttf", "Mona Sans Expanded", 700));
 
     private final TemplateEngine templateEngine;
     private final String issuerName;
@@ -49,15 +69,34 @@ public class InvoicePdfRenderer {
         String html = templateEngine.process("invoice", context);
 
         ByteArrayOutputStream output = new ByteArrayOutputStream();
-        PdfRendererBuilder builder = new PdfRendererBuilder();
-        builder.useFastMode();
-        builder.withHtmlContent(html, null);
-        builder.toStream(output);
-        try {
+        try (PDDocument document = new PDDocument()) {
+            PdfRendererBuilder builder = new PdfRendererBuilder();
+            builder.useFastMode();
+            builder.usePDDocument(document);
+            for (Face face : FACES) {
+                builder.useFont(new PDFontSupplier(load(document, face.file())), face.family(), face.weight(),
+                        FontStyle.NORMAL, true);
+            }
+            builder.withHtmlContent(html, null);
+            builder.toStream(output);
             builder.run();
         } catch (Exception exception) {
             throw new IllegalStateException("Could not render invoice " + invoice.getInvoiceNumber(), exception);
         }
         return output.toByteArray();
+    }
+
+    /**
+     * Mona Sans joins "ti", "tt", "ff" and a few more into ligatures, and PDFBox
+     * applies them as it writes. Those glyphs have no character behind them, so
+     * text copied or searched out of the PDF would lose its letters. Without the
+     * substitution table every glyph maps back to the character it draws.
+     */
+    private static PDFont load(PDDocument document, String file) throws IOException {
+        try (InputStream stream = InvoicePdfRenderer.class.getResourceAsStream("/fonts/" + file)) {
+            TrueTypeFont font = new TTFParser().parse(new RandomAccessReadBuffer(stream));
+            font.getTableMap().remove("GSUB");
+            return PDType0Font.load(document, font, true);
+        }
     }
 }

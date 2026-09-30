@@ -7,6 +7,9 @@ export const fr: Messages = {
   'app.role.assisting': 'Assiste {count} propriétaire(s)',
   'app.signOut': 'Se déconnecter',
   'app.language': 'Langue',
+  'app.openMenu': 'Ouvrir le menu',
+  'app.navigation': 'Principale',
+  'gate.pitch': 'Loyers, dépenses et factures de tous vos immeubles, au même endroit.',
 
   'nav.dashboard': "Vue d'ensemble",
   'nav.buildings': 'Immeubles',
@@ -18,6 +21,8 @@ export const fr: Messages = {
   'nav.assistants': 'Assistants',
 
   'common.cancel': 'Annuler',
+  'common.close': 'Fermer',
+  'common.actions': 'Actions',
   'common.saveChanges': 'Enregistrer',
   'common.edit': 'Modifier',
   'common.delete': 'Supprimer',
@@ -37,6 +42,19 @@ export const fr: Messages = {
   'common.to': 'Au',
   'common.date': 'Date',
   'common.description': 'Description',
+
+  'confirm.deleteTitle': 'Supprimer {name} ?',
+  'confirm.deleteBody': 'La suppression est définitive.',
+  'confirm.removeAssistantTitle': 'Retirer {name} ?',
+  'confirm.removeAssistantBody': "Cette personne perd immédiatement l'accès à vos immeubles.",
+
+  'toast.saved': 'Enregistré : {name}',
+  'toast.deleted': 'Supprimé : {name}',
+  'toast.invoiceCreated': 'Facture créée',
+  'toast.invoiceStatus': 'Facture {number} : {status}',
+  'toast.assistantRemoved': 'Accès retiré : {name}',
+
+  'facade.label': '{occupied} sur {total} appartements loués',
 
   'enum.status.VACANT': 'Libre',
   'enum.status.OCCUPIED': 'Occupé',
@@ -80,6 +98,8 @@ export const fr: Messages = {
   'dashboard.spent': 'Dépensé',
   'dashboard.net': 'Résultat net',
   'dashboard.rentRoll': 'Loyers par mois',
+  'dashboard.street': 'Vos immeubles',
+  'dashboard.streetSubtitle': 'Chaque fenêtre est un appartement. {occupied} sur {total} sont éclairées, car elles sont louées.',
   'dashboard.byBuilding': 'Situation par immeuble',
   'dashboard.byBuildingSubtitle':
     'Les loyers encaissés face à ce que chaque immeuble coûte à exploiter.',
@@ -204,6 +224,7 @@ export const fr: Messages = {
   'invoices.due': 'Échéance',
   'invoices.markSent': 'Marquer envoyée',
   'invoices.markPaid': 'Marquer payée',
+  'invoices.downloadPdf': 'Télécharger le PDF',
   'invoices.periodStart': 'Période du',
   'invoices.periodEnd': 'Période au',
   'invoices.issueDate': 'Émise le',
@@ -262,6 +283,8 @@ export const fr: Messages = {
   'assistants.handOverBody':
     'Ce mot de passe ne sera affiché qu’une fois. {name} devra le changer à la première connexion.',
   'assistants.temporaryPassword': 'Mot de passe temporaire',
+  'assistants.copy': 'Copier',
+  'assistants.copied': 'Mot de passe copié',
   'assistants.theirEmail': 'Son e-mail',
   'assistants.emailHint': 'Nous créons le compte et vous donnons un mot de passe à transmettre.',
   'assistants.mayDo': 'Ses droits',

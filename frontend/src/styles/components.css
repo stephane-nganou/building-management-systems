@@ -1,0 +1,797 @@
+/* ---------- buttons ---------- */
+
+button,
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font: inherit;
+  font-weight: 550;
+  line-height: 1.2;
+  border-radius: var(--radius-s);
+  border: 1px solid var(--line-strong);
+  background: var(--surface);
+  color: var(--ink);
+  padding: 9px 16px;
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+}
+
+button:hover,
+.btn:hover {
+  border-color: var(--ink-3);
+}
+
+button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+button.primary,
+.btn.primary {
+  background: var(--primary);
+  border-color: var(--primary);
+  color: var(--primary-ink);
+  font-weight: 600;
+}
+
+button.primary:hover:not(:disabled),
+.btn.primary:hover {
+  background: var(--primary-hover);
+  border-color: var(--primary-hover);
+}
+
+button.destructive {
+  background: var(--brick);
+  border-color: var(--brick);
+  color: #fff;
+  font-weight: 600;
+}
+
+button.quiet {
+  background: transparent;
+  border-color: transparent;
+  color: var(--ink-2);
+  padding: 7px 10px;
+}
+
+button.quiet:hover {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+}
+
+/* Square, icon only; the name lives in aria-label and the tooltip. */
+button.icon {
+  padding: 7px;
+  border-color: transparent;
+  background: transparent;
+  color: var(--ink-3);
+}
+
+button.icon:hover {
+  color: var(--ink);
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+}
+
+button.icon.danger:hover {
+  color: var(--brick);
+  background: color-mix(in srgb, var(--brick) 10%, transparent);
+}
+
+.row-actions {
+  display: inline-flex;
+  gap: 2px;
+  justify-content: flex-end;
+}
+
+bms-icon {
+  display: inline-flex;
+  flex: none;
+}
+
+/* ---------- forms ---------- */
+
+input,
+select,
+textarea {
+  font: inherit;
+  color: var(--ink);
+  background: var(--surface);
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius-s);
+  padding: 9px 12px;
+  width: 100%;
+  transition: border-color 120ms ease, box-shadow 120ms ease;
+}
+
+input:hover,
+select:hover,
+textarea:hover {
+  border-color: var(--ink-3);
+}
+
+input:focus,
+select:focus,
+textarea:focus {
+  outline: none;
+  border-color: var(--night);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--lamplight) 45%, transparent);
+}
+
+@media (prefers-color-scheme: dark) {
+  input:focus,
+  select:focus,
+  textarea:focus {
+    border-color: var(--lamplight);
+  }
+}
+
+input[readonly] {
+  background: var(--surface-sunk);
+}
+
+label {
+  display: block;
+  font-size: var(--step--1);
+  font-weight: 550;
+  color: var(--ink-2);
+  margin-bottom: 6px;
+}
+
+.field {
+  margin-bottom: 16px;
+}
+
+.hint {
+  font-size: var(--step--1);
+  color: var(--ink-3);
+  margin-top: 6px;
+}
+
+.grid-2 {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 0 16px;
+}
+
+.toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin-bottom: 16px;
+}
+
+.toolbar .field {
+  margin-bottom: 0;
+  min-width: 180px;
+}
+
+.checks {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 4px 18px;
+}
+
+.check {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 5px 0;
+}
+
+.check input {
+  width: 16px;
+  height: 16px;
+  margin: 0;
+  accent-color: var(--night);
+}
+
+.check label {
+  margin: 0;
+  font-size: var(--step-0);
+  font-weight: 450;
+  color: var(--ink);
+}
+
+/* EN and FR, one segmented control. */
+.languages {
+  display: inline-flex;
+  width: fit-content;
+  border: 1px solid var(--line-strong);
+  border-radius: 999px;
+  padding: 2px;
+  gap: 2px;
+}
+
+button.language {
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--ink-3);
+  font-size: 0.75rem;
+  font-weight: 650;
+  letter-spacing: 0.04em;
+  padding: 3px 10px;
+}
+
+button.language.on {
+  background: var(--ink);
+  color: var(--ground);
+}
+
+/* ---------- tables: one plaster sheet per list ---------- */
+
+table.sheet {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+
+.sheet th {
+  text-align: left;
+  font-weight: 600;
+  font-size: var(--step--1);
+  color: var(--ink-3);
+  background: var(--surface-sunk);
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--line);
+  white-space: nowrap;
+}
+
+.sheet td {
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--line);
+  vertical-align: middle;
+}
+
+.sheet tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.sheet tbody tr:hover td {
+  background: var(--surface-sunk);
+}
+
+.sheet tfoot td {
+  border-top: 1px solid var(--line-strong);
+  border-bottom: 0;
+  background: var(--surface-sunk);
+}
+
+.sheet .strong {
+  font-weight: 600;
+}
+
+.sheet .actions-cell {
+  width: 1%;
+  padding-top: 6px;
+  padding-bottom: 6px;
+  white-space: nowrap;
+  text-align: right;
+}
+
+/* A table wider than the screen scrolls inside its own frame. Positioned, so
+   the visually hidden column labels stay inside it rather than widening the
+   page on a phone. */
+.sheet-frame {
+  position: relative;
+  overflow-x: auto;
+  border-radius: var(--radius);
+}
+
+.name-cell {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.name-cell small {
+  display: block;
+  color: var(--ink-3);
+  font-size: var(--step--1);
+}
+
+/* ---------- status marks ---------- */
+
+.mark {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: var(--step--1);
+  font-weight: 550;
+  padding: 3px 10px 3px 8px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+.mark::before {
+  content: '';
+  width: 7px;
+  height: 9px;
+  border-radius: 1px;
+  background: currentColor;
+  opacity: 0.55;
+}
+
+/* Let: the window is lit. */
+.mark.occupied {
+  background: color-mix(in srgb, var(--lamplight) 20%, transparent);
+  color: color-mix(in srgb, var(--lamplight) 45%, var(--ink));
+}
+
+.mark.occupied::before {
+  background: var(--lamplight);
+  opacity: 1;
+}
+
+.mark.vacant::before {
+  background: transparent;
+  border: 1.5px solid currentColor;
+}
+
+.mark.maintenance::before {
+  background: repeating-linear-gradient(135deg, currentColor 0 2px, transparent 2px 4px);
+  opacity: 0.8;
+}
+
+.mark.paid {
+  background: color-mix(in srgb, var(--pos) 12%, transparent);
+  color: var(--pos);
+}
+
+.mark.sent {
+  background: color-mix(in srgb, var(--ink) 10%, transparent);
+  color: var(--ink);
+}
+
+.mark.cancelled {
+  background: color-mix(in srgb, var(--neg) 10%, transparent);
+  color: var(--neg);
+  text-decoration: line-through;
+}
+
+/* ---------- ledger figures ---------- */
+
+.figures {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+
+.figure {
+  background: var(--surface);
+  padding: 20px 22px;
+}
+
+.figure .caption {
+  display: block;
+  color: var(--ink-2);
+  font-size: var(--step--1);
+  font-weight: 550;
+}
+
+.figure .amount {
+  display: block;
+  margin-top: 8px;
+  font-size: clamp(1.5rem, 2.4vw, 2rem);
+  font-weight: 650;
+  font-stretch: var(--wider);
+  letter-spacing: -0.03em;
+  line-height: 1;
+}
+
+/* ---------- dialog ---------- */
+
+dialog.panel {
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-l);
+  background: var(--surface);
+  color: var(--ink);
+  width: min(640px, calc(100vw - 32px));
+  max-height: calc(100dvh - 48px);
+  box-shadow: var(--shadow-lift);
+}
+
+dialog.panel.narrow {
+  width: min(440px, calc(100vw - 32px));
+}
+
+dialog.panel[open] {
+  display: flex;
+  flex-direction: column;
+  animation: dialog-in 180ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+dialog.panel::backdrop {
+  background: var(--wash);
+  backdrop-filter: blur(2px);
+  animation: fade-in 180ms ease;
+}
+
+.panel header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 20px 24px 0;
+}
+
+.panel .body {
+  padding: 20px 24px 8px;
+  overflow-y: auto;
+}
+
+.panel .body > p {
+  color: var(--ink-2);
+}
+
+.panel footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  padding: 16px 24px 20px;
+}
+
+@keyframes dialog-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ---------- toasts ---------- */
+
+.toasts {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  z-index: 60;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.toast {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  background: var(--night);
+  color: #fff;
+  font-weight: 550;
+  box-shadow: var(--shadow-lift);
+  animation: toast-in 220ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.toast bms-icon {
+  color: var(--lamplight);
+}
+
+@media (prefers-color-scheme: dark) {
+  .toast {
+    background: #eceef8;
+    color: #1c1f3a;
+  }
+
+  .toast bms-icon {
+    color: var(--night);
+  }
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+}
+
+@media (max-width: 860px) {
+  .toasts {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+  }
+}
+
+/* ---------- states ---------- */
+
+.empty {
+  display: flex;
+  align-items: center;
+  gap: 28px;
+  padding: 32px;
+  background: var(--surface);
+  border: 1px dashed var(--line-strong);
+  border-radius: var(--radius);
+  color: var(--ink-2);
+}
+
+.empty h3 {
+  font-size: var(--step-1);
+  font-stretch: var(--wide);
+  margin-bottom: 6px;
+}
+
+.empty p {
+  max-width: 52ch;
+}
+
+.empty .btn,
+.empty button {
+  margin-top: 16px;
+}
+
+@media (max-width: 600px) {
+  .empty {
+    flex-direction: column;
+    align-items: flex-start;
+    padding: 24px;
+  }
+}
+
+.notice {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  margin-top: 16px;
+  border-radius: var(--radius-s);
+  background: color-mix(in srgb, var(--neg) 9%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--neg) 30%, transparent);
+  color: var(--ink);
+}
+
+.loading {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink-3);
+  padding: 24px 0;
+}
+
+.loading::before {
+  content: '';
+  width: 8px;
+  height: 10px;
+  border-radius: 1px;
+  background: var(--lamplight);
+  animation: flicker 1.1s ease-in-out infinite;
+}
+
+@keyframes flicker {
+  50% {
+    opacity: 0.2;
+  }
+}
+
+/* A value the owner has to copy, such as a password shown once. */
+.handover {
+  display: flex;
+  gap: 8px;
+}
+
+.handover input {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+/* ---------- the facade ---------- */
+
+/* A facade drawn on plaster; a night scene sets its own colours instead. */
+:root {
+  --facade-body: var(--surface-sunk);
+  --facade-frame: var(--window-frame);
+  --facade-window: var(--window-dark);
+}
+
+.facade {
+  display: inline-flex;
+  flex: none;
+}
+
+.facade .body {
+  fill: var(--facade-body);
+  stroke: var(--facade-frame);
+  stroke-width: 1.25;
+}
+
+.facade .cornice,
+.facade .door {
+  fill: var(--facade-frame);
+}
+
+.facade .pane {
+  fill: var(--facade-window);
+}
+
+.facade .pane.occupied {
+  fill: var(--lamplight);
+}
+
+.facade .strike {
+  stroke: var(--facade-frame);
+  stroke-width: 1.25;
+  stroke-linecap: round;
+}
+
+/* The one orchestrated moment: the lights come on, floor by floor. */
+.facade.switching-on .pane.occupied {
+  animation: switch-on 520ms steps(1, end) both;
+}
+
+@keyframes switch-on {
+  0% {
+    fill: var(--facade-window);
+  }
+  40% {
+    fill: var(--lamplight);
+  }
+  60% {
+    fill: var(--facade-window);
+  }
+  100% {
+    fill: var(--lamplight);
+  }
+}
+
+.notes-field {
+  margin-top: 16px;
+}
+
+/* Plain labels, such as what an assistant may do: no status, so no lamp. */
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.tag {
+  font-size: var(--step--1);
+  padding: 2px 9px;
+  border-radius: 999px;
+  border: 1px solid var(--line-strong);
+  color: var(--ink-2);
+  white-space: nowrap;
+}
+
+/* ---------- night scenes: the dashboard street and the gate ---------- */
+
+/* Fixed colours rather than tokens: the street is at dusk in either theme. */
+.night {
+  --pavement: #3b4166;
+  --facade-body: #272b4d;
+  --facade-frame: #4a5080;
+  --facade-window: #171a33;
+  color: #eceef8;
+  background:
+    radial-gradient(120% 90% at 85% 0%, #2d3262 0%, transparent 60%),
+    linear-gradient(180deg, #1c1f3a 0%, #232748 100%);
+}
+
+.night .pane.occupied {
+  filter: drop-shadow(0 0 5px rgb(240 180 60 / 0.55));
+}
+
+.street {
+  position: relative;
+  margin-bottom: 20px;
+  padding: 26px 28px 0;
+  border-radius: var(--radius-l);
+  overflow: hidden;
+}
+
+.street-head h2 {
+  color: #fff;
+}
+
+.street-head p {
+  margin-top: 4px;
+  color: rgb(236 238 248 / 0.64);
+}
+
+.lots {
+  display: flex;
+  align-items: flex-end;
+  gap: 36px;
+  margin-top: 26px;
+  padding: 0 4px 22px;
+  overflow-x: auto;
+}
+
+.lot {
+  flex: none;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* the pavement, run on across the gap to the next lot */
+.lot .facade {
+  margin: 0 -18px 10px;
+  padding: 0 18px;
+  border-bottom: 3px solid var(--pavement);
+}
+
+.lot-name {
+  font-weight: 600;
+  color: #fff;
+  max-width: 22ch;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.lot-net {
+  font-size: var(--step--1);
+  font-weight: 600;
+  font-stretch: var(--wide);
+  color: rgb(236 238 248 / 0.6);
+}
+
+/* The ledger colours are tuned for plaster; at night they need more light. */
+.lot-net.pos {
+  color: #6fd6a3;
+}
+
+.lot-net.neg {
+  color: #ff9a8c;
+}
+
+/* ---------- tallies ---------- */
+
+.tallies {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 20px;
+  margin: 0;
+}
+
+.tallies div {
+  padding: 2px 0 2px 16px;
+  border-left: 2px solid var(--line-strong);
+}
+
+.tallies dt {
+  font-size: var(--step--1);
+  color: var(--ink-2);
+}
+
+.tallies dd {
+  margin: 4px 0 0;
+  font-size: var(--step-2);
+  font-weight: 650;
+  font-stretch: var(--wider);
+}
+
+@media (prefers-color-scheme: dark) {
+  .street {
+    box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06);
+  }
+}

@@ -1,6 +1,6 @@
 # Architecture diagrams
 
-Last updated: 2026-09-05, after BM-8.
+Last updated: 2026-09-30, after BM-13.
 
 The diagrams are Mermaid, so GitHub renders them in the browser and a change to
 one shows up as a readable diff. Each carries a short note on what it is meant
@@ -493,7 +493,7 @@ flowchart TB
     end
 
     subgraph shell["Shell"]
-        app["App<br/>sidebar from visibleEntries(), router-outlet"]
+        app["App<br/>sidebar from visibleEntries(), a drawer on phones,<br/>router-outlet, confirm and toast hosts"]
         routes["app.routes.ts<br/>canMatch on every screen"]
     end
 
@@ -514,6 +514,8 @@ flowchart TB
     subgraph sharedui["shared/"]
         pipes["TranslatePipe (t), MoneyPipe (money),<br/>DayPipe (day), LabelPipe (label)<br/>impure on purpose"]
         lang["LanguageSwitcher"]
+        ui["Dialog (native dialog), ConfirmService,<br/>ToastService, IconButton, Icon"]
+        look["Facade (floorsOf), Brand, Gate"]
     end
 
     main --> appcfg
@@ -530,6 +532,9 @@ flowchart TB
     session --> nav
     pages --> api
     pages --> pipes
+    pages --> ui
+    pages --> look
+    app --> ui
     pipes --> i18n
     lang --> i18n
     api --> models
@@ -541,6 +546,13 @@ on its argument, and the argument here is the message key, which does not
 change when the language does; the old wording would stay on screen. An impure
 pipe reads the language signal on every run, which both registers the
 dependency with the view and recomputes once it is marked dirty.
+
+The look lives in `src/styles/`: `tokens.css` holds the palette, the type
+scale and the self hosted Mona Sans, and the other three sheets style the shell
+and the shared pieces by class, so a screen's template carries no styles of
+its own. `Facade` is the one drawing: a building as its floors, a lit window
+per let apartment. The dashboard, the building list, empty states and the
+register page all use it.
 
 ## 7. Entity relationship diagram
 

@@ -2,6 +2,10 @@
   Rendered to PDF by openhtmltopdf, which parses this document as XML.
   Keep the markup well formed: close every tag, avoid void elements such as
   <meta> or <br>, and avoid named entities like &nbsp;.
+
+  It wears the application's colours: a night band across the top with the
+  building mark, lamplight for the one thing that matters, and Mona Sans,
+  registered by InvoicePdfRenderer.
 -->
 <html xmlns:th="http://www.thymeleaf.org">
 <head>
@@ -9,136 +13,203 @@
     <style>
         @page {
             size: A4;
-            margin: 22mm 18mm;
+            margin: 16mm 16mm 20mm;
         }
 
         body {
-            font-family: Helvetica, Arial, sans-serif;
-            font-size: 10.5pt;
-            color: #1f2933;
+            font-family: 'Mona Sans', sans-serif;
+            font-size: 10pt;
+            color: #1c1f3a;
             line-height: 1.5;
         }
 
-        .header {
-            border-bottom: 2pt solid #1f2933;
-            padding-bottom: 10pt;
-            margin-bottom: 18pt;
+        .band {
+            background-color: #1c1f3a;
+            color: #ffffff;
+            border-radius: 8pt;
+            padding: 16pt 18pt;
+            margin-bottom: 22pt;
+        }
+
+        .band td {
+            vertical-align: middle;
+        }
+
+        /* The building mark, drawn in cells: two floors, a light on in each. */
+        .mark {
+            border-collapse: separate;
+            border-spacing: 2.5pt;
+            background-color: #272b4d;
+            border: 0.75pt solid #8b90ad;
+            border-top: 2pt solid #8b90ad;
+            border-radius: 1.5pt;
+        }
+
+        .mark td {
+            width: 6pt;
+            height: 7pt;
+            border-radius: 1pt;
+        }
+
+        .lit {
+            background-color: #f0b43c;
+        }
+
+        .dark {
+            background-color: #3b4166;
         }
 
         .issuer {
-            font-size: 15pt;
+            font-family: 'Mona Sans Expanded', sans-serif;
             font-weight: bold;
-            letter-spacing: 0.4pt;
+            font-size: 15pt;
+            padding-left: 10pt;
         }
 
         .doc-type {
-            color: #52606d;
-            font-size: 9pt;
-            text-transform: uppercase;
-            letter-spacing: 1.4pt;
+            color: #f0b43c;
+            font-weight: 600;
+            font-size: 9.5pt;
         }
 
-        .meta-table {
+        .number {
+            font-family: 'Mona Sans Expanded', sans-serif;
+            font-weight: bold;
+            font-size: 12pt;
+        }
+
+        .columns {
             width: 100%;
-            margin-bottom: 20pt;
+            margin-bottom: 18pt;
         }
 
-        .meta-table td {
+        .columns td {
             vertical-align: top;
             width: 50%;
         }
 
         .label {
-            color: #7b8794;
+            color: #6e7390;
             font-size: 8.5pt;
-            text-transform: uppercase;
-            letter-spacing: 0.8pt;
+            font-weight: 600;
         }
 
         .value {
-            font-weight: bold;
+            font-weight: 600;
         }
 
         .party {
-            margin-top: 4pt;
+            margin-top: 3pt;
+        }
+
+        /* Dates read as a row of ruled columns, as the app shows its tallies. */
+        .dates {
+            width: 100%;
+            margin-bottom: 22pt;
+        }
+
+        .dates td {
+            border-left: 1.5pt solid #cfd2dc;
+            padding: 1pt 0 1pt 9pt;
+            width: 33%;
         }
 
         table.lines {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 6pt;
         }
 
         table.lines th {
-            background: #f5f7fa;
-            border-bottom: 1pt solid #cbd2d9;
-            padding: 7pt 6pt;
+            background-color: #f4f5f7;
+            border-bottom: 0.75pt solid #cfd2dc;
+            padding: 7pt 8pt;
             text-align: left;
-            font-size: 9pt;
-            text-transform: uppercase;
-            letter-spacing: 0.6pt;
-            color: #52606d;
+            font-size: 8.5pt;
+            font-weight: 600;
+            color: #4a4f6a;
         }
 
         table.lines td {
-            border-bottom: 0.5pt solid #e4e7eb;
-            padding: 7pt 6pt;
+            border-bottom: 0.5pt solid #e3e5ec;
+            padding: 8pt;
         }
 
-        .num {
+        /* Scoped to the table, or its left aligned headings would win. */
+        table.lines .num {
             text-align: right;
         }
 
-        .totals {
-            width: 42%;
-            margin-left: 58%;
-            margin-top: 14pt;
+        .total {
+            width: 100%;
+            margin-top: 16pt;
             border-collapse: collapse;
         }
 
-        .totals td {
-            padding: 6pt 6pt;
+        .total td {
+            padding: 10pt 8pt 0;
+            vertical-align: bottom;
+            white-space: nowrap;
         }
 
-        .totals tr.grand td {
-            border-top: 1.5pt solid #1f2933;
-            font-size: 12pt;
+        .total td.ruled {
+            border-top: 1.5pt solid #1c1f3a;
+        }
+
+        .total .amount {
+            font-family: 'Mona Sans Expanded', sans-serif;
             font-weight: bold;
+            font-size: 17pt;
+            text-align: right;
         }
 
         .notes {
             margin-top: 26pt;
-            padding-top: 10pt;
-            border-top: 0.5pt solid #e4e7eb;
-            color: #52606d;
+            padding: 10pt 12pt;
+            background-color: #f8f9fb;
+            border-radius: 6pt;
+            color: #4a4f6a;
             font-size: 9.5pt;
         }
 
         .footer {
-            margin-top: 30pt;
-            color: #7b8794;
-            font-size: 8.5pt;
+            margin-top: 26pt;
+            padding-top: 10pt;
+            border-top: 0.5pt solid #e3e5ec;
+            color: #6e7390;
+            font-size: 9pt;
         }
     </style>
 </head>
 <body>
 
-<div class="header">
+<div class="band">
     <table style="width:100%">
         <tr>
+            <td style="width:26pt">
+                <table class="mark">
+                    <tr>
+                        <td class="dark"></td>
+                        <td class="lit"></td>
+                    </tr>
+                    <tr>
+                        <td class="lit"></td>
+                        <td class="dark"></td>
+                    </tr>
+                </table>
+            </td>
             <td>
                 <div class="issuer" th:text="${issuerName}">Building Management</div>
             </td>
             <td style="text-align:right">
                 <div class="doc-type"
                      th:text="#{'invoice.title.' + ${invoice.type.name()}}">Invoice</div>
-                <div class="value" th:text="${invoice.invoiceNumber}">INV-2026-000001</div>
+                <div class="number" th:text="${invoice.invoiceNumber}">INV-2026-000001</div>
             </td>
         </tr>
     </table>
 </div>
 
-<table class="meta-table">
+<table class="columns">
     <tr>
         <td>
             <div class="label" th:text="#{invoice.billedTo}">Billed to</div>
@@ -159,25 +230,19 @@
     </tr>
 </table>
 
-<table class="meta-table">
+<table class="dates">
     <tr>
         <td>
             <div class="label" th:text="#{invoice.billingPeriod}">Billing period</div>
-            <div class="value" th:text="${periodStart} + ' - ' + ${periodEnd}">01.01.2026 - 31.01.2026</div>
+            <div class="value" th:text="${periodStart} + ' - ' + ${periodEnd}">01/01/2026 - 31/01/2026</div>
         </td>
         <td>
-            <table style="width:100%">
-                <tr>
-                    <td>
-                        <div class="label" th:text="#{invoice.issueDate}">Issue date</div>
-                        <div class="value" th:text="${issueDate}">01.01.2026</div>
-                    </td>
-                    <td>
-                        <div class="label" th:text="#{invoice.dueDate}">Due date</div>
-                        <div class="value" th:text="${dueDate}">15.01.2026</div>
-                    </td>
-                </tr>
-            </table>
+            <div class="label" th:text="#{invoice.issueDate}">Issue date</div>
+            <div class="value" th:text="${issueDate}">01/01/2026</div>
+        </td>
+        <td>
+            <div class="label" th:text="#{invoice.dueDate}">Due date</div>
+            <div class="value" th:text="${dueDate}">15/01/2026</div>
         </td>
     </tr>
 </table>
@@ -207,10 +272,11 @@
     </tbody>
 </table>
 
-<table class="totals">
-    <tr class="grand">
-        <td th:text="#{invoice.totalDue}">Total due</td>
-        <td class="num"
+<table class="total">
+    <tr>
+        <td style="width:50%"></td>
+        <td class="label ruled" th:text="#{invoice.totalDue}">Total due</td>
+        <td class="amount ruled"
             th:text="${#numbers.formatDecimal(invoice.total, 1, 2)} + ' ' + ${currency}">0,00</td>
     </tr>
 </table>

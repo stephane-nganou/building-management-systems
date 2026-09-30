@@ -1,7 +1,7 @@
 {
   "realm": "bms",
   "enabled": true,
-  "displayName": "Building Management",
+  "displayName": "Hausbuch",
   "loginTheme": "bms",
   "internationalizationEnabled": true,
   "supportedLocales": [

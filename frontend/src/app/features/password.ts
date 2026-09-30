@@ -6,7 +6,7 @@ import { AuthApi } from '../core/api';
 import { AuthService } from '../core/auth';
 import { TranslationService } from '../core/i18n';
 import { SessionService } from '../core/session';
-import { LanguageSwitcher } from '../shared/language-switcher';
+import { Gate } from '../shared/gate';
 import { TranslatePipe } from '../shared/translate.pipe';
 
 /**
@@ -16,78 +16,53 @@ import { TranslatePipe } from '../shared/translate.pipe';
  */
 @Component({
   selector: 'bms-password',
-  imports: [FormsModule, LanguageSwitcher, TranslatePipe],
+  imports: [FormsModule, Gate, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="gate">
-      <section class="band gate-card">
-        <div class="band-head">
-          <div>
-            <h1>{{ 'password.title' | t }}</h1>
-            <p>{{ 'password.subtitle' | t }}</p>
-          </div>
+    <bms-gate>
+      <div class="band-head">
+        <div>
+          <h1>{{ 'password.title' | t }}</h1>
+          <p>{{ 'password.subtitle' | t }}</p>
         </div>
+      </div>
 
-        <div class="field">
-          <label for="newPassword">{{ 'password.new' | t }}</label>
-          <input
-            id="newPassword"
-            name="newPassword"
-            type="password"
-            [(ngModel)]="newPassword"
-            autocomplete="new-password"
-          />
-          <p class="muted" style="font-size:0.8125rem;margin:6px 0 0">
-            {{ 'password.hint' | t }}
-          </p>
-        </div>
+      <div class="field">
+        <label for="newPassword">{{ 'password.new' | t }}</label>
+        <input
+          id="newPassword"
+          name="newPassword"
+          type="password"
+          [(ngModel)]="newPassword"
+          autocomplete="new-password"
+        />
+        <p class="hint">
+          {{ 'password.hint' | t }}
+        </p>
+      </div>
 
-        <div class="field">
-          <label for="confirmPassword">{{ 'password.confirm' | t }}</label>
-          <input
-            id="confirmPassword"
-            name="confirmPassword"
-            type="password"
-            [(ngModel)]="confirmPassword"
-            autocomplete="new-password"
-          />
-        </div>
+      <div class="field">
+        <label for="confirmPassword">{{ 'password.confirm' | t }}</label>
+        <input
+          id="confirmPassword"
+          name="confirmPassword"
+          type="password"
+          [(ngModel)]="confirmPassword"
+          autocomplete="new-password"
+        />
+      </div>
 
-        @if (error()) {
-          <p class="notice">{{ error() }}</p>
-        }
+      @if (error()) {
+        <p class="notice" role="alert">{{ error() }}</p>
+      }
 
-        <div class="gate-actions">
-          <button class="primary" type="button" [disabled]="!complete() || saving()" (click)="submit()">
-            {{ (saving() ? 'password.saving' : 'password.submit') | t }}
-          </button>
-          <button class="quiet" type="button" (click)="signOut()">{{ 'app.signOut' | t }}</button>
-        </div>
-      </section>
-
-      <bms-language-switcher />
-    </div>
-  `,
-  styles: `
-    .gate {
-      display: grid;
-      place-items: center;
-      align-content: center;
-      gap: 18px;
-      min-height: 100vh;
-      padding: 32px 20px;
-    }
-
-    .gate-card {
-      width: min(440px, 100%);
-    }
-
-    .gate-actions {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      margin-top: 20px;
-    }
+      <div class="gate-actions">
+        <button class="primary" type="button" [disabled]="!complete() || saving()" (click)="submit()">
+          {{ (saving() ? 'password.saving' : 'password.submit') | t }}
+        </button>
+        <button class="quiet" type="button" (click)="signOut()">{{ 'app.signOut' | t }}</button>
+      </div>
+    </bms-gate>
   `,
 })
 export class PasswordPage {

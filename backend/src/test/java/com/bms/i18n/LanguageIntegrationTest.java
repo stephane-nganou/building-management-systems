@@ -104,17 +104,19 @@ class LanguageIntegrationTest extends AbstractIntegrationTest {
 
         String invoiceId = com.jayway.jsonpath.JsonPath.read(created, "$.id");
 
-        // The headings are upper cased by the stylesheet, so they come back out
-        // of the document that way.
+        // Désignation and Quantité hold the "ti" Mona Sans would draw as one
+        // ligature glyph, which reads back out of a PDF as nothing at all.
         assertThat(pdfText(invoiceId, "fr"))
-                .contains("FACTURÉ À", "PÉRIODE FACTURÉE", "Total à payer", "Loyer 2B")
+                .contains("Facturé à", "Période facturée", "Total à payer", "Loyer 2B")
+                .contains("Désignation", "Quantité")
                 .contains("Merci de virer le total dû")
                 .doesNotContain("Total due");
 
         // The same invoice downloaded in English: the wording around the lines
         // follows the request, the stored lines do not.
         assertThat(pdfText(invoiceId, "en"))
-                .contains("BILLED TO", "BILLING PERIOD", "Total due", "Loyer 2B")
+                .contains("Billed to", "Billing period", "Total due", "Loyer 2B")
+                .contains("Description", "Quantity")
                 .contains("Please transfer the total due")
                 .doesNotContain("Total à payer");
     }
