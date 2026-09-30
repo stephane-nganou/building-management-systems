@@ -441,6 +441,14 @@ table.sheet {
   font-stretch: var(--wider);
   letter-spacing: -0.03em;
   line-height: 1;
+  /* a long amount in francs wraps rather than leave its card */
+  overflow-wrap: anywhere;
+}
+
+/* A portfolio in more than one currency: a line each, a step smaller, so
+   millions of francs still fit beside euros. */
+.figures.several .amount {
+  font-size: var(--step-2);
 }
 
 /* ---------- dialog ---------- */

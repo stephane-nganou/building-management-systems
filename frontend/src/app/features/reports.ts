@@ -3,6 +3,8 @@ import { FormsModule } from '@angular/forms';
 import { rxResource } from '@angular/core/rxjs-interop';
 
 import { BuildingsApi, ReportsApi } from '../core/api';
+import { Currency } from '../core/models';
+import { MessageKey } from '../i18n/en';
 import { Facade } from '../shared/facade';
 import { Icon } from '../shared/icon';
 import { DayPipe, LabelPipe, MoneyPipe } from '../shared/money.pipe';
@@ -54,27 +56,30 @@ import { TranslatePipe } from '../shared/translate.pipe';
       </section>
     } @else if (report.hasValue()) {
       <section class="band">
-        <div class="figures">
+        <!-- One line per currency: buildings in different countries are never added up. -->
+        <div class="figures" [class.several]="report.value()!.totals.length > 1">
           <div class="figure">
             <span class="caption">{{ 'reports.income' | t }}</span>
-            <span class="amount pos">{{ report.value()!.totalIncome | money }}</span>
+            @for (totals of report.value()!.totals; track totals.currency) {
+              <span class="amount pos">{{ totals.income | money: totals.currency }}</span>
+            }
           </div>
           <div class="figure">
             <span class="caption">{{ 'reports.costs' | t }}</span>
-            <span class="amount neg">{{ report.value()!.totalExpenses | money }}</span>
+            @for (totals of report.value()!.totals; track totals.currency) {
+              <span class="amount neg">{{ totals.expenses | money: totals.currency }}</span>
+            }
           </div>
           <div class="figure">
             <span class="caption">
-              {{ (report.value()!.netResult >= 0 ? 'reports.profit' : 'reports.loss') | t }},
+              {{ resultCaption() | t }},
               {{ report.value()!.from | day }} - {{ report.value()!.to | day }}
             </span>
-            <span
-              class="amount"
-              [class.pos]="report.value()!.netResult >= 0"
-              [class.neg]="report.value()!.netResult < 0"
-            >
-              {{ report.value()!.netResult | money }}
-            </span>
+            @for (totals of report.value()!.totals; track totals.currency) {
+              <span class="amount" [class.pos]="totals.netResult >= 0" [class.neg]="totals.netResult < 0">
+                {{ totals.netResult | money: totals.currency }}
+              </span>
+            }
           </div>
         </div>
       </section>
@@ -104,25 +109,27 @@ import { TranslatePipe } from '../shared/translate.pipe';
                 @for (row of report.value()!.buildings; track row.buildingId) {
                   <tr>
                     <td class="strong">{{ row.buildingName }}</td>
-                    <td class="right pos">{{ row.income | money }}</td>
-                    <td class="right neg">{{ row.expenses | money }}</td>
+                    <td class="right pos">{{ row.income | money: row.currency }}</td>
+                    <td class="right neg">{{ row.expenses | money: row.currency }}</td>
                     <td
                       class="right strong"
                       [class.pos]="row.netResult >= 0"
                       [class.neg]="row.netResult < 0"
                     >
-                      {{ row.netResult | money }}
+                      {{ row.netResult | money: row.currency }}
                     </td>
                   </tr>
                 }
               </tbody>
               <tfoot>
-                <tr>
-                  <td class="strong">{{ 'common.total' | t }}</td>
-                  <td class="right strong pos">{{ report.value()!.totalIncome | money }}</td>
-                  <td class="right strong neg">{{ report.value()!.totalExpenses | money }}</td>
-                  <td class="right strong">{{ report.value()!.netResult | money }}</td>
-                </tr>
+                @for (totals of report.value()!.totals; track totals.currency) {
+                  <tr>
+                    <td class="strong">{{ 'common.total' | t }}</td>
+                    <td class="right strong pos">{{ totals.income | money: totals.currency }}</td>
+                    <td class="right strong neg">{{ totals.expenses | money: totals.currency }}</td>
+                    <td class="right strong">{{ totals.netResult | money: totals.currency }}</td>
+                  </tr>
+                }
               </tfoot>
             </table>
           </div>
@@ -142,11 +149,11 @@ import { TranslatePipe } from '../shared/translate.pipe';
                 </tr>
               </thead>
               <tbody>
-                @for (row of report.value()!.expensesByCategory; track row.category) {
+                @for (row of report.value()!.expensesByCategory; track row.category + row.currency) {
                   <tr>
                     <td>{{ row.category | label: 'category' }}</td>
-                    <td class="right">{{ row.amount | money }}</td>
-                    <td class="right muted">{{ share(row.amount) }}%</td>
+                    <td class="right">{{ row.amount | money: row.currency }}</td>
+                    <td class="right muted">{{ share(row.amount, row.currency) }}%</td>
                   </tr>
                 }
               </tbody>
@@ -176,10 +183,18 @@ export class ReportsPage {
       this.api.profitLoss(params.from, params.to, params.buildingId || undefined),
   });
 
-  private readonly totalExpenses = computed(() => this.report.value()?.totalExpenses ?? 0);
+  /** Profit or loss when every currency agrees; otherwise the neutral word. */
+  protected readonly resultCaption = computed<MessageKey>(() => {
+    const totals = this.report.value()?.totals ?? [];
+    if (totals.every((each) => each.netResult >= 0)) {
+      return 'reports.profit';
+    }
+    return totals.every((each) => each.netResult < 0) ? 'reports.loss' : 'reports.resultColumn';
+  });
 
-  protected share(amount: number): string {
-    const total = this.totalExpenses();
+  /** A category's share of the costs in its own currency. */
+  protected share(amount: number, currency: Currency): string {
+    const total = this.report.value()?.totals.find((each) => each.currency === currency)?.expenses ?? 0;
     return total === 0 ? '0' : ((amount / total) * 100).toFixed(1);
   }
 

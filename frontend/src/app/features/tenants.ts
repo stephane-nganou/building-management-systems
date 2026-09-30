@@ -107,7 +107,7 @@ const blank = (): TenantForm => ({
                       {{ 'tenants.onwards' | t }}
                     }
                   </td>
-                  <td class="right">{{ tenant.deposit | money }}</td>
+                  <td class="right">{{ tenant.deposit | money: tenant.currency }}</td>
                   <td class="actions-cell">
                     <span class="row-actions">
                       <button bmsIconButton icon="edit" [label]="'common.edit' | t" (click)="startEdit(tenant)"></button>

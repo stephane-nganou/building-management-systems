@@ -10,6 +10,10 @@ export type ExpenseCategory =
   | 'RENOVATION'
   | 'OTHER';
 
+/** The currencies a building can keep its books in; the backend's CurrencyCode. */
+export const CURRENCIES = ['EUR', 'XAF', 'XOF', 'USD', 'GBP', 'CHF'] as const;
+export type Currency = (typeof CURRENCIES)[number];
+
 export type InvoiceType = 'RENT' | 'COLD_WATER';
 export type InvoiceStatus = 'DRAFT' | 'SENT' | 'PAID' | 'CANCELLED';
 
@@ -34,6 +38,7 @@ export interface Building {
   postalCode: string | null;
   country: string | null;
   notes: string | null;
+  currency: Currency;
   apartmentCount: number;
 }
 
@@ -52,6 +57,7 @@ export interface Apartment {
   baseRent: number;
   utilitiesAdvance: number;
   status: ApartmentStatus;
+  currency: Currency;
 }
 
 export interface Tenant {
@@ -68,6 +74,7 @@ export interface Tenant {
   leaseEnd: string | null;
   deposit: number | null;
   active: boolean;
+  currency: Currency;
 }
 
 export interface Expense {
@@ -81,6 +88,7 @@ export interface Expense {
   incurredOn: string;
   description: string;
   vendor: string | null;
+  currency: Currency;
 }
 
 export interface InvoiceLine {
@@ -109,23 +117,31 @@ export interface Invoice {
   dueDate: string;
   notes: string | null;
   total: number;
+  currency: Currency;
   lines: InvoiceLine[];
+}
+
+/** Amounts in one currency. Reports give one of these per currency, never a sum across them. */
+export interface ProfitLossTotals {
+  currency: Currency;
+  income: number;
+  expenses: number;
+  netResult: number;
 }
 
 export interface ProfitLossReport {
   from: string;
   to: string;
-  totalIncome: number;
-  totalExpenses: number;
-  netResult: number;
+  totals: ProfitLossTotals[];
   buildings: {
     buildingId: string;
     buildingName: string;
+    currency: Currency;
     income: number;
     expenses: number;
     netResult: number;
   }[];
-  expensesByCategory: { category: ExpenseCategory; amount: number }[];
+  expensesByCategory: { category: ExpenseCategory; currency: Currency; amount: number }[];
 }
 
 export interface DashboardSummary {
@@ -134,10 +150,13 @@ export interface DashboardSummary {
   occupiedApartments: number;
   vacantApartments: number;
   activeTenants: number;
-  monthlyRentRoll: number;
-  yearToDateIncome: number;
-  yearToDateExpenses: number;
-  yearToDateNet: number;
+  totals: {
+    currency: Currency;
+    monthlyRentRoll: number;
+    yearToDateIncome: number;
+    yearToDateExpenses: number;
+    yearToDateNet: number;
+  }[];
 }
 
 export interface Assistant {
