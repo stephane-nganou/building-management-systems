@@ -25,6 +25,10 @@ Thumbs.db
 
 # Environment
 .env
+.env.production
+
+# Production database dumps
+/backups/
 
 # Logs
 *.log

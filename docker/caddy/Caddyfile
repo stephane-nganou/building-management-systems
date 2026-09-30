@@ -1,0 +1,44 @@
+# The one door into production. Caddy obtains and renews the certificate for
+# BMS_DOMAIN from Let's Encrypt, and sends each path to the service that owns it,
+# so the browser sees a single origin: the application, its API and the sign in
+# page all live under https://BMS_DOMAIN.
+
+{
+	email {$ACME_EMAIL}
+}
+
+{$BMS_DOMAIN} {
+	encode zstd gzip
+
+	header {
+		Strict-Transport-Security "max-age=31536000; includeSubDomains"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+
+	# Keycloak's admin console and admin API, and the master realm that signs
+	# into them, are never served here. Operators reach them over an SSH
+	# tunnel to the port the compose file binds to localhost.
+	handle /auth/admin* {
+		respond 404
+	}
+	handle /auth/realms/master* {
+		respond 404
+	}
+
+	# The sign in page and the token endpoints.
+	handle /auth/* {
+		reverse_proxy keycloak:8080
+	}
+
+	# Straight to the backend, which trusts the X-Forwarded-* headers Caddy sets.
+	handle /api/* {
+		reverse_proxy backend:8080
+	}
+
+	handle {
+		header X-Frame-Options DENY
+		reverse_proxy frontend:80
+	}
+}

@@ -1,0 +1,2 @@
+# Shell scripts run inside Linux containers too, where a CR ends every line in an error.
+*.sh text eol=lf

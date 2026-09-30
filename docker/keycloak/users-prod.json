@@ -10,9 +10,11 @@
       "credentials": [
         {
           "type": "password",
-          "value": "${BMS_ADMIN_PASSWORD}",
-          "temporary": true
+          "value": "${BMS_ADMIN_PASSWORD}"
         }
+      ],
+      "requiredActions": [
+        "UPDATE_PASSWORD"
       ],
       "realmRoles": [
         "admin"
