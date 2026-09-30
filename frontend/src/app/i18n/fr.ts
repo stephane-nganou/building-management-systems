@@ -4,6 +4,7 @@ import { Messages } from './en';
 export const fr: Messages = {
   'app.tagline': 'Registre immobilier',
   'app.role.owner': 'Propriétaire',
+  'app.role.admin': 'Administrateur',
   'app.role.assisting': 'Assiste {count} propriétaire(s)',
   'app.signOut': 'Se déconnecter',
   'app.language': 'Langue',
@@ -19,6 +20,7 @@ export const fr: Messages = {
   'nav.invoices': 'Factures',
   'nav.reports': 'Compte de résultat',
   'nav.assistants': 'Assistants',
+  'nav.accounts': 'Comptes',
 
   'common.cancel': 'Annuler',
   'common.close': 'Fermer',
@@ -47,6 +49,12 @@ export const fr: Messages = {
   'confirm.deleteBody': 'La suppression est définitive.',
   'confirm.removeAssistantTitle': 'Retirer {name} ?',
   'confirm.removeAssistantBody': "Cette personne perd immédiatement l'accès à vos immeubles.",
+  'confirm.endSubscriptionTitle': "Mettre fin à l'abonnement de {name} ?",
+  'confirm.endSubscriptionBody':
+    'Hier devient son dernier jour. Ses données restent consultables mais ne peuvent plus être modifiées.',
+  'confirm.suspendTitle': 'Suspendre {name} ?',
+  'confirm.suspendBody':
+    'Cette personne est aussitôt déconnectée de tout, et ses assistants ne peuvent plus modifier ses données.',
 
   'toast.saved': 'Enregistré : {name}',
   'toast.deleted': 'Supprimé : {name}',
@@ -88,6 +96,10 @@ export const fr: Messages = {
   'enum.permission.INVOICE_READ': 'Voir les factures',
   'enum.permission.INVOICE_WRITE': 'Gérer les factures',
   'enum.permission.REPORT_READ': 'Voir les rapports',
+
+  'enum.subscriptionStatus.ACTIVE': 'Actif',
+  'enum.subscriptionStatus.EXPIRED': 'Expiré',
+  'enum.subscriptionStatus.SUSPENDED': 'Suspendu',
 
   'dashboard.title': "Vue d'ensemble",
   'dashboard.subtitle': "Où en est le portefeuille cette année, du 1er janvier à aujourd'hui.",
@@ -291,6 +303,39 @@ export const fr: Messages = {
   'assistants.saveFailed': "Cet assistant n'a pas pu être enregistré.",
   'assistants.resetFailed': "Aucun nouveau mot de passe n'a pu être émis pour {name}.",
   'assistants.removeFailed': "{name} n'a pas pu être retiré.",
+
+  'accounts.title': 'Comptes',
+  'accounts.subtitle': 'Tous les propriétaires qui utilisent le service, et la durée de leur abonnement.',
+  'accounts.add': 'Ajouter un propriétaire',
+  'accounts.create': 'Créer le propriétaire',
+  'accounts.anyStatus': 'Tous les statuts',
+  'accounts.loading': 'Chargement des comptes.',
+  'accounts.empty': 'Aucun compte ne correspond.',
+  'accounts.since': 'Depuis',
+  'accounts.endsOn': "Jusqu'au",
+  'accounts.subscription': 'Abonnement',
+  'accounts.subscriptionOf': 'Abonnement de {name}',
+  'accounts.addPeriod': 'Ajouter une période',
+  'accounts.lastDay': 'Dernier jour',
+  'accounts.endNow': "Mettre fin à l'abonnement",
+  'accounts.suspend': 'Suspendre',
+  'accounts.reactivate': 'Réactiver',
+  'accounts.emailHint': "Nous créons le compte en période d'essai et vous donnons un mot de passe à transmettre.",
+  'accounts.handOverBody':
+    "Transmettez-les à {name}. Le mot de passe ne s'affiche qu'une fois ; la personne choisira le sien à sa première connexion.",
+  'accounts.periodAdded': 'Abonnement de {name} prolongé',
+  'accounts.ended': 'Abonnement de {name} terminé',
+  'accounts.suspended': '{name} suspendu',
+  'accounts.reactivated': '{name} réactivé',
+  'accounts.saveFailed': "Cette modification n'a pas pu être enregistrée.",
+
+  'readOnly.own':
+    "Votre abonnement a pris fin le {date}. Vous pouvez toujours tout consulter et télécharger, mais rien ne peut être modifié avant son renouvellement.",
+  'readOnly.assisting':
+    "L'abonnement de {names} a pris fin. Ses données restent consultables mais ne peuvent plus être modifiées.",
+
+  'suspended.title': 'Ce compte est suspendu',
+  'suspended.body': "Rien ne peut être consulté ni modifié tant qu'il l'est. Contactez-nous pour le faire réactiver.",
 
   'register.readyTitle': 'Votre compte est prêt',
   'register.readyBody':

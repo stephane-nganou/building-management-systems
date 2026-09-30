@@ -15,6 +15,10 @@ const PATHS = {
   chart: 'M3 3v18h18 M8 17v-5 M13 17V8 M18 17v-9',
   assistant:
     'M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2 M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8 M16 11l2 2 4-4',
+  shield: 'M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z M9 12l2 2 4-4',
+  calendar: 'M4 5h16v16H4z M4 10h16 M8 3v4 M16 3v4',
+  pause: 'M8 5v14 M16 5v14',
+  play: 'M7 4l13 8-13 8z',
   plus: 'M12 5v14 M5 12h14',
   edit: 'M12 20h9 M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z',
   trash: 'M3 6h18 M8 6V4h8v2 M19 6l-1 14H6L5 6 M10 11v6 M14 11v6',

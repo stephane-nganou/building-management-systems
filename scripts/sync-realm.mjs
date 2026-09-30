@@ -12,9 +12,11 @@
 //   KEYCLOAK_ADMIN           default admin
 //   KEYCLOAK_ADMIN_PASSWORD  default admin
 //
-// Ordinary users are deliberately left alone: recreating one would give it a
-// new id, and the application keys its own records on that id, so every
-// building the demo owner has would be orphaned.
+// Users in the export are only ever added, never replaced: recreating one would
+// give it a new id, and the application keys its own records on that id, so
+// every building the demo owner has would be orphaned. A seeded user who is
+// missing, such as the administrator added after the realm was first imported,
+// is created.
 
 import { readFile } from 'node:fs/promises';
 import { dirname, join } from 'node:path';
@@ -75,15 +77,18 @@ async function syncRealmSettings(token, realm, exported) {
  * <p>Roles are only ever added. Overwriting one deletes and recreates it, and
  * every user who held it loses it: the demo owner stops being an owner, and an
  * assistant who loses their marker silently becomes one. A role whose
- * definition drifted is worth far less than that.
+ * definition drifted is worth far less than that. Seeded users are only ever
+ * added too, for the same reason; the service account is left to the step
+ * below.
  *
  * <p>Clients are overwritten, since redirect URIs and secrets are exactly what
  * drifts and no user holds a client by mapping.
  */
 async function syncRolesAndClients(token, realm, exported) {
+  const seededUsers = (exported.users ?? []).filter((user) => !user.serviceAccountClientId);
   const results = [];
   for (const [ifResourceExists, payload] of [
-    ['SKIP', { roles: exported.roles ?? {} }],
+    ['SKIP', { roles: exported.roles ?? {}, users: seededUsers }],
     ['OVERWRITE', { clients: exported.clients ?? [] }],
   ]) {
     const result = await call(token, 'POST', `/admin/realms/${realm}/partialImport`, {
@@ -186,7 +191,7 @@ const counts = imported.reduce((totals, item) => {
   return totals;
 }, {});
 const summary = Object.entries(counts).map(([action, count]) => `${count} ${action.toLowerCase()}`);
-console.log(`Roles and clients: ${summary.length > 0 ? summary.join(', ') : 'nothing to do'}`);
+console.log(`Roles, seeded users and clients: ${summary.length > 0 ? summary.join(', ') : 'nothing to do'}`);
 
 for (const grant of await syncServiceAccountRoles(token, realm, exported)) {
   console.log(`Service account roles: ${grant}`);
@@ -196,4 +201,4 @@ for (const clientId of await checkConfidentialClients(realm, exported)) {
   console.log(`Verified: ${clientId} can get a token`);
 }
 
-console.log(`\nRealm "${realm}" matches the export. Users were left untouched.`);
+console.log(`\nRealm "${realm}" matches the export. Existing users were left untouched.`);

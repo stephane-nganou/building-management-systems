@@ -1,6 +1,13 @@
 import { Routes } from '@angular/router';
 
-import { authGuard, ownerGuard, passwordChangeGuard, permissionGuard } from './core/guards';
+import {
+  adminGuard,
+  authGuard,
+  ownerGuard,
+  passwordChangeGuard,
+  permissionGuard,
+  suspendedGuard,
+} from './core/guards';
 
 /**
  * Every screen is gated with canMatch, so a route the caller may not use is
@@ -16,6 +23,11 @@ export const routes: Routes = [
     path: 'password',
     canMatch: [passwordChangeGuard],
     loadComponent: () => import('./features/password').then((m) => m.PasswordPage),
+  },
+  {
+    path: 'suspended',
+    canMatch: [suspendedGuard],
+    loadComponent: () => import('./features/suspended').then((m) => m.SuspendedPage),
   },
   {
     path: 'dashboard',
@@ -56,6 +68,11 @@ export const routes: Routes = [
     path: 'assistants',
     canMatch: [authGuard, ownerGuard],
     loadComponent: () => import('./features/assistants').then((m) => m.AssistantsPage),
+  },
+  {
+    path: 'accounts',
+    canMatch: [authGuard, adminGuard],
+    loadComponent: () => import('./features/accounts').then((m) => m.AccountsPage),
   },
   {
     path: 'no-access',

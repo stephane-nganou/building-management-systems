@@ -25,10 +25,27 @@ export class SessionService {
 
   readonly user = this.me.asReadonly();
   readonly owner = computed(() => this.me()?.owner ?? false);
+  readonly admin = computed(() => this.me()?.admin ?? false);
   readonly signedIn = computed(() => this.me() !== null);
 
   /** True while this account is still using a password somebody else chose. */
   readonly mustChangePassword = computed(() => this.me()?.mustChangePassword ?? false);
+
+  /** True once an administrator has suspended this account. */
+  readonly suspended = computed(() => this.me()?.suspended ?? false);
+
+  /** The day an owner's own subscription ran out, while it has; null otherwise. */
+  readonly ownSubscriptionEnded = computed(() => {
+    const subscription = this.me()?.subscription;
+    return subscription && subscription.status !== 'ACTIVE' ? (subscription.endsOn ?? '') : null;
+  });
+
+  /** The owners an assistant works for whose data can no longer be changed. */
+  readonly readOnlyOwners = computed(() =>
+    (this.me()?.assistingFor ?? [])
+      .filter((delegation) => delegation.ownerStatus !== 'ACTIVE')
+      .map((delegation) => delegation.ownerName),
+  );
 
   /** Fetches the profile the first time it is asked for, then hands out the same result. */
   load(): Promise<unknown> {
@@ -46,6 +63,9 @@ export class SessionService {
   }
 
   allows(entry: NavEntry): boolean {
+    if (entry.adminOnly) {
+      return this.admin();
+    }
     if (entry.ownerOnly) {
       return this.owner();
     }

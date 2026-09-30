@@ -5,7 +5,14 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { MeApi } from './api';
 import { AuthService } from './auth';
-import { authGuard, ownerGuard, passwordChangeGuard, permissionGuard } from './guards';
+import {
+  adminGuard,
+  authGuard,
+  ownerGuard,
+  passwordChangeGuard,
+  permissionGuard,
+  suspendedGuard,
+} from './guards';
 import { Me, Permission } from './models';
 import { SessionService } from './session';
 
@@ -15,10 +22,17 @@ function profile(owner: boolean, permissions: Permission[], mustChangePassword =
     email: 'someone@example.com',
     name: 'Someone',
     owner,
+    admin: false,
     permissions,
     mustChangePassword,
+    suspended: false,
+    subscription: owner ? { status: 'ACTIVE', endsOn: '2026-12-31' } : null,
     assistingFor: [],
   };
+}
+
+function administrator(): Me {
+  return { ...profile(false, []), admin: true };
 }
 
 const signIn = vi.fn();
@@ -86,6 +100,50 @@ describe('SessionService', () => {
     await session.load();
 
     expect(session.landingRoute()).toBe('/no-access');
+  });
+
+  it('shows an administrator the accounts and nothing that belongs to an owner', async () => {
+    const session = sessionFor(administrator());
+    await session.load();
+
+    expect(session.visibleEntries().map((entry) => entry.path)).toEqual(['/accounts']);
+    expect(session.landingRoute()).toBe('/accounts');
+  });
+
+  it('keeps the accounts screen away from owners and assistants', async () => {
+    const session = sessionFor(profile(true, ['REPORT_READ', 'BUILDING_READ']));
+    await session.load();
+
+    expect(session.visibleEntries().map((entry) => entry.path)).not.toContain('/accounts');
+  });
+
+  it('tells an owner when their own subscription ran out', async () => {
+    const session = sessionFor({ ...profile(true, []), subscription: { status: 'EXPIRED', endsOn: '2026-09-29' } });
+    await session.load();
+
+    expect(session.ownSubscriptionEnded()).toBe('2026-09-29');
+    expect(session.readOnlyOwners()).toEqual([]);
+  });
+
+  it('says nothing while an owner is paid up', async () => {
+    const session = sessionFor(profile(true, []));
+    await session.load();
+
+    expect(session.ownSubscriptionEnded()).toBeNull();
+  });
+
+  it('names only the owners an assistant can no longer change data for', async () => {
+    const session = sessionFor({
+      ...profile(false, ['BUILDING_READ']),
+      assistingFor: [
+        { ownerId: 'o1', ownerName: 'Olivia', permissions: ['BUILDING_READ'], ownerStatus: 'EXPIRED' },
+        { ownerId: 'o2', ownerName: 'Oscar', permissions: ['BUILDING_READ'], ownerStatus: 'ACTIVE' },
+        { ownerId: 'o3', ownerName: 'Opal', permissions: ['BUILDING_READ'], ownerStatus: 'SUSPENDED' },
+      ],
+    });
+    await session.load();
+
+    expect(session.readOnlyOwners()).toEqual(['Olivia', 'Opal']);
   });
 
   it('reads a refused profile as nobody being signed in', async () => {
@@ -184,5 +242,29 @@ describe('route guards', () => {
     TestBed.resetTestingModule();
     sessionFor(profile(false, ['EXPENSE_READ']));
     expect(await runGuard(passwordChangeGuard)).toBe(false);
+  });
+
+  it('reserves administrator routes for administrators', async () => {
+    sessionFor(profile(true, ['BUILDING_READ']));
+    expect(await runGuard(adminGuard)).toBe(false);
+
+    TestBed.resetTestingModule();
+    sessionFor(administrator());
+    expect(await runGuard(adminGuard)).toBe(true);
+  });
+
+  it('holds a suspended account at the screen that says so', async () => {
+    sessionFor({ ...profile(true, ['BUILDING_READ']), suspended: true });
+
+    const result = await runGuard(authGuard);
+
+    expect(String(result)).toBe('/suspended');
+    expect(await runGuard(suspendedGuard)).toBe(true);
+  });
+
+  it('offers the suspended screen only while there is a suspension', async () => {
+    sessionFor(profile(true, ['BUILDING_READ']));
+
+    expect(await runGuard(suspendedGuard)).toBe(false);
   });
 });

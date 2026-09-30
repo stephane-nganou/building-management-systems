@@ -9,16 +9,28 @@ import { Brand } from './shared/brand';
 import { ConfirmHost } from './shared/confirm';
 import { Icon } from './shared/icon';
 import { LanguageSwitcher } from './shared/language-switcher';
+import { DayPipe } from './shared/money.pipe';
 import { Toasts } from './shared/toasts';
 import { TranslatePipe } from './shared/translate.pipe';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, RouterLink, RouterLinkActive, Brand, ConfirmHost, Icon, LanguageSwitcher, Toasts, TranslatePipe],
+  imports: [
+    RouterOutlet,
+    RouterLink,
+    RouterLinkActive,
+    Brand,
+    ConfirmHost,
+    DayPipe,
+    Icon,
+    LanguageSwitcher,
+    Toasts,
+    TranslatePipe,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '(document:keydown.escape)': 'menuOpen.set(false)' },
   template: `
-    @if (me() && !session.mustChangePassword()) {
+    @if (me() && !session.mustChangePassword() && !session.suspended()) {
       <div class="shell" [class.drawer-open]="menuOpen()">
         <header class="topbar">
           <button
@@ -53,7 +65,9 @@ import { TranslatePipe } from './shared/translate.pipe';
               <div>
                 <div class="who">{{ me()!.name }}</div>
                 <div class="role">
-                  @if (session.owner()) {
+                  @if (session.admin()) {
+                    {{ 'app.role.admin' | t }}
+                  } @else if (session.owner()) {
                     {{ 'app.role.owner' | t }}
                   } @else {
                     {{ 'app.role.assisting' | t: { count: me()!.assistingFor.length } }}
@@ -74,6 +88,17 @@ import { TranslatePipe } from './shared/translate.pipe';
         <div class="nav-scrim" (click)="menuOpen.set(false)"></div>
 
         <main class="main">
+          @if (session.ownSubscriptionEnded() !== null) {
+            <p class="notice read-only" role="status">
+              <bms-icon name="alert" />
+              {{ 'readOnly.own' | t: { date: (session.ownSubscriptionEnded() | day) } }}
+            </p>
+          } @else if (session.readOnlyOwners().length > 0) {
+            <p class="notice read-only" role="status">
+              <bms-icon name="alert" />
+              {{ 'readOnly.assisting' | t: { names: session.readOnlyOwners().join(', ') } }}
+            </p>
+          }
           <router-outlet />
         </main>
       </div>

@@ -361,6 +361,22 @@ table.sheet {
   text-decoration: line-through;
 }
 
+/* A subscription: running, run out (the window left dark), or stopped by us. */
+.mark.active {
+  background: color-mix(in srgb, var(--pos) 12%, transparent);
+  color: var(--pos);
+}
+
+.mark.expired::before {
+  background: transparent;
+  border: 1.5px solid currentColor;
+}
+
+.mark.suspended {
+  background: color-mix(in srgb, var(--neg) 10%, transparent);
+  color: var(--neg);
+}
+
 /* ---------- ledger figures ---------- */
 
 .figures {
@@ -564,6 +580,15 @@ dialog.panel::backdrop {
   background: color-mix(in srgb, var(--neg) 9%, var(--surface));
   border: 1px solid color-mix(in srgb, var(--neg) 30%, transparent);
   color: var(--ink);
+}
+
+table.sheet.periods {
+  margin-bottom: 24px;
+}
+
+/* Above every screen while the data shown can no longer be changed. */
+.notice.read-only {
+  margin: 0 0 20px;
 }
 
 .loading {

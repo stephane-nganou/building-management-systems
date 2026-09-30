@@ -150,15 +150,52 @@ export interface Assistant {
   temporaryPassword: string | null;
 }
 
+/** Only an ACTIVE owner's data can be changed; the rest is read only. */
+export type SubscriptionStatus = 'ACTIVE' | 'EXPIRED' | 'SUSPENDED';
+
 export interface Me {
   id: string;
   email: string;
   name: string;
   owner: boolean;
+  /** Runs the service. An administrator owns no data and assists nobody. */
+  admin: boolean;
   permissions: Permission[];
   /** True while this account still holds a password its owner chose for it. */
   mustChangePassword: boolean;
-  assistingFor: { ownerId: string; ownerName: string; permissions: Permission[] }[];
+  /** True once an administrator has suspended this account; nothing else answers it. */
+  suspended: boolean;
+  /** An owner's own standing; null for anyone else. */
+  subscription: { status: SubscriptionStatus; endsOn: string | null } | null;
+  assistingFor: {
+    ownerId: string;
+    ownerName: string;
+    permissions: Permission[];
+    ownerStatus: SubscriptionStatus;
+  }[];
+}
+
+/** An owner, as the administrator sees them. */
+export interface Account {
+  id: string;
+  email: string;
+  name: string;
+  createdAt: string;
+  buildings: number;
+  assistants: number;
+  status: SubscriptionStatus;
+  /** The last day of the current period, or of the last one. */
+  endsOn: string | null;
+  /** Only ever sent back on the response that created the account. */
+  temporaryPassword: string | null;
+}
+
+/** Both days are included. */
+export interface SubscriptionPeriod {
+  id: string;
+  startsOn: string;
+  endsOn: string;
+  note: string | null;
 }
 
 export interface Registration {

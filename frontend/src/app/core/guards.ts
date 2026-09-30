@@ -24,6 +24,9 @@ export const authGuard: CanMatchFn = () => {
       auth.signIn(path);
       return false;
     }
+    if (session.suspended()) {
+      return router.parseUrl('/suspended');
+    }
     if (session.mustChangePassword()) {
       return router.parseUrl('/password');
     }
@@ -49,11 +52,22 @@ export const ownerGuard: CanMatchFn = () => {
   return session.load().then(() => session.owner());
 };
 
+/** Administrators only, for managing the service's customers. */
+export const adminGuard: CanMatchFn = () => {
+  const session = inject(SessionService);
+  return session.load().then(() => session.admin());
+};
+
 /**
  * The change password screen, which only exists while it is required. Leaving
  * it reachable afterwards would offer a screen the sidebar never mentions.
  */
-export const passwordChangeGuard: CanMatchFn = () => {
+export const passwordChangeGuard: CanMatchFn = () => onlyWhile((session) => session.mustChangePassword());
+
+/** The screen that explains a suspension, which likewise exists only while there is one. */
+export const suspendedGuard: CanMatchFn = () => onlyWhile((session) => session.suspended());
+
+function onlyWhile(holds: (session: SessionService) => boolean): Promise<boolean> {
   const session = inject(SessionService);
   const auth = inject(AuthService);
   const path = currentPath();
@@ -62,6 +76,6 @@ export const passwordChangeGuard: CanMatchFn = () => {
       auth.signIn(path);
       return false;
     }
-    return session.mustChangePassword();
+    return holds(session);
   });
-};
+}

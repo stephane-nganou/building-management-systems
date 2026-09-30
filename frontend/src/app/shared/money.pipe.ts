@@ -4,7 +4,13 @@ import { TranslationService } from '../core/i18n';
 import { MessageKey } from '../i18n/en';
 
 /** The enum families the app renders. Each one is a group of message keys. */
-export type EnumGroup = 'status' | 'category' | 'invoiceType' | 'invoiceStatus' | 'permission';
+export type EnumGroup =
+  | 'status'
+  | 'category'
+  | 'invoiceType'
+  | 'invoiceStatus'
+  | 'permission'
+  | 'subscriptionStatus';
 
 const money = new Map<string, Intl.NumberFormat>();
 const day = new Map<string, Intl.DateTimeFormat>();
