@@ -37,16 +37,16 @@ page, the API's error messages and invoice PDFs follow the same choice.
 
 Keycloak takes about a minute on first start while it imports the realm. The
 import runs only when the realm does not exist yet, so a stack that has been
-started once will not see later changes to `docker/keycloak/realm-bms.json`.
-Apply them to a running Keycloak instead of wiping the database:
+started once would not see later changes to `docker/keycloak/realm-bms.json`.
+The `keycloak-sync` compose service therefore runs `scripts/sync-realm.mjs` on
+every start, before the backend comes up. It updates the realm settings, adds
+any missing roles and refreshes the clients, then checks that the backend can
+still get a token. Users are left alone, so nobody loses their account or their
+buildings. To apply a change to a running stack by hand:
 
 ```bash
 node scripts/sync-realm.mjs
 ```
-
-It updates the realm settings, adds any missing roles and refreshes the
-clients, then checks that the backend can still get a token. Users are left
-alone, so nobody loses their account or their buildings.
 
 ## Stack
 

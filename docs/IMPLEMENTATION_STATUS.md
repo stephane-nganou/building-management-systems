@@ -1,6 +1,6 @@
 # Implementation status
 
-Last updated: 2026-09-05, after BM-8 (the frontend knows only the backend).
+Last updated: 2026-09-30, after BM-11 (the realm is synced on every start).
 
 The architecture is drawn out in
 [ARCHITECTURE_DIAGRAMS.md](ARCHITECTURE_DIAGRAMS.md): containers, backend and
@@ -45,7 +45,11 @@ create an assistant and watch them replace the handed over password on our own
 screen, and sign out at both ends. For BM-4, against a throwaway stack: switch the whole app
 to French and back and watch it hold across a reload, land on a French
 registration page from a French browser, read the Keycloak sign in page in both
-languages, and download the same invoice as a French and an English PDF.
+languages, and download the same invoice as a French and an English PDF. For
+BM-11, against the development database whose realm predated BM-8: sign in
+failed with "Invalid parameter: redirect_uri", and after one start with the sync
+service `bms-backend` carries its callback URI and the sign in form loads; the
+end to end suite still passes on a throwaway stack.
 
 ## Tests
 
@@ -270,6 +274,17 @@ languages, and download the same invoice as a French and an English PDF.
   how diagrams stop being updated. Note that `;` terminates a statement in a
   Mermaid sequence diagram, so it cannot appear inside message text.
 
+- **The realm export is applied on every start (BM-11).** `--import-realm`
+  skips a realm that already exists (`Strategy: IGNORE_EXISTING`), so a stack
+  first started before BM-8 kept a `bms-backend` client with no redirect URIs,
+  and Keycloak refused the backend's callback with "Invalid parameter:
+  redirect_uri". The one-shot `keycloak-sync` compose service (`node:24-alpine`)
+  now runs `scripts/sync-realm.mjs` against `http://keycloak:8080` once Keycloak
+  is healthy, and the backend waits for it with
+  `service_completed_successfully`. A plain `docker compose up` gets it too, and
+  users are left untouched. Wiping the volume was rejected because the same
+  Postgres holds the application data.
+
 ## Not built yet
 
 - Sender constrained tokens. DPoP would make a stolen access token useless to
@@ -302,10 +317,10 @@ languages, and download the same invoice as a French and an English PDF.
 - Signing out is a `GET`, so that ending the Keycloak session stays one browser
   navigation. A forged sign out is possible and costs the user nothing beyond
   the annoyance of signing in again.
-- Changing the realm export does not change a realm Keycloak already has, since
-  it only imports one that is absent. `node scripts/sync-realm.mjs` applies the
-  export to a running Keycloak; `--wipe` is the alternative, at the cost of the
-  application database.
+- Keycloak only imports a realm that is absent, so a changed export reaches an
+  existing realm through the `keycloak-sync` service on the next start (BM-11),
+  or through `node scripts/sync-realm.mjs` against a running Keycloak. The sync
+  never removes anything, and it adds roles but never overwrites them.
 - Shell scripts and the hook need the executable bit set in git itself
   (`git update-index --chmod=+x`). Windows checkouts run with
   `core.fileMode=false`, so a local `chmod` is not recorded, and a script

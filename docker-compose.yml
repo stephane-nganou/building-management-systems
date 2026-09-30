@@ -53,6 +53,24 @@ services:
       retries: 30
       start_period: 30s
 
+  # --import-realm skips a realm that already exists, so on its own a stack
+  # started once never sees later changes to realm-bms.json. This applies the
+  # export on every start, before the backend comes up.
+  keycloak-sync:
+    image: node:24-alpine
+    container_name: bms-keycloak-sync
+    command: ["node", "/app/scripts/sync-realm.mjs"]
+    environment:
+      KEYCLOAK_URL: http://keycloak:8080
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+    volumes:
+      - ./scripts/sync-realm.mjs:/app/scripts/sync-realm.mjs:ro
+      - ./docker/keycloak/realm-bms.json:/app/docker/keycloak/realm-bms.json:ro
+    depends_on:
+      keycloak:
+        condition: service_healthy
+
   backend:
     build:
       context: ./backend
@@ -75,8 +93,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      keycloak:
-        condition: service_healthy
+      keycloak-sync:
+        condition: service_completed_successfully
 
   frontend:
     build:
