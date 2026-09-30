@@ -11,6 +11,7 @@ const ENGLISH = [
   'Invoices',
   'Profit and loss',
   'Assistants',
+  'Subscription',
 ];
 
 const FRENCH = [
@@ -22,6 +23,7 @@ const FRENCH = [
   'Factures',
   'Compte de résultat',
   'Assistants',
+  'Abonnement',
 ];
 
 /** The EN and FR buttons in the sidebar. */

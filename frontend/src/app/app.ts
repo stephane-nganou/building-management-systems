@@ -93,6 +93,17 @@ import { TranslatePipe } from './shared/translate.pipe';
               <bms-icon name="alert" />
               {{ 'readOnly.own' | t: { date: (session.ownSubscriptionEnded() | day) } }}
             </p>
+          } @else if (session.endingSoon(); as standing) {
+            <p class="notice reminder" role="status">
+              <bms-icon name="calendar" />
+              <span>
+                {{
+                  (standing.daysLeft === 0 ? 'reminder.lastDay' : 'reminder.endsOn')
+                    | t: { date: (standing.endsOn | day), days: standing.daysLeft ?? 0 }
+                }}
+                <a routerLink="/subscription">{{ 'reminder.manage' | t }}</a>
+              </span>
+            </p>
           } @else if (session.readOnlyOwners().length > 0) {
             <p class="notice read-only" role="status">
               <bms-icon name="alert" />

@@ -1,4 +1,4 @@
-package com.bms.admin.dto;
+package com.bms.subscription.dto;
 
 import java.time.LocalDate;
 import java.util.UUID;

@@ -587,8 +587,53 @@ table.sheet.periods {
 }
 
 /* Above every screen while the data shown can no longer be changed. */
-.notice.read-only {
+.notice.read-only,
+.notice.reminder {
   margin: 0 0 20px;
+}
+
+/* Not a failure, so not in the colour of one. */
+.notice.reminder {
+  background: color-mix(in srgb, var(--ink) 5%, var(--surface));
+  border-color: var(--line-strong);
+}
+
+.notice.reminder a {
+  font-weight: 600;
+  margin-left: 4px;
+}
+
+/* Sets a block off from the one above it inside a band. */
+.gap-above {
+  margin: 32px 0 12px;
+}
+
+/* How to reach customer service. */
+.support-card {
+  margin-top: 24px;
+  padding: 20px 24px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-s);
+  background: var(--surface);
+}
+
+.support-card h2 {
+  margin-bottom: 14px;
+}
+
+.support-card dl {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 8px 20px;
+  margin: 0;
+}
+
+.support-card dt {
+  color: var(--ink-3);
+}
+
+.support-card dd {
+  margin: 0;
 }
 
 .loading {

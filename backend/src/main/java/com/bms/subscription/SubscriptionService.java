@@ -2,6 +2,7 @@ package com.bms.subscription;
 
 import java.time.Clock;
 import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 import java.util.List;
 import java.util.UUID;
 
@@ -9,6 +10,8 @@ import com.bms.common.exception.ValidationException;
 import com.bms.user.AppUser;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import static java.util.Comparator.comparing;
 
 /** Decides whether an owner's subscription covers today, and opens new ones. */
 @Service
@@ -87,9 +90,35 @@ public class SubscriptionService {
         return periods.covers(owner.getId(), today()) ? SubscriptionStatus.ACTIVE : SubscriptionStatus.EXPIRED;
     }
 
+    /**
+     * Where an owner stands today. While active, the last day is where the
+     * unbroken run of periods from today ends, so a renewal already booked from
+     * tomorrow means nothing is ending.
+     */
     @Transactional(readOnly = true)
     public SubscriptionSummary summary(AppUser owner) {
-        return new SubscriptionSummary(status(owner), periods.latestEndStartedBy(owner.getId(), today()));
+        LocalDate today = today();
+        SubscriptionStatus status = status(owner);
+        if (status != SubscriptionStatus.ACTIVE) {
+            return new SubscriptionSummary(status, periods.latestEndStartedBy(owner.getId(), today), null, false);
+        }
+        LocalDate endsOn = runsUntil(periods.findByOwnerIdOrderByStartsOnDesc(owner.getId()), today);
+        long daysLeft = ChronoUnit.DAYS.between(today, endsOn);
+        return new SubscriptionSummary(status, endsOn, daysLeft, daysLeft <= properties.warningDays());
+    }
+
+    /** The last day of the run of periods that covers today, joined end to start or overlapping. */
+    static LocalDate runsUntil(List<SubscriptionPeriod> all, LocalDate today) {
+        LocalDate end = null;
+        for (SubscriptionPeriod period : all.stream().sorted(comparing(SubscriptionPeriod::getStartsOn)).toList()) {
+            if (end == null && period.covers(today)) {
+                end = period.getEndsOn();
+            } else if (end != null && !period.getStartsOn().isAfter(end.plusDays(1))
+                    && period.getEndsOn().isAfter(end)) {
+                end = period.getEndsOn();
+            }
+        }
+        return end;
     }
 
     LocalDate today() {

@@ -26,7 +26,7 @@ function profile(owner: boolean, permissions: Permission[], mustChangePassword =
     permissions,
     mustChangePassword,
     suspended: false,
-    subscription: owner ? { status: 'ACTIVE', endsOn: '2026-12-31' } : null,
+    subscription: owner ? { status: 'ACTIVE', endsOn: '2026-12-31', daysLeft: 90, endingSoon: false } : null,
     assistingFor: [],
   };
 }
@@ -118,7 +118,10 @@ describe('SessionService', () => {
   });
 
   it('tells an owner when their own subscription ran out', async () => {
-    const session = sessionFor({ ...profile(true, []), subscription: { status: 'EXPIRED', endsOn: '2026-09-29' } });
+    const session = sessionFor({
+      ...profile(true, []),
+      subscription: { status: 'EXPIRED', endsOn: '2026-09-29', daysLeft: null, endingSoon: false },
+    });
     await session.load();
 
     expect(session.ownSubscriptionEnded()).toBe('2026-09-29');
@@ -130,6 +133,29 @@ describe('SessionService', () => {
     await session.load();
 
     expect(session.ownSubscriptionEnded()).toBeNull();
+    expect(session.endingSoon()).toBeNull();
+  });
+
+  it('reminds an owner once their last day is a week away or closer', async () => {
+    const session = sessionFor({
+      ...profile(true, []),
+      subscription: { status: 'ACTIVE', endsOn: '2026-10-05', daysLeft: 5, endingSoon: true },
+    });
+    await session.load();
+
+    expect(session.endingSoon()?.daysLeft).toBe(5);
+    expect(session.ownSubscriptionEnded()).toBeNull();
+  });
+
+  it('gives an owner, and only an owner, the subscription screen', async () => {
+    const owner = sessionFor(profile(true, ['BUILDING_READ']));
+    await owner.load();
+    expect(owner.visibleEntries().map((entry) => entry.path)).toContain('/subscription');
+
+    TestBed.resetTestingModule();
+    const assistant = sessionFor(profile(false, ['BUILDING_READ']));
+    await assistant.load();
+    expect(assistant.visibleEntries().map((entry) => entry.path)).not.toContain('/subscription');
   });
 
   it('names only the owners an assistant can no longer change data for', async () => {

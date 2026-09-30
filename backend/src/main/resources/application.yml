@@ -47,6 +47,12 @@ bms:
     currency: ${BMS_INVOICE_CURRENCY:EUR}
   subscription:
     trial-days: ${BMS_SUBSCRIPTION_TRIAL_DAYS:30}
+    warning-days: ${BMS_SUBSCRIPTION_WARNING_DAYS:7}
+  support:
+    # Shown to owners on their subscription screen, and to a suspended account.
+    email: ${BMS_SUPPORT_EMAIL:support@hausbuch.example}
+    phone: ${BMS_SUPPORT_PHONE:+49 30 1234 5678}
+    hours: ${BMS_SUPPORT_HOURS:Monday to Friday, 9:00 to 17:00}
 
 springdoc:
   swagger-ui:

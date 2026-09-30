@@ -14,9 +14,13 @@ public class WebConfig implements WebMvcConfigurer {
         this.suspension = suspension;
     }
 
-    /** The profile stays readable, so the application can say why nothing else is. */
+    /**
+     * The profile stays readable, so the application can say why nothing else
+     * is, and so do the subscription and whom to contact about it.
+     */
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
-        registry.addInterceptor(suspension).addPathPatterns("/api/**").excludePathPatterns("/api/me");
+        registry.addInterceptor(suspension).addPathPatterns("/api/**")
+                .excludePathPatterns("/api/me", "/api/subscription", "/api/support");
     }
 }

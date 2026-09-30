@@ -21,6 +21,7 @@ export const fr: Messages = {
   'nav.reports': 'Compte de résultat',
   'nav.assistants': 'Assistants',
   'nav.accounts': 'Comptes',
+  'nav.subscription': 'Abonnement',
 
   'common.cancel': 'Annuler',
   'common.close': 'Fermer',
@@ -333,6 +334,25 @@ export const fr: Messages = {
     "Votre abonnement a pris fin le {date}. Vous pouvez toujours tout consulter et télécharger, mais rien ne peut être modifié avant son renouvellement.",
   'readOnly.assisting':
     "L'abonnement de {names} a pris fin. Ses données restent consultables mais ne peuvent plus être modifiées.",
+
+  'reminder.endsOn': 'Votre abonnement prend fin le {date}, dans {days} jours.',
+  'reminder.lastDay': "Aujourd'hui, {date}, est le dernier jour de votre abonnement.",
+  'reminder.manage': "Gérer l'abonnement",
+
+  'subscription.title': 'Abonnement',
+  'subscription.subtitle':
+    "Jusqu'à quand vous pouvez modifier vos données, et chaque période passée ou réservée.",
+  'subscription.loading': 'Chargement de votre abonnement.',
+  'subscription.runsUntil': "Valable jusqu'au",
+  'subscription.ended': 'Terminé le',
+  'subscription.daysLeft': 'Jours restants',
+  'subscription.history': 'Périodes',
+  'subscription.renewHint':
+    "Pour renouveler ou modifier votre abonnement, contactez le service client. Vos données restent consultables quoi qu'il arrive.",
+
+  'support.title': 'Service client',
+  'support.phone': 'Téléphone',
+  'support.hours': 'Horaires',
 
   'suspended.title': 'Ce compte est suspendu',
   'suspended.body': "Rien ne peut être consulté ni modifié tant qu'il l'est. Contactez-nous pour le faire réactiver.",
