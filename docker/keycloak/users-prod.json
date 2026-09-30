@@ -1,0 +1,22 @@
+{
+  "users": [
+    {
+      "username": "${BMS_ADMIN_USERNAME}",
+      "email": "${BMS_ADMIN_EMAIL}",
+      "firstName": "${BMS_ADMIN_FIRST_NAME:Service}",
+      "lastName": "${BMS_ADMIN_LAST_NAME:Administrator}",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "${BMS_ADMIN_PASSWORD}",
+          "temporary": true
+        }
+      ],
+      "realmRoles": [
+        "admin"
+      ]
+    }
+  ]
+}

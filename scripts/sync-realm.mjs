@@ -11,6 +11,15 @@
 //   KEYCLOAK_URL             default http://localhost:8081
 //   KEYCLOAK_ADMIN           default admin
 //   KEYCLOAK_ADMIN_PASSWORD  default admin
+//   KEYCLOAK_USERS_FILE      people to seed, relative to the repository:
+//                            docker/keycloak/users-demo.json in development,
+//                            docker/keycloak/users-prod.json in production.
+//                            Nobody when unset.
+//
+// Both files hold ${NAME} and ${NAME:default} placeholders, resolved from the
+// environment the way Keycloak resolves them on import. Unlike Keycloak, a
+// placeholder with no value and no default stops the sync, rather than leaving
+// a client secret that is literally "${...}".
 //
 // Users in the export are only ever added, never replaced: recreating one would
 // give it a new id, and the application keys its own records on that id, so
@@ -26,6 +35,21 @@ const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const keycloakUrl = (process.env.KEYCLOAK_URL ?? 'http://localhost:8081').replace(/\/$/, '');
 const adminUser = process.env.KEYCLOAK_ADMIN ?? 'admin';
 const adminPassword = process.env.KEYCLOAK_ADMIN_PASSWORD ?? 'admin';
+const usersFile = process.env.KEYCLOAK_USERS_FILE;
+
+function resolvePlaceholders(text, file) {
+  return text.replace(/\$\{([A-Za-z0-9_]+)(?::([^}]*))?\}/g, (placeholder, name, fallback) => {
+    const value = process.env[name] ?? fallback;
+    if (value === undefined) {
+      throw new Error(`${file} needs ${name}, which is not set`);
+    }
+    return value;
+  });
+}
+
+async function readExport(path) {
+  return JSON.parse(resolvePlaceholders(await readFile(join(root, path), 'utf8'), path));
+}
 
 async function call(token, method, path, body) {
   const response = await fetch(`${keycloakUrl}${path}`, {
@@ -178,7 +202,10 @@ async function checkConfidentialClients(realm, exported) {
   return checked;
 }
 
-const exported = JSON.parse(await readFile(join(root, 'docker/keycloak/realm-bms.json'), 'utf8'));
+const exported = await readExport('docker/keycloak/realm-bms.json');
+if (usersFile) {
+  exported.users = [...(exported.users ?? []), ...(await readExport(usersFile)).users];
+}
 const realm = exported.realm;
 
 const token = await adminToken();
