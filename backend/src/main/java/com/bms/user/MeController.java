@@ -7,6 +7,7 @@ import java.util.TreeSet;
 
 import com.bms.access.AssistantAssignmentRepository;
 import com.bms.access.Permission;
+import com.bms.subscription.SubscriptionService;
 import com.bms.user.dto.MeResponse;
 import org.springframework.security.core.Authentication;
 import org.springframework.transaction.annotation.Transactional;
@@ -20,10 +21,13 @@ public class MeController {
 
     private final CurrentUserService currentUser;
     private final AssistantAssignmentRepository assignments;
+    private final SubscriptionService subscriptions;
 
-    public MeController(CurrentUserService currentUser, AssistantAssignmentRepository assignments) {
+    public MeController(CurrentUserService currentUser, AssistantAssignmentRepository assignments,
+                        SubscriptionService subscriptions) {
         this.currentUser = currentUser;
         this.assignments = assignments;
+        this.subscriptions = subscriptions;
     }
 
     @GetMapping
@@ -34,7 +38,8 @@ public class MeController {
                 .map(assignment -> new MeResponse.Delegation(
                         assignment.getOwner().getId(),
                         assignment.getOwner().getFullName(),
-                        new TreeSet<>(assignment.getPermissions())))
+                        new TreeSet<>(assignment.getPermissions()),
+                        subscriptions.status(assignment.getOwner())))
                 .toList();
         boolean owner = Roles.isOwner(authentication);
         return new MeResponse(
@@ -42,8 +47,11 @@ public class MeController {
                 user.getEmail(),
                 user.getFullName(),
                 owner,
+                Roles.isAdmin(authentication),
                 effectivePermissions(owner, delegations),
                 user.isMustChangePassword(),
+                user.isSuspended(),
+                owner ? subscriptions.summary(user) : null,
                 delegations);
     }
 

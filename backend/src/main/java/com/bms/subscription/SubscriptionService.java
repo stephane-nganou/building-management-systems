@@ -38,6 +38,11 @@ public class SubscriptionService {
         return periods.covers(owner.getId(), today()) ? SubscriptionStatus.ACTIVE : SubscriptionStatus.EXPIRED;
     }
 
+    @Transactional(readOnly = true)
+    public SubscriptionSummary summary(AppUser owner) {
+        return new SubscriptionSummary(status(owner), periods.latestEndStartedBy(owner.getId(), today()));
+    }
+
     LocalDate today() {
         return LocalDate.now(clock);
     }

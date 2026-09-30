@@ -78,6 +78,15 @@ public class CurrentUserService {
         return require().getId();
     }
 
+    /** False for an anonymous caller, who has no account to suspend. */
+    @Transactional(readOnly = true)
+    public boolean isSuspended() {
+        return currentClaims()
+                .flatMap(claims -> users.findByKeycloakId(subjectOf(claims)))
+                .map(AppUser::isSuspended)
+                .orElse(false);
+    }
+
     private void syncProfile(AppUser user, ClaimAccessor claims) {
         String email = email(claims);
         String firstName = claims.getClaimAsString("given_name");
