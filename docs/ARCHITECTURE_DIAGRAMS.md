@@ -517,6 +517,7 @@ flowchart TB
         guards["guards.ts<br/>authGuard, permissionGuard,<br/>ownerGuard, passwordChangeGuard"]
         api["api.ts<br/>BuildingsApi, ApartmentsApi, TenantsApi,<br/>ExpensesApi, InvoicesApi, ReportsApi,<br/>AssistantsApi, AuthApi, MeApi"]
         i18n["TranslationService<br/>language signal, translate()<br/>acceptLanguageInterceptor"]
+        theme["ThemeService<br/>theme signal, data-theme on html"]
         nav["navigation.ts<br/>NAV_ENTRIES"]
         models["models.ts"]
     end
@@ -527,7 +528,7 @@ flowchart TB
 
     subgraph sharedui["shared/"]
         pipes["TranslatePipe (t), MoneyPipe (money),<br/>DayPipe (day), LabelPipe (label)<br/>impure on purpose"]
-        lang["LanguageSwitcher"]
+        lang["LanguageSwitcher, ThemeSwitcher"]
         ui["Dialog (native dialog), ConfirmService,<br/>ToastService, IconButton, Icon"]
         look["Facade (floorsOf), Brand, Gate"]
     end
@@ -551,6 +552,7 @@ flowchart TB
     app --> ui
     pipes --> i18n
     lang --> i18n
+    lang --> theme
     api --> models
     session --> models
 ```
