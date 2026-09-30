@@ -32,6 +32,15 @@ public class SubscriptionService {
         periods.save(new SubscriptionPeriod(owner, today, today.plusDays(properties.trialDays() - 1L), "Trial"));
     }
 
+    /**
+     * Takes away periods from someone the realm says is not an owner. Only the
+     * V3 migration hands those out, because it had to guess who owned data.
+     */
+    @Transactional
+    public void forget(AppUser user) {
+        periods.deleteByOwner(user.getId());
+    }
+
     /** Everyone who has ever had a period, which is every owner and nobody else. */
     @Transactional(readOnly = true)
     public List<AppUser> owners() {

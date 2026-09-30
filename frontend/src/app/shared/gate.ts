@@ -31,7 +31,7 @@ const STREET: Unit[][] = [
   ],
 ];
 
-/** The frame for the pages a visitor sees before the app itself: sign up, and first password. */
+/** The frame for the pages seen instead of the app itself: sign up, first password, and a suspension. */
 @Component({
   selector: 'bms-gate',
   imports: [Brand, Facade, LanguageSwitcher, TranslatePipe],

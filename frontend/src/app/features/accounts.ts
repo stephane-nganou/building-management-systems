@@ -1,3 +1,4 @@
+import { HttpErrorResponse } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { rxResource } from '@angular/core/rxjs-interop';
@@ -5,6 +6,7 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { AdminApi } from '../core/api';
 import { TranslationService } from '../core/i18n';
 import { Account, SubscriptionStatus } from '../core/models';
+import { MessageKey } from '../i18n/en';
 import { ConfirmService } from '../shared/confirm';
 import { Dialog } from '../shared/dialog';
 import { Icon } from '../shared/icon';
@@ -265,7 +267,7 @@ export class AccountsPage {
         this.issued.set(account);
         this.accounts.reload();
       },
-      error: (response) => this.error.set(response?.error?.detail ?? this.i18n.translate('accounts.saveFailed')),
+      error: this.failed,
     });
   }
 
@@ -281,13 +283,8 @@ export class AccountsPage {
 
   protected addPeriod(account: Account): void {
     this.api.addPeriod(account.id, this.startsOn, this.endsOn, this.note.trim()).subscribe({
-      next: () => {
-        this.error.set(null);
-        this.toasts.show(this.i18n.translate('accounts.periodAdded', { name: account.name }));
-        this.periods.reload();
-        this.accounts.reload();
-      },
-      error: (response) => this.error.set(response?.error?.detail ?? this.i18n.translate('accounts.saveFailed')),
+      next: () => this.changed('accounts.periodAdded', account),
+      error: this.failed,
     });
   }
 
@@ -301,12 +298,8 @@ export class AccountsPage {
       return;
     }
     this.api.endCurrentPeriod(account.id).subscribe({
-      next: () => {
-        this.toasts.show(this.i18n.translate('accounts.ended', { name: account.name }));
-        this.periods.reload();
-        this.accounts.reload();
-      },
-      error: (response) => this.error.set(response?.error?.detail ?? this.i18n.translate('accounts.saveFailed')),
+      next: () => this.changed('accounts.ended', account),
+      error: this.failed,
     });
   }
 
@@ -316,13 +309,20 @@ export class AccountsPage {
       body: this.i18n.translate('confirm.suspendBody'),
       action: this.i18n.translate('accounts.suspend'),
     });
-    if (confirmed) {
-      this.setSuspended(account, true);
+    if (!confirmed) {
+      return;
     }
+    this.api.suspend(account.id).subscribe({
+      next: () => this.changed('accounts.suspended', account),
+      error: this.failed,
+    });
   }
 
   protected reactivate(account: Account): void {
-    this.setSuspended(account, false);
+    this.api.reactivate(account.id).subscribe({
+      next: () => this.changed('accounts.reactivated', account),
+      error: this.failed,
+    });
   }
 
   protected copy(password: string): void {
@@ -331,16 +331,14 @@ export class AccountsPage {
       .then(() => this.toasts.show(this.i18n.translate('assistants.copied')));
   }
 
-  private setSuspended(account: Account, suspended: boolean): void {
-    const request = suspended ? this.api.suspend(account.id) : this.api.reactivate(account.id);
-    request.subscribe({
-      next: () => {
-        this.error.set(null);
-        const key = suspended ? 'accounts.suspended' : 'accounts.reactivated';
-        this.toasts.show(this.i18n.translate(key, { name: account.name }));
-        this.accounts.reload();
-      },
-      error: (response) => this.error.set(response?.error?.detail ?? this.i18n.translate('accounts.saveFailed')),
-    });
+  /** Every change here ends the same way: say what happened, and show where things stand now. */
+  private changed(key: MessageKey, account: Account): void {
+    this.error.set(null);
+    this.toasts.show(this.i18n.translate(key, { name: account.name }));
+    this.periods.reload();
+    this.accounts.reload();
   }
+
+  private readonly failed = (response: HttpErrorResponse): void =>
+    this.error.set(response.error?.detail ?? this.i18n.translate('accounts.saveFailed'));
 }

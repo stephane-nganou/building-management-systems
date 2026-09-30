@@ -6,6 +6,7 @@ import java.util.UUID;
 
 import com.bms.user.AppUser;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 
 public interface SubscriptionPeriodRepository extends JpaRepository<SubscriptionPeriod, UUID> {
@@ -13,6 +14,10 @@ public interface SubscriptionPeriodRepository extends JpaRepository<Subscription
     List<SubscriptionPeriod> findByOwnerIdOrderByStartsOnDesc(UUID ownerId);
 
     boolean existsByOwnerId(UUID ownerId);
+
+    @Modifying
+    @Query("delete from SubscriptionPeriod p where p.owner.id = :ownerId")
+    void deleteByOwner(UUID ownerId);
 
     @Query("select distinct o from SubscriptionPeriod p join p.owner o order by o.email")
     List<AppUser> findOwners();

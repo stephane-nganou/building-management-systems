@@ -309,8 +309,10 @@ export class ApartmentsPage {
         this.apartments.reload();
         this.buildings.reload();
       },
-      error: () =>
-        this.error.set(this.i18n.translate('apartments.deleteFailed', { label: apartment.label })),
+      error: (response) =>
+        this.error.set(
+          response?.error?.detail ?? this.i18n.translate('apartments.deleteFailed', { label: apartment.label }),
+        ),
     });
   }
 }

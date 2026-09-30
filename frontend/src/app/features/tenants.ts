@@ -271,7 +271,8 @@ export class TenantsPage {
         this.toasts.show(this.i18n.translate('toast.deleted', { name }));
         this.tenants.reload();
       },
-      error: () => this.error.set(this.i18n.translate('tenants.deleteFailed', { name })),
+      error: (response) =>
+        this.error.set(response?.error?.detail ?? this.i18n.translate('tenants.deleteFailed', { name })),
     });
   }
 }

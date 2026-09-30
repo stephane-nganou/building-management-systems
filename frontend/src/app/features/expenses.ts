@@ -325,7 +325,8 @@ export class ExpensesPage {
         this.toasts.show(this.i18n.translate('toast.deleted', { name: expense.description }));
         this.expenses.reload();
       },
-      error: () => this.error.set(this.i18n.translate('expenses.deleteFailed')),
+      error: (response) =>
+        this.error.set(response?.error?.detail ?? this.i18n.translate('expenses.deleteFailed')),
     });
   }
 }

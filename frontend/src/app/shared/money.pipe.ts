@@ -61,8 +61,17 @@ export class DayPipe implements PipeTransform {
       day,
       locale,
       () => new Intl.DateTimeFormat(locale, { day: '2-digit', month: '2-digit', year: 'numeric' }),
-    ).format(new Date(value));
+    ).format(parse(value));
   }
+}
+
+/**
+ * A bare date such as 2026-10-29 is a calendar day, not an instant. The Date
+ * constructor reads it as UTC midnight, which is the evening before anywhere
+ * west of Greenwich; with a time and no offset it is read as local instead.
+ */
+function parse(value: string): Date {
+  return new Date(value.length === 10 ? `${value}T00:00` : value);
 }
 
 /**

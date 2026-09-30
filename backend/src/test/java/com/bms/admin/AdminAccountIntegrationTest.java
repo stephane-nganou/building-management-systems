@@ -131,7 +131,7 @@ class AdminAccountIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void endingTheSubscriptionMakesYesterdayItsLastDay() throws Exception {
-        testData.setPeriod("owner-a",TODAY.minusDays(10), TODAY.plusDays(10));
+        testData.setPeriod("owner-a", TODAY.minusDays(10), TODAY.plusDays(10));
 
         mockMvc.perform(post("/api/admin/accounts/" + owner.getId() + "/periods/end").with(ADMIN))
                 .andExpect(status().isNoContent());

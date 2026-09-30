@@ -59,6 +59,22 @@ class TrialIntegrationTest extends AbstractIntegrationTest {
                 .isEmpty();
     }
 
+    /**
+     * The V3 migration could only guess who owned data, since roles live in
+     * Keycloak, and an assistant nobody had assigned yet looked like an owner.
+     * Their token settles it the next time they sign in.
+     */
+    @Test
+    void anAssistantTheMigrationTookForAnOwnerLosesTheTrialOnTheirNextRequest() throws Exception {
+        mockMvc.perform(get("/api/me").with(asAssistant("kc-sam", "sam@example.com"))).andExpect(status().isOk());
+        testData.setPeriod("kc-sam", LocalDate.now(), LocalDate.now().plusDays(29));
+
+        mockMvc.perform(get("/api/me").with(asAssistant("kc-sam", "sam@example.com"))).andExpect(status().isOk());
+
+        assertThat(periods.findByOwnerIdOrderByStartsOnDesc(users.findByKeycloakId("kc-sam").orElseThrow().getId()))
+                .isEmpty();
+    }
+
     private SubscriptionPeriod onlyPeriodOf(AppUser owner) {
         List<SubscriptionPeriod> found = periods.findByOwnerIdOrderByStartsOnDesc(owner.getId());
         assertThat(found).hasSize(1);

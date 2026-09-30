@@ -46,8 +46,15 @@ public class CurrentUserService {
         currentClaims().ifPresent(claims -> {
             String keycloakId = subjectOf(claims);
             users.findByKeycloakId(keycloakId)
-                    .ifPresentOrElse(user -> syncProfile(user, claims), () -> create(keycloakId, claims));
+                    .ifPresentOrElse(user -> refresh(user, claims), () -> create(keycloakId, claims));
         });
+    }
+
+    private void refresh(AppUser user, ClaimAccessor claims) {
+        syncProfile(user, claims);
+        if (!Roles.isOwner(SecurityContextHolder.getContext().getAuthentication())) {
+            subscriptions.forget(user);
+        }
     }
 
     /**

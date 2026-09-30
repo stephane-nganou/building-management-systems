@@ -218,7 +218,8 @@ export class BuildingsPage {
         this.toasts.show(this.i18n.translate('toast.saved', { name: saved.name }));
         this.buildings.reload();
       },
-      error: () => this.error.set(this.i18n.translate('buildings.saveFailed')),
+      error: (response) =>
+        this.error.set(response?.error?.detail ?? this.i18n.translate('buildings.saveFailed')),
     });
   }
 
@@ -231,8 +232,10 @@ export class BuildingsPage {
         this.toasts.show(this.i18n.translate('toast.deleted', { name: building.name }));
         this.buildings.reload();
       },
-      error: () =>
-        this.error.set(this.i18n.translate('buildings.deleteFailed', { name: building.name })),
+      error: (response) =>
+        this.error.set(
+          response?.error?.detail ?? this.i18n.translate('buildings.deleteFailed', { name: building.name }),
+        ),
     });
   }
 }
