@@ -12,11 +12,13 @@ import {
   Invoice,
   InvoiceStatus,
   Me,
+  OwnSubscription,
   Permission,
   ProfitLossReport,
   Registration,
   SubscriptionPeriod,
   SubscriptionStatus,
+  SupportContacts,
   Tenant,
 } from './models';
 
@@ -244,6 +246,21 @@ export class AdminApi {
 
   reactivate(accountId: string): Observable<Account> {
     return this.http.delete<Account>(`/api/admin/accounts/${accountId}/suspension`);
+  }
+}
+
+@Injectable({ providedIn: 'root' })
+export class SubscriptionApi {
+  private http = inject(HttpClient);
+
+  /** The caller's own subscription; owners only. */
+  mine(): Observable<OwnSubscription> {
+    return this.http.get<OwnSubscription>('/api/subscription');
+  }
+
+  /** Answered even to a suspended account. */
+  support(): Observable<SupportContacts> {
+    return this.http.get<SupportContacts>('/api/support');
   }
 }
 

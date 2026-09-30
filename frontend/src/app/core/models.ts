@@ -153,6 +153,30 @@ export interface Assistant {
 /** Only an ACTIVE owner's data can be changed; the rest is read only. */
 export type SubscriptionStatus = 'ACTIVE' | 'EXPIRED' | 'SUSPENDED';
 
+/** Where an owner's subscription stands today. */
+export interface Standing {
+  status: SubscriptionStatus;
+  /** While active, the last covered day of the unbroken run from today; otherwise the last day there was. */
+  endsOn: string | null;
+  /** Days after today still covered, zero on the last day; null unless active. */
+  daysLeft: number | null;
+  /** True from a week before the last day. */
+  endingSoon: boolean;
+}
+
+export interface SupportContacts {
+  email: string;
+  phone: string;
+  hours: string;
+}
+
+/** Everything an owner can know about their own subscription. */
+export interface OwnSubscription {
+  standing: Standing;
+  periods: SubscriptionPeriod[];
+  support: SupportContacts;
+}
+
 export interface Me {
   id: string;
   email: string;
@@ -166,7 +190,7 @@ export interface Me {
   /** True once an administrator has suspended this account; nothing else answers it. */
   suspended: boolean;
   /** An owner's own standing; null for anyone else. */
-  subscription: { status: SubscriptionStatus; endsOn: string | null } | null;
+  subscription: Standing | null;
   assistingFor: {
     ownerId: string;
     ownerName: string;

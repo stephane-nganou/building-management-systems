@@ -40,6 +40,12 @@ export class SessionService {
     return subscription && subscription.status !== 'ACTIVE' ? (subscription.endsOn ?? '') : null;
   });
 
+  /** An owner's standing while their last day is a week away or closer; null otherwise. */
+  readonly endingSoon = computed(() => {
+    const subscription = this.me()?.subscription;
+    return subscription?.endingSoon ? subscription : null;
+  });
+
   /** The owners an assistant works for whose data can no longer be changed. */
   readonly readOnlyOwners = computed(() =>
     (this.me()?.assistingFor ?? [])

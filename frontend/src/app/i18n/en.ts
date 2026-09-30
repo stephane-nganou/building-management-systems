@@ -23,6 +23,7 @@ export const en = {
   'nav.reports': 'Profit and loss',
   'nav.assistants': 'Assistants',
   'nav.accounts': 'Accounts',
+  'nav.subscription': 'Subscription',
 
   'common.cancel': 'Cancel',
   'common.close': 'Close',
@@ -321,6 +322,24 @@ export const en = {
     'Your subscription ended on {date}. You can still read and download everything, but nothing can be changed until it is renewed.',
   'readOnly.assisting':
     'The subscription of {names} has ended. Their data can be read, but no longer changed.',
+
+  'reminder.endsOn': 'Your subscription ends on {date}, {days} days from now.',
+  'reminder.lastDay': 'Today, {date}, is the last day of your subscription.',
+  'reminder.manage': 'Manage subscription',
+
+  'subscription.title': 'Subscription',
+  'subscription.subtitle': 'How long you can keep changing your data, and every period you have had or booked.',
+  'subscription.loading': 'Loading your subscription.',
+  'subscription.runsUntil': 'Runs until',
+  'subscription.ended': 'Ended on',
+  'subscription.daysLeft': 'Days left',
+  'subscription.history': 'Periods',
+  'subscription.renewHint':
+    'To renew or change your subscription, contact customer service. Your data stays readable whatever happens.',
+
+  'support.title': 'Customer service',
+  'support.phone': 'Phone',
+  'support.hours': 'Hours',
 
   'suspended.title': 'This account is suspended',
   'suspended.body': 'Nothing can be viewed or changed while it is. Contact us to have it reactivated.',

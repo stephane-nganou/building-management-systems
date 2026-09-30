@@ -70,6 +70,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/assistants').then((m) => m.AssistantsPage),
   },
   {
+    path: 'subscription',
+    canMatch: [authGuard, ownerGuard],
+    loadComponent: () => import('./features/subscription').then((m) => m.SubscriptionPage),
+  },
+  {
     path: 'accounts',
     canMatch: [authGuard, adminGuard],
     loadComponent: () => import('./features/accounts').then((m) => m.AccountsPage),

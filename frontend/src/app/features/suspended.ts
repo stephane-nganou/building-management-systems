@@ -1,7 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { rxResource } from '@angular/core/rxjs-interop';
 
+import { SubscriptionApi } from '../core/api';
 import { AuthService } from '../core/auth';
 import { Gate } from '../shared/gate';
+import { SupportCard } from '../shared/support-card';
 import { TranslatePipe } from '../shared/translate.pipe';
 
 /**
@@ -10,7 +13,7 @@ import { TranslatePipe } from '../shared/translate.pipe';
  */
 @Component({
   selector: 'bms-suspended',
-  imports: [Gate, TranslatePipe],
+  imports: [Gate, SupportCard, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <bms-gate>
@@ -20,6 +23,9 @@ import { TranslatePipe } from '../shared/translate.pipe';
           <p>{{ 'suspended.body' | t }}</p>
         </div>
       </div>
+      @if (support.hasValue()) {
+        <bms-support-card [contacts]="support.value()!" />
+      }
       <div class="gate-actions">
         <button class="quiet" type="button" (click)="signOut()">{{ 'app.signOut' | t }}</button>
       </div>
@@ -28,6 +34,10 @@ import { TranslatePipe } from '../shared/translate.pipe';
 })
 export class SuspendedPage {
   private auth = inject(AuthService);
+  private api = inject(SubscriptionApi);
+
+  /** One of the few things a suspended account is still answered. */
+  protected readonly support = rxResource({ stream: () => this.api.support() });
 
   protected signOut(): void {
     this.auth.signOut();
