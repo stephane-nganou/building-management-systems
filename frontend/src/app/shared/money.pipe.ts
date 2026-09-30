@@ -4,7 +4,13 @@ import { TranslationService } from '../core/i18n';
 import { MessageKey } from '../i18n/en';
 
 /** The enum families the app renders. Each one is a group of message keys. */
-export type EnumGroup = 'status' | 'category' | 'invoiceType' | 'invoiceStatus' | 'permission';
+export type EnumGroup =
+  | 'status'
+  | 'category'
+  | 'invoiceType'
+  | 'invoiceStatus'
+  | 'permission'
+  | 'subscriptionStatus';
 
 const money = new Map<string, Intl.NumberFormat>();
 const day = new Map<string, Intl.DateTimeFormat>();
@@ -55,8 +61,17 @@ export class DayPipe implements PipeTransform {
       day,
       locale,
       () => new Intl.DateTimeFormat(locale, { day: '2-digit', month: '2-digit', year: 'numeric' }),
-    ).format(new Date(value));
+    ).format(parse(value));
   }
+}
+
+/**
+ * A bare date such as 2026-10-29 is a calendar day, not an instant. The Date
+ * constructor reads it as UTC midnight, which is the evening before anywhere
+ * west of Greenwich; with a time and no offset it is read as local instead.
+ */
+function parse(value: string): Date {
+  return new Date(value.length === 10 ? `${value}T00:00` : value);
 }
 
 /**

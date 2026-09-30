@@ -45,6 +45,8 @@ bms:
   invoice:
     issuer-name: ${BMS_INVOICE_ISSUER_NAME:Building Management}
     currency: ${BMS_INVOICE_CURRENCY:EUR}
+  subscription:
+    trial-days: ${BMS_SUBSCRIPTION_TRIAL_DAYS:30}
 
 springdoc:
   swagger-ui:

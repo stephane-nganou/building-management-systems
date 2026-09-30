@@ -17,5 +17,5 @@ echo "Backend    http://localhost:${BACKEND_PORT:-8080}"
 echo "API docs   http://localhost:${BACKEND_PORT:-8080}/swagger-ui.html"
 echo "Keycloak   http://localhost:${KEYCLOAK_PORT:-8081}  (admin / admin)"
 echo
-echo "Sign in as owner / owner, or assistant / assistant."
+echo "Sign in as owner / owner, assistant / assistant, or admin / admin."
 echo "Keycloak takes about a minute on the first run while it imports the realm."

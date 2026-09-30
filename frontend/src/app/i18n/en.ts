@@ -6,6 +6,7 @@
 export const en = {
   'app.tagline': 'Property ledger',
   'app.role.owner': 'Owner',
+  'app.role.admin': 'Administrator',
   'app.role.assisting': 'Assisting {count} owner(s)',
   'app.signOut': 'Sign out',
   'app.language': 'Language',
@@ -21,6 +22,7 @@ export const en = {
   'nav.invoices': 'Invoices',
   'nav.reports': 'Profit and loss',
   'nav.assistants': 'Assistants',
+  'nav.accounts': 'Accounts',
 
   'common.cancel': 'Cancel',
   'common.close': 'Close',
@@ -49,6 +51,12 @@ export const en = {
   'confirm.deleteBody': 'This removes it for good and cannot be undone.',
   'confirm.removeAssistantTitle': 'Remove {name}?',
   'confirm.removeAssistantBody': 'They lose access to your buildings straight away.',
+  'confirm.endSubscriptionTitle': 'End the subscription of {name}?',
+  'confirm.endSubscriptionBody':
+    'Yesterday becomes its last day. Their data stays readable but can no longer be changed.',
+  'confirm.suspendTitle': 'Suspend {name}?',
+  'confirm.suspendBody':
+    'They are signed out of everything at once, and their assistants can no longer change their data.',
 
   'toast.saved': '{name} saved',
   'toast.deleted': '{name} deleted',
@@ -90,6 +98,10 @@ export const en = {
   'enum.permission.INVOICE_READ': 'View invoices',
   'enum.permission.INVOICE_WRITE': 'Manage invoices',
   'enum.permission.REPORT_READ': 'View reports',
+
+  'enum.subscriptionStatus.ACTIVE': 'Active',
+  'enum.subscriptionStatus.EXPIRED': 'Expired',
+  'enum.subscriptionStatus.SUSPENDED': 'Suspended',
 
   'dashboard.title': 'Overview',
   'dashboard.subtitle': 'Where the portfolio stands this year, 1 January to today.',
@@ -279,6 +291,39 @@ export const en = {
   'assistants.saveFailed': 'That assistant could not be saved.',
   'assistants.resetFailed': 'A new password for {name} could not be issued.',
   'assistants.removeFailed': '{name} could not be removed.',
+
+  'accounts.title': 'Accounts',
+  'accounts.subtitle': 'Every owner using the service, and how long their subscription runs.',
+  'accounts.add': 'Add owner',
+  'accounts.create': 'Create owner',
+  'accounts.anyStatus': 'Any status',
+  'accounts.loading': 'Loading accounts.',
+  'accounts.empty': 'No account matches.',
+  'accounts.since': 'Since',
+  'accounts.endsOn': 'Runs until',
+  'accounts.subscription': 'Subscription',
+  'accounts.subscriptionOf': 'Subscription of {name}',
+  'accounts.addPeriod': 'Add period',
+  'accounts.lastDay': 'Last day',
+  'accounts.endNow': 'End subscription now',
+  'accounts.suspend': 'Suspend',
+  'accounts.reactivate': 'Reactivate',
+  'accounts.emailHint': 'We create the account on a trial and give you a password to pass on.',
+  'accounts.handOverBody':
+    'Give these to {name}. The password is shown only now, and they choose their own when they first sign in.',
+  'accounts.periodAdded': 'Subscription of {name} extended',
+  'accounts.ended': 'Subscription of {name} ended',
+  'accounts.suspended': '{name} suspended',
+  'accounts.reactivated': '{name} reactivated',
+  'accounts.saveFailed': 'That change could not be saved.',
+
+  'readOnly.own':
+    'Your subscription ended on {date}. You can still read and download everything, but nothing can be changed until it is renewed.',
+  'readOnly.assisting':
+    'The subscription of {names} has ended. Their data can be read, but no longer changed.',
+
+  'suspended.title': 'This account is suspended',
+  'suspended.body': 'Nothing can be viewed or changed while it is. Contact us to have it reactivated.',
 
   'register.readyTitle': 'Your account is ready',
   'register.readyBody': 'Sign in with {email} and start by adding your first building.',

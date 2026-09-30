@@ -28,8 +28,10 @@ Pass `--wipe` (`-Wipe` on Windows) to the stop script to drop the database volum
 
 New landlords sign up at http://localhost:4200/register, reachable from
 **Register here** on the sign in page. Demo sign in:
-`owner` / `owner`, or `assistant` / `assistant`. These live in
-`docker/keycloak/realm-bms.json` and exist for local development only.
+`owner` / `owner`, `assistant` / `assistant`, or `admin` / `admin` for the
+administrator of the service (a user of the `bms` realm, not Keycloak's own
+console admin). These live in `docker/keycloak/realm-bms.json` and exist for
+local development only.
 
 The app opens in French for a French browser and English for anything else;
 **EN / FR** in the sidebar changes it and the choice is remembered. The sign in
@@ -40,9 +42,10 @@ import runs only when the realm does not exist yet, so a stack that has been
 started once would not see later changes to `docker/keycloak/realm-bms.json`.
 The `keycloak-sync` compose service therefore runs `scripts/sync-realm.mjs` on
 every start, before the backend comes up. It updates the realm settings, adds
-any missing roles and refreshes the clients, then checks that the backend can
-still get a token. Users are left alone, so nobody loses their account or their
-buildings. To apply a change to a running stack by hand:
+any missing roles and seeded users and refreshes the clients, then checks that
+the backend can still get a token. Existing users are left alone, so nobody
+loses their account or their buildings. To apply a change to a running stack by
+hand:
 
 ```bash
 node scripts/sync-realm.mjs
@@ -116,6 +119,14 @@ sign up: an owner creates them under **Assistants**, and the app returns a
 password once, to hand over. The app then makes them choose their own before
 showing them anything else. Both accounts are created through the Keycloak admin
 API by the `bms-backend` client.
+
+Every owner has a subscription: a history of dated periods, starting with a
+30 day trial (`BMS_SUBSCRIPTION_TRIAL_DAYS`). Once no period covers today, the
+owner and their assistants can still read everything, but every change to that
+owner's data is refused. The administrator, holding the `admin` realm role,
+manages owners under **Accounts**: signs them up, adds or ends periods, and
+suspends an account, which disables it in Keycloak and refuses its open
+sessions too.
 
 **The Angular app knows one host: its own.** It never names Keycloak, holds no
 token and carries no identity library. Signing in is a navigation to

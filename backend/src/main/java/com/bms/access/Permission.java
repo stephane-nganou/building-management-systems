@@ -15,5 +15,9 @@ public enum Permission {
     EXPENSE_WRITE,
     INVOICE_READ,
     INVOICE_WRITE,
-    REPORT_READ
+    REPORT_READ;
+
+    public boolean isWrite() {
+        return name().endsWith("_WRITE");
+    }
 }

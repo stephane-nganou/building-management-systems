@@ -19,7 +19,7 @@ import org.springframework.web.client.RestClientException;
 
 /**
  * The slice of Keycloak's admin REST API this application needs: create an
- * account, set its password and give it a realm role.
+ * account, set its password, give it a realm role, and disable it.
  *
  * <p>Written against {@link RestClient} rather than the official admin client,
  * which would pull an entire JAX-RS stack in for four calls.
@@ -57,6 +57,19 @@ public class KeycloakAdminClient {
 
     public void resetPassword(String keycloakId, String password) {
         setPassword(accessToken(), keycloakId, password);
+    }
+
+    /** A disabled account cannot sign in. Keycloak only changes the fields it is sent. */
+    public void setEnabled(String keycloakId, boolean enabled) {
+        http.put()
+                .uri("/admin/realms/{realm}/users/{id}", properties.realm(), keycloakId)
+                .headers(headers -> headers.setBearerAuth(accessToken()))
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Map.of("enabled", enabled))
+                .exchange((request, response) -> {
+                    failOnError(response.getStatusCode(), enabled ? "enable the account" : "disable the account");
+                    return null;
+                });
     }
 
     private String createAccount(String token, String email, String firstName, String lastName) {

@@ -1,5 +1,6 @@
 package com.bms.support;
 
+import java.time.LocalDate;
 import java.util.Set;
 
 import com.bms.access.AssistantAssignment;
@@ -9,6 +10,8 @@ import com.bms.apartment.ApartmentRepository;
 import com.bms.building.BuildingRepository;
 import com.bms.expense.ExpenseRepository;
 import com.bms.invoice.InvoiceRepository;
+import com.bms.subscription.SubscriptionPeriod;
+import com.bms.subscription.SubscriptionPeriodRepository;
 import com.bms.tenant.TenantRepository;
 import com.bms.user.AppUser;
 import com.bms.user.AppUserRepository;
@@ -26,10 +29,11 @@ public class TestData {
     private final TenantRepository tenants;
     private final ExpenseRepository expenses;
     private final InvoiceRepository invoices;
+    private final SubscriptionPeriodRepository periods;
 
     public TestData(AppUserRepository users, AssistantAssignmentRepository assignments,
                     BuildingRepository buildings, ApartmentRepository apartments, TenantRepository tenants,
-                    ExpenseRepository expenses, InvoiceRepository invoices) {
+                    ExpenseRepository expenses, InvoiceRepository invoices, SubscriptionPeriodRepository periods) {
         this.users = users;
         this.assignments = assignments;
         this.buildings = buildings;
@@ -37,6 +41,7 @@ public class TestData {
         this.tenants = tenants;
         this.expenses = expenses;
         this.invoices = invoices;
+        this.periods = periods;
     }
 
     @Transactional
@@ -48,12 +53,32 @@ public class TestData {
         buildings.deleteAllInBatch();
         // Bulk delete: assistant_permission rows go with it via on delete cascade.
         assignments.deleteAllInBatch();
+        periods.deleteAllInBatch();
         users.deleteAllInBatch();
     }
 
     @Transactional
     public AppUser createUser(String keycloakId, String email, String firstName, String lastName) {
         return users.save(new AppUser(keycloakId, email, firstName, lastName));
+    }
+
+    /** Replaces the owner's subscription with one that ended yesterday. */
+    public void expire(String keycloakId) {
+        LocalDate today = LocalDate.now();
+        setPeriod(keycloakId, today.minusDays(60), today.minusDays(1));
+    }
+
+    /** Replaces the owner's subscription with the one period given. */
+    @Transactional
+    public void setPeriod(String keycloakId, LocalDate startsOn, LocalDate endsOn) {
+        AppUser owner = users.findByKeycloakId(keycloakId).orElseThrow();
+        periods.deleteAll(periods.findByOwnerIdOrderByStartsOnDesc(owner.getId()));
+        periods.save(new SubscriptionPeriod(owner, startsOn, endsOn, null));
+    }
+
+    @Transactional
+    public void suspend(String keycloakId) {
+        users.findByKeycloakId(keycloakId).orElseThrow().suspend();
     }
 
     @Transactional

@@ -69,8 +69,10 @@ public class ExpenseService {
     }
 
     private Expense require(UUID id, Permission permission) {
-        return expenses.findByIdAndBuildingOwnerIdIn(id, accessControl.accessibleOwnerIds(permission))
+        Expense expense = expenses.findByIdAndBuildingOwnerIdIn(id, accessControl.accessibleOwnerIds(permission))
                 .orElseThrow(() -> NotFoundException.of("error.notFound.expense", id));
+        accessControl.requireWritable(permission, expense.getBuilding().getOwner());
+        return expense;
     }
 
     /** An apartment level expense must belong to the building the expense is booked against. */

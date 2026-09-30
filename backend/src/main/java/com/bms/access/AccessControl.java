@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.UUID;
 
 import com.bms.common.exception.AccessDeniedForResourceException;
+import com.bms.subscription.SubscriptionService;
+import com.bms.user.AppUser;
 import com.bms.user.CurrentUserService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,16 +14,20 @@ import org.springframework.transaction.annotation.Transactional;
 /**
  * Single entry point for "may the caller touch this owner's data?".
  * A user is always allowed on their own data; an assistant needs an explicit grant.
+ * Either way, only an owner whose subscription covers today can have data changed.
  */
 @Service
 public class AccessControl {
 
     private final AssistantAssignmentRepository assignments;
     private final CurrentUserService currentUser;
+    private final SubscriptionService subscriptions;
 
-    public AccessControl(AssistantAssignmentRepository assignments, CurrentUserService currentUser) {
+    public AccessControl(AssistantAssignmentRepository assignments, CurrentUserService currentUser,
+                         SubscriptionService subscriptions) {
         this.assignments = assignments;
         this.currentUser = currentUser;
+        this.subscriptions = subscriptions;
     }
 
     @Transactional(readOnly = true)
@@ -39,6 +45,24 @@ public class AccessControl {
     public void require(UUID ownerId, Permission permission) {
         if (!canAccess(ownerId, permission)) {
             throw new AccessDeniedForResourceException("error.accessDenied", permission);
+        }
+    }
+
+    /** Refuses a write, never a read, to an owner who may not change their data today. */
+    @Transactional(readOnly = true)
+    public void requireWritable(Permission permission, AppUser owner) {
+        if (permission.isWrite()) {
+            requireWritable(owner);
+        }
+    }
+
+    @Transactional(readOnly = true)
+    public void requireWritable(AppUser owner) {
+        switch (subscriptions.status(owner)) {
+            case SUSPENDED -> throw new AccessDeniedForResourceException("error.account.suspended");
+            case EXPIRED -> throw new AccessDeniedForResourceException("error.subscription.expired");
+            case ACTIVE -> {
+            }
         }
     }
 

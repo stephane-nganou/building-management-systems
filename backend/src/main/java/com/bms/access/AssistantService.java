@@ -24,13 +24,15 @@ public class AssistantService {
     private final AppUserRepository users;
     private final CurrentUserService currentUser;
     private final AccountService accounts;
+    private final AccessControl accessControl;
 
     public AssistantService(AssistantAssignmentRepository assignments, AppUserRepository users,
-                            CurrentUserService currentUser, AccountService accounts) {
+                            CurrentUserService currentUser, AccountService accounts, AccessControl accessControl) {
         this.assignments = assignments;
         this.users = users;
         this.currentUser = currentUser;
         this.accounts = accounts;
+        this.accessControl = accessControl;
     }
 
     @Transactional(readOnly = true)
@@ -46,6 +48,7 @@ public class AssistantService {
     @Transactional
     public AssistantResponse grant(AssistantRequest request) {
         AppUser owner = currentUser.require();
+        accessControl.requireWritable(owner);
         return users.findByEmailIgnoreCase(request.email())
                 .map(assistant -> assign(owner, assistant, request.permissions(), null))
                 .orElseGet(() -> {
@@ -94,6 +97,7 @@ public class AssistantService {
         if (!assignment.getOwner().getId().equals(currentUser.requireId())) {
             throw NotFoundException.of("error.notFound.assistant", assignmentId);
         }
+        accessControl.requireWritable(assignment.getOwner());
         return assignment;
     }
 }

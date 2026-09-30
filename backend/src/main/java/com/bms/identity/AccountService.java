@@ -3,6 +3,7 @@ package com.bms.identity;
 import java.util.UUID;
 
 import com.bms.common.exception.ValidationException;
+import com.bms.subscription.SubscriptionService;
 import com.bms.user.AppUser;
 import com.bms.user.AppUserRepository;
 import org.springframework.stereotype.Service;
@@ -20,16 +21,37 @@ public class AccountService {
 
     private final KeycloakAdminClient keycloak;
     private final AppUserRepository users;
+    private final SubscriptionService subscriptions;
 
-    public AccountService(KeycloakAdminClient keycloak, AppUserRepository users) {
+    public AccountService(KeycloakAdminClient keycloak, AppUserRepository users,
+                          SubscriptionService subscriptions) {
         this.keycloak = keycloak;
         this.users = users;
+        this.subscriptions = subscriptions;
     }
 
-    /** Registers someone who manages their own buildings. They chose their password. */
+    /** Registers someone who manages their own buildings, on a trial. They chose their password. */
     @Transactional
     public AppUser createOwner(String email, String firstName, String lastName, String password) {
-        return create(email, firstName, lastName, password, OWNER_ROLE, false);
+        return owner(create(email, firstName, lastName, password, OWNER_ROLE, false));
+    }
+
+    /** An administrator signs an owner up, with a password to hand over like an assistant's. */
+    @Transactional
+    public NewAccount createOwnerWithGeneratedPassword(String email, String firstName, String lastName) {
+        String password = GeneratedPassword.next();
+        return new NewAccount(owner(create(email, firstName, lastName, password, OWNER_ROLE, true)), password);
+    }
+
+    /** Keycloak first, so a refusal there leaves our record as it was. */
+    @Transactional
+    public void setSuspended(AppUser user, boolean suspended) {
+        keycloak.setEnabled(user.getKeycloakId(), !suspended);
+        if (suspended) {
+            user.suspend();
+        } else {
+            user.reactivate();
+        }
     }
 
     /**
@@ -78,6 +100,11 @@ public class AccountService {
         });
         String keycloakId = keycloak.createUser(email, firstName, lastName, password, realmRole);
         return users.save(new AppUser(keycloakId, email, firstName, lastName, mustChangePassword));
+    }
+
+    private AppUser owner(AppUser user) {
+        subscriptions.startTrial(user);
+        return user;
     }
 
     /** An account and the password to hand over, which is never readable again. */

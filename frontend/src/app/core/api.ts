@@ -3,6 +3,7 @@ import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
 
 import {
+  Account,
   Apartment,
   Assistant,
   Building,
@@ -14,6 +15,8 @@ import {
   Permission,
   ProfitLossReport,
   Registration,
+  SubscriptionPeriod,
+  SubscriptionStatus,
   Tenant,
 } from './models';
 
@@ -204,6 +207,43 @@ export class AssistantsApi {
 
   revoke(id: string): Observable<void> {
     return this.http.delete<void>(`/api/assistants/${id}`);
+  }
+}
+
+@Injectable({ providedIn: 'root' })
+export class AdminApi {
+  private http = inject(HttpClient);
+
+  accounts(status?: SubscriptionStatus): Observable<Account[]> {
+    return this.http.get<Account[]>('/api/admin/accounts', { params: params({ status }) });
+  }
+
+  createOwner(email: string, firstName: string, lastName: string): Observable<Account> {
+    return this.http.post<Account>('/api/admin/accounts', { email, firstName, lastName });
+  }
+
+  periods(accountId: string): Observable<SubscriptionPeriod[]> {
+    return this.http.get<SubscriptionPeriod[]>(`/api/admin/accounts/${accountId}/periods`);
+  }
+
+  addPeriod(accountId: string, startsOn: string, endsOn: string, note: string): Observable<SubscriptionPeriod> {
+    return this.http.post<SubscriptionPeriod>(`/api/admin/accounts/${accountId}/periods`, {
+      startsOn,
+      endsOn,
+      note,
+    });
+  }
+
+  endCurrentPeriod(accountId: string): Observable<void> {
+    return this.http.post<void>(`/api/admin/accounts/${accountId}/periods/end`, null);
+  }
+
+  suspend(accountId: string): Observable<Account> {
+    return this.http.post<Account>(`/api/admin/accounts/${accountId}/suspension`, null);
+  }
+
+  reactivate(accountId: string): Observable<Account> {
+    return this.http.delete<Account>(`/api/admin/accounts/${accountId}/suspension`);
   }
 }
 

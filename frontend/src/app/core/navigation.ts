@@ -13,6 +13,7 @@ export interface NavEntry {
   icon: IconName;
   permission?: Permission;
   ownerOnly?: boolean;
+  adminOnly?: boolean;
 }
 
 export const NAV_ENTRIES: NavEntry[] = [
@@ -24,4 +25,5 @@ export const NAV_ENTRIES: NavEntry[] = [
   { path: '/invoices', label: 'nav.invoices', icon: 'invoice', permission: 'INVOICE_READ' },
   { path: '/reports', label: 'nav.reports', icon: 'chart', permission: 'REPORT_READ' },
   { path: '/assistants', label: 'nav.assistants', icon: 'assistant', ownerOnly: true },
+  { path: '/accounts', label: 'nav.accounts', icon: 'shield', adminOnly: true },
 ];

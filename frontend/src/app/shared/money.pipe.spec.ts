@@ -54,6 +54,11 @@ describe('DayPipe', () => {
   it('returns nothing for a missing date', () => {
     expect(pipes('en').day.transform(null)).toBe('');
   });
+
+  /** Read as UTC midnight, a bare date showed the day before anywhere west of Greenwich. */
+  it('shows a calendar date as that day in any time zone', () => {
+    expect(pipes('en').day.transform('2026-10-29')).toBe('29/10/2026');
+  });
 });
 
 describe('LabelPipe', () => {

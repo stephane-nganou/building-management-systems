@@ -103,17 +103,17 @@ flowchart TB
     subgraph web["Web layer, @RestController"]
         c1["BuildingController<br/>ApartmentController<br/>TenantController"]
         c2["ExpenseController<br/>InvoiceController<br/>ReportController"]
-        c3["AssistantController<br/>MeController<br/>AuthController"]
+        c3["AssistantController<br/>MeController<br/>AuthController<br/>AdminAccountController"]
     end
 
     subgraph app["Application layer, @Service, @Transactional"]
         s1["BuildingService<br/>ApartmentService<br/>TenantService"]
         s2["ExpenseService<br/>InvoiceService<br/>ProfitLossService<br/>DashboardService"]
-        s3["AssistantService<br/>AccountService<br/>CurrentUserService"]
+        s3["AssistantService<br/>AccountService<br/>CurrentUserService<br/>SubscriptionService<br/>AdminAccountService"]
     end
 
     subgraph domain["Domain, JPA entities"]
-        d1["AppUser, Building, Apartment,<br/>Tenant, Expense, Invoice, InvoiceLine,<br/>AssistantAssignment"]
+        d1["AppUser, Building, Apartment,<br/>Tenant, Expense, Invoice, InvoiceLine,<br/>AssistantAssignment, SubscriptionPeriod"]
     end
 
     subgraph data["Persistence, Spring Data JPA"]
@@ -121,16 +121,16 @@ flowchart TB
     end
 
     subgraph cross["Cross cutting"]
-        ac["AccessControl<br/>may the caller touch this owner's data?"]
+        ac["AccessControl<br/>may the caller touch this owner's data?<br/>may it be changed today?"]
         msg["Messages<br/>wording for the request's locale"]
         pdf["InvoicePdfRenderer<br/>Thymeleaf then openhtmltopdf"]
-        kcc["KeycloakAdminClient<br/>RestClient, four calls"]
+        kcc["KeycloakAdminClient<br/>RestClient, five calls"]
     end
 
     subgraph infra["Infrastructure"]
-        sec["SecurityConfig, session and bearer<br/>KeycloakClientConfig, written out<br/>KeycloakJwtAuthenticationConverter<br/>KeycloakAuthoritiesMapper<br/>UserProvisioningFilter"]
+        sec["SecurityConfig, session and bearer<br/>KeycloakClientConfig, written out<br/>KeycloakJwtAuthenticationConverter<br/>KeycloakAuthoritiesMapper<br/>UserProvisioningFilter<br/>SuspensionInterceptor"]
         exh["ApiExceptionHandler<br/>@RestControllerAdvice"]
-        fly["Flyway V1__init.sql,<br/>V2__must_change_password.sql"]
+        fly["Flyway V1__init.sql to<br/>V4__subscription_period_may_be_cut_to_nothing.sql"]
     end
 
     web --> app
@@ -171,10 +171,22 @@ classDiagram
         String firstName
         String lastName
         boolean mustChangePassword
+        boolean suspended
         getFullName() String
         updateProfile(email, firstName, lastName)
         requirePasswordChange()
         passwordChosen()
+        suspend()
+        reactivate()
+    }
+
+    class SubscriptionPeriod {
+        AppUser owner
+        LocalDate startsOn
+        LocalDate endsOn
+        String note
+        covers(day) boolean
+        endOn(day)
     }
 
     class Building {
@@ -278,8 +290,10 @@ classDiagram
     BaseEntity <|-- Invoice
     BaseEntity <|-- InvoiceLine
     BaseEntity <|-- AssistantAssignment
+    BaseEntity <|-- SubscriptionPeriod
 
     AppUser "1" <-- "0..*" Building : owner
+    AppUser "1" <-- "0..*" SubscriptionPeriod : owner
     Building *-- Address
     Building "1" <-- "0..*" Apartment
     Apartment *-- RoomLayout
@@ -569,6 +583,17 @@ erDiagram
         varchar first_name
         varchar last_name
         boolean must_change_password "handed over, not yet replaced"
+        boolean suspended "refused everywhere by the administrator"
+        timestamptz created_at
+        timestamptz updated_at
+    }
+
+    SUBSCRIPTION_PERIOD {
+        uuid id PK
+        uuid owner_id FK "on delete cascade"
+        date starts_on
+        date ends_on "inclusive, may be starts_on minus 1"
+        varchar note
         timestamptz created_at
         timestamptz updated_at
     }
@@ -673,6 +698,7 @@ erDiagram
     }
 
     APP_USER ||--o{ BUILDING : owns
+    APP_USER ||--o{ SUBSCRIPTION_PERIOD : "subscribes for"
     APP_USER ||--o{ ASSISTANT_ASSIGNMENT : "delegates as owner"
     APP_USER ||--o{ ASSISTANT_ASSIGNMENT : "assists as assistant"
     ASSISTANT_ASSIGNMENT ||--o{ ASSISTANT_PERMISSION : grants

@@ -13,6 +13,7 @@ import com.bms.apartment.BuildingApartmentCount;
 import com.bms.building.dto.BuildingRequest;
 import com.bms.building.dto.BuildingResponse;
 import com.bms.common.exception.NotFoundException;
+import com.bms.user.AppUser;
 import com.bms.user.CurrentUserService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -52,7 +53,9 @@ public class BuildingService {
 
     @Transactional
     public BuildingResponse create(BuildingRequest request) {
-        Building building = new Building(currentUser.require(), request.name(), toAddress(request), request.notes());
+        AppUser owner = currentUser.require();
+        accessControl.requireWritable(owner);
+        Building building = new Building(owner, request.name(), toAddress(request), request.notes());
         return BuildingResponse.from(buildings.save(building), 0L);
     }
 
@@ -72,8 +75,10 @@ public class BuildingService {
     /** Loads a building the caller is allowed to touch, or fails. */
     @Transactional(readOnly = true)
     public Building require(UUID id, Permission permission) {
-        return buildings.findByIdAndOwnerIdIn(id, accessControl.accessibleOwnerIds(permission))
+        Building building = buildings.findByIdAndOwnerIdIn(id, accessControl.accessibleOwnerIds(permission))
                 .orElseThrow(() -> NotFoundException.of("error.notFound.building", id));
+        accessControl.requireWritable(permission, building.getOwner());
+        return building;
     }
 
     private Map<UUID, Long> apartmentCounts(List<Building> forBuildings) {

@@ -77,8 +77,10 @@ public class ApartmentService {
 
     @Transactional(readOnly = true)
     public Apartment require(UUID id, Permission permission) {
-        return apartments.findByIdAndBuildingOwnerIdIn(id, accessControl.accessibleOwnerIds(permission))
+        Apartment apartment = apartments.findByIdAndBuildingOwnerIdIn(id, accessControl.accessibleOwnerIds(permission))
                 .orElseThrow(() -> NotFoundException.of("error.notFound.apartment", id));
+        accessControl.requireWritable(permission, apartment.getBuilding().getOwner());
+        return apartment;
     }
 
     private RoomLayout layoutOf(ApartmentRequest request) {

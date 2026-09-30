@@ -255,8 +255,10 @@ export class AssistantsPage {
         this.error.set(null);
         this.showCredentials(saved);
       },
-      error: () =>
-        this.error.set(this.i18n.translate('assistants.resetFailed', { name: assistant.name })),
+      error: (response) =>
+        this.error.set(
+          response?.error?.detail ?? this.i18n.translate('assistants.resetFailed', { name: assistant.name }),
+        ),
     });
   }
 
@@ -289,8 +291,10 @@ export class AssistantsPage {
         this.toasts.show(this.i18n.translate('toast.assistantRemoved', { name: assistant.name }));
         this.assistants.reload();
       },
-      error: () =>
-        this.error.set(this.i18n.translate('assistants.removeFailed', { name: assistant.name })),
+      error: (response) =>
+        this.error.set(
+          response?.error?.detail ?? this.i18n.translate('assistants.removeFailed', { name: assistant.name }),
+        ),
     });
   }
 }

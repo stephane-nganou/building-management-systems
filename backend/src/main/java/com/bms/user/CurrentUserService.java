@@ -4,6 +4,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.UUID;
 
+import com.bms.subscription.SubscriptionService;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.oauth2.core.ClaimAccessor;
@@ -32,9 +33,11 @@ import org.springframework.transaction.annotation.Transactional;
 public class CurrentUserService {
 
     private final AppUserRepository users;
+    private final SubscriptionService subscriptions;
 
-    public CurrentUserService(AppUserRepository users) {
+    public CurrentUserService(AppUserRepository users, SubscriptionService subscriptions) {
         this.users = users;
+        this.subscriptions = subscriptions;
     }
 
     /** Creates or refreshes the local record for the caller. Runs read write. */
@@ -43,14 +46,30 @@ public class CurrentUserService {
         currentClaims().ifPresent(claims -> {
             String keycloakId = subjectOf(claims);
             users.findByKeycloakId(keycloakId)
-                    .ifPresentOrElse(
-                            user -> syncProfile(user, claims),
-                            () -> users.save(new AppUser(
-                                    keycloakId,
-                                    email(claims),
-                                    claims.getClaimAsString("given_name"),
-                                    claims.getClaimAsString("family_name"))));
+                    .ifPresentOrElse(user -> refresh(user, claims), () -> create(keycloakId, claims));
         });
+    }
+
+    private void refresh(AppUser user, ClaimAccessor claims) {
+        syncProfile(user, claims);
+        if (!Roles.isOwner(SecurityContextHolder.getContext().getAuthentication())) {
+            subscriptions.forget(user);
+        }
+    }
+
+    /**
+     * An owner first met here was made in Keycloak rather than through our
+     * registration, the seeded demo owner among them, and gets the same trial.
+     */
+    private void create(String keycloakId, ClaimAccessor claims) {
+        AppUser user = users.save(new AppUser(
+                keycloakId,
+                email(claims),
+                claims.getClaimAsString("given_name"),
+                claims.getClaimAsString("family_name")));
+        if (Roles.isOwner(SecurityContextHolder.getContext().getAuthentication())) {
+            subscriptions.startTrial(user);
+        }
     }
 
     @Transactional(readOnly = true)
@@ -64,6 +83,15 @@ public class CurrentUserService {
     @Transactional(readOnly = true)
     public UUID requireId() {
         return require().getId();
+    }
+
+    /** False for an anonymous caller, who has no account to suspend. */
+    @Transactional(readOnly = true)
+    public boolean isSuspended() {
+        return currentClaims()
+                .flatMap(claims -> users.findByKeycloakId(subjectOf(claims)))
+                .map(AppUser::isSuspended)
+                .orElse(false);
     }
 
     private void syncProfile(AppUser user, ClaimAccessor claims) {

@@ -29,6 +29,11 @@ public final class Jwts {
         return withRole(keycloakId, email, "ROLE_ASSISTANT");
     }
 
+    /** Someone who runs the service and manages its customers' accounts. */
+    public static RequestPostProcessor asAdmin(String keycloakId, String email) {
+        return withRole(keycloakId, email, "ROLE_ADMIN");
+    }
+
     private static RequestPostProcessor withRole(String keycloakId, String email, String authority) {
         RequestPostProcessor authentication = jwt()
                 .jwt(builder -> builder

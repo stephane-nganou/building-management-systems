@@ -24,6 +24,10 @@
       {
         "name": "assistant",
         "description": "Works on an owner's data within granted permissions"
+      },
+      {
+        "name": "admin",
+        "description": "Runs the service: manages owners' accounts and subscriptions"
       }
     ]
   },
@@ -119,6 +123,24 @@
       ],
       "realmRoles": [
         "assistant"
+      ]
+    },
+    {
+      "username": "admin",
+      "email": "admin@bms.local",
+      "firstName": "Ada",
+      "lastName": "Admin",
+      "enabled": true,
+      "emailVerified": true,
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin",
+          "temporary": false
+        }
+      ],
+      "realmRoles": [
+        "admin"
       ]
     }
   ]

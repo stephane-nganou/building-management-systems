@@ -3,6 +3,9 @@ import { Page, expect } from '@playwright/test';
 /** The demo owner seeded by the realm export. */
 export const DEMO_OWNER = { username: 'owner', password: 'owner' };
 
+/** The administrator seeded by the realm export. */
+export const DEMO_ADMIN = { username: 'admin', password: 'admin' };
+
 /** Emails have to be unique per run, because accounts are never deleted. */
 export function uniqueEmail(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}@example.test`;
