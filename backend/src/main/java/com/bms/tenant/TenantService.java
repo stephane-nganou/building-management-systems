@@ -79,8 +79,10 @@ public class TenantService {
 
     @Transactional(readOnly = true)
     public Tenant require(UUID id, Permission permission) {
-        return tenants.findByIdAndApartmentBuildingOwnerIdIn(id, accessControl.accessibleOwnerIds(permission))
+        Tenant tenant = tenants.findByIdAndApartmentBuildingOwnerIdIn(id, accessControl.accessibleOwnerIds(permission))
                 .orElseThrow(() -> NotFoundException.of("error.notFound.tenant", id));
+        accessControl.requireWritable(permission, tenant.getApartment().getBuilding().getOwner());
+        return tenant;
     }
 
     private void validateLease(TenantRequest request) {

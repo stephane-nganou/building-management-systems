@@ -1,5 +1,6 @@
 package com.bms.support;
 
+import java.time.LocalDate;
 import java.util.Set;
 
 import com.bms.access.AssistantAssignment;
@@ -9,6 +10,7 @@ import com.bms.apartment.ApartmentRepository;
 import com.bms.building.BuildingRepository;
 import com.bms.expense.ExpenseRepository;
 import com.bms.invoice.InvoiceRepository;
+import com.bms.subscription.SubscriptionPeriod;
 import com.bms.subscription.SubscriptionPeriodRepository;
 import com.bms.tenant.TenantRepository;
 import com.bms.user.AppUser;
@@ -58,6 +60,20 @@ public class TestData {
     @Transactional
     public AppUser createUser(String keycloakId, String email, String firstName, String lastName) {
         return users.save(new AppUser(keycloakId, email, firstName, lastName));
+    }
+
+    /** Replaces the owner's subscription with one that ended yesterday. */
+    @Transactional
+    public void expire(String keycloakId) {
+        AppUser owner = users.findByKeycloakId(keycloakId).orElseThrow();
+        periods.deleteAll(periods.findByOwnerIdOrderByStartsOnDesc(owner.getId()));
+        LocalDate today = LocalDate.now();
+        periods.save(new SubscriptionPeriod(owner, today.minusDays(60), today.minusDays(1), "Lapsed"));
+    }
+
+    @Transactional
+    public void suspend(String keycloakId) {
+        users.findByKeycloakId(keycloakId).orElseThrow().suspend();
     }
 
     @Transactional

@@ -80,8 +80,10 @@ public class InvoiceService {
 
     @Transactional(readOnly = true)
     public Invoice require(UUID id, Permission permission) {
-        return invoices.findByIdAndApartmentBuildingOwnerIdIn(id, accessControl.accessibleOwnerIds(permission))
+        Invoice invoice = invoices.findByIdAndApartmentBuildingOwnerIdIn(id, accessControl.accessibleOwnerIds(permission))
                 .orElseThrow(() -> NotFoundException.of("error.notFound.invoice", id));
+        accessControl.requireWritable(permission, invoice.getApartment().getBuilding().getOwner());
+        return invoice;
     }
 
     private void addLines(Invoice invoice, InvoiceRequest request, Apartment apartment) {

@@ -2,7 +2,6 @@ package com.bms.subscription;
 
 import java.time.Clock;
 import java.time.LocalDate;
-import java.util.UUID;
 
 import com.bms.user.AppUser;
 import org.springframework.stereotype.Service;
@@ -30,9 +29,13 @@ public class SubscriptionService {
         periods.save(new SubscriptionPeriod(owner, today, today.plusDays(properties.trialDays() - 1L), "Trial"));
     }
 
+    /** A suspension outranks any subscription. */
     @Transactional(readOnly = true)
-    public boolean isActive(UUID ownerId) {
-        return periods.covers(ownerId, today());
+    public SubscriptionStatus status(AppUser owner) {
+        if (owner.isSuspended()) {
+            return SubscriptionStatus.SUSPENDED;
+        }
+        return periods.covers(owner.getId(), today()) ? SubscriptionStatus.ACTIVE : SubscriptionStatus.EXPIRED;
     }
 
     LocalDate today() {
