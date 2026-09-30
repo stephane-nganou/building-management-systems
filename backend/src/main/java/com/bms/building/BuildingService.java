@@ -55,14 +55,15 @@ public class BuildingService {
     public BuildingResponse create(BuildingRequest request) {
         AppUser owner = currentUser.require();
         accessControl.requireWritable(owner);
-        Building building = new Building(owner, request.name(), toAddress(request), request.notes());
+        Building building = new Building(owner, request.name(), toAddress(request), request.notes(),
+                request.currency());
         return BuildingResponse.from(buildings.save(building), 0L);
     }
 
     @Transactional
     public BuildingResponse update(UUID id, BuildingRequest request) {
         Building building = require(id, Permission.BUILDING_WRITE);
-        building.update(request.name(), toAddress(request), request.notes());
+        building.update(request.name(), toAddress(request), request.notes(), request.currency());
         Map<UUID, Long> counts = apartmentCounts(List.of(building));
         return BuildingResponse.from(building, counts.getOrDefault(id, 0L));
     }

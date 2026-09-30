@@ -263,11 +263,11 @@
         <td class="num" th:text="${#numbers.formatDecimal(line.quantity, 1, 2)}">1,00</td>
         <td th:text="${line.unit != null} ? ${line.unit} : ''">month</td>
         <td class="num"
-            th:text="${#numbers.formatDecimal(line.unitPrice, 1, 2)} + ' ' + ${currency}">
+            th:text="${#numbers.formatDecimal(line.unitPrice, 1, digits)} + ' ' + ${currency}">
             0,00
         </td>
         <td class="num"
-            th:text="${#numbers.formatDecimal(line.amount, 1, 2)} + ' ' + ${currency}">0,00</td>
+            th:text="${#numbers.formatDecimal(line.amount, 1, digits)} + ' ' + ${currency}">0,00</td>
     </tr>
     </tbody>
 </table>
@@ -277,7 +277,7 @@
         <td style="width:50%"></td>
         <td class="label ruled" th:text="#{invoice.totalDue}">Total due</td>
         <td class="amount ruled"
-            th:text="${#numbers.formatDecimal(invoice.total, 1, 2)} + ' ' + ${currency}">0,00</td>
+            th:text="${#numbers.formatDecimal(invoice.total, 1, digits)} + ' ' + ${currency}">0,00</td>
     </tr>
 </table>
 

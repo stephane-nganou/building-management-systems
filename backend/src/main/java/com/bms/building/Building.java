@@ -1,10 +1,13 @@
 package com.bms.building;
 
 import com.bms.common.BaseEntity;
+import com.bms.common.CurrencyCode;
 import com.bms.user.AppUser;
 import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
@@ -27,15 +30,24 @@ public class Building extends BaseEntity {
     @Column(name = "notes", length = 1000)
     private String notes;
 
+    /**
+     * What its rent, deposits and expenses are counted in. Changing it relabels
+     * them without converting anything; invoices keep the one they were issued in.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "currency", nullable = false, length = 3)
+    private CurrencyCode currency;
+
     protected Building() {
         // for JPA
     }
 
-    public Building(AppUser owner, String name, Address address, String notes) {
+    public Building(AppUser owner, String name, Address address, String notes, CurrencyCode currency) {
         this.owner = owner;
         this.name = name;
         this.address = address;
         this.notes = notes;
+        this.currency = currency;
     }
 
     public AppUser getOwner() {
@@ -54,9 +66,14 @@ public class Building extends BaseEntity {
         return notes;
     }
 
-    public void update(String name, Address address, String notes) {
+    public CurrencyCode getCurrency() {
+        return currency;
+    }
+
+    public void update(String name, Address address, String notes, CurrencyCode currency) {
         this.name = name;
         this.address = address;
         this.notes = notes;
+        this.currency = currency;
     }
 }

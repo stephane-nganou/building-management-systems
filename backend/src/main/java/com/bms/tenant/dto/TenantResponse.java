@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
+import com.bms.common.CurrencyCode;
 import com.bms.tenant.Tenant;
 
 public record TenantResponse(
@@ -19,7 +20,8 @@ public record TenantResponse(
         LocalDate leaseStart,
         LocalDate leaseEnd,
         BigDecimal deposit,
-        boolean active) {
+        boolean active,
+        CurrencyCode currency) {
 
     public static TenantResponse from(Tenant tenant) {
         var apartment = tenant.getApartment();
@@ -36,6 +38,7 @@ public record TenantResponse(
                 tenant.getLeaseStart(),
                 tenant.getLeaseEnd(),
                 tenant.getDeposit(),
-                tenant.isActive());
+                tenant.isActive(),
+                apartment.getBuilding().getCurrency());
     }
 }

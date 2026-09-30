@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.UUID;
 
+import com.bms.common.CurrencyCode;
 import com.bms.invoice.Invoice;
 import com.bms.invoice.InvoiceStatus;
 import com.bms.invoice.InvoiceType;
@@ -26,6 +27,7 @@ public record InvoiceResponse(
         LocalDate dueDate,
         String notes,
         BigDecimal total,
+        CurrencyCode currency,
         List<Line> lines) {
 
     public record Line(UUID id, String description, BigDecimal quantity, BigDecimal unitPrice,
@@ -51,6 +53,7 @@ public record InvoiceResponse(
                 invoice.getDueDate(),
                 invoice.getNotes(),
                 invoice.getTotal(),
+                invoice.getCurrency(),
                 invoice.getLines().stream()
                         .map(line -> new Line(line.getId(), line.getDescription(), line.getQuantity(),
                                 line.getUnitPrice(), line.getUnit(), line.getAmount()))
