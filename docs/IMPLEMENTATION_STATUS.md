@@ -1,6 +1,6 @@
 # Implementation status
 
-Last updated: 2026-09-30, after BM-12 (three themes to choose from).
+Last updated: 2026-10-01, after BM-5 (a currency per building).
 
 The architecture is drawn out in
 [ARCHITECTURE_DIAGRAMS.md](ARCHITECTURE_DIAGRAMS.md): containers, backend and
@@ -27,7 +27,8 @@ main flow. This file records what is built and why it is built that way.
 | Tenants | Done | Full CRUD, lease dates, deposit, one active tenant per apartment |
 | Expenses | Done | Full CRUD, category, reason, optional apartment, filter by building and period |
 | Invoices | Done | Rent and cold water, status flow, PDF download |
-| Profit and loss | Done | Per building and total, expense breakdown by category |
+| Profit and loss | Done | Per building and total, expense breakdown by category; totals per currency |
+| Currencies | Done | Each building keeps its books in EUR, XAF, XOF, USD, GBP or CHF; an invoice keeps the one it was issued in |
 | Dashboard | Done | Portfolio counts, rent roll, year to date position |
 | Visual design | Done | "Lights on": Mona Sans served from our own origin, a night and lamplight palette, and each building drawn as its floors with a lit window per let apartment. The sign in page and the invoice PDF match |
 | Themes | Done | Classic, Magic and Ocean blue, chosen from the sidebar or the gate and remembered in the browser; Classic still follows the system's light or dark |
@@ -70,7 +71,14 @@ and dark and at 390 wide on a phone, shot before and after the colours moved
 into tokens and compared pixel by pixel. Classic came out identical but for the
 switcher's own row and 2/255 of anti-aliasing noise on one select, which two
 shots of the same build also show. Then the same screens in Magic and in Ocean
-blue, with the system set to light and to dark.
+blue, with the system set to light and to dark. For BM-5, against the
+development stack and its existing data: V5 took the schema from v4 to v5 and
+every existing building and invoice came out in euros. An owner with a Berlin
+building in euros and a Douala one in CFA francs saw each figure on the
+dashboard and the profit and loss as one line per currency, "FCFA 1,500,000"
+fitting beside euros at 1440 and 1100 wide, and the building form in French
+showed its currency as "euro (EUR)" with the warning that changing it converts
+nothing.
 
 ## Tests
 
@@ -87,19 +95,23 @@ blue, with the system set to light and to dark.
   Keycloak admin client is mocked there. `ReadOnlyIntegrationTest` sends every
   write the API has as a lapsed owner and expects the refusal, and fails if a
   non-GET route exists that its list does not name, so a new write endpoint
-  cannot quietly skip the check. Now 77 tests.
-- Frontend: 51 unit tests, for the formatting pipes, the translation service and
+  cannot quietly skip the check. `CurrencyIntegrationTest` covers a building's
+  currency reaching everything under it, an invoice keeping its own after the
+  building changes, whole francs on the line and on the PDF, and reports that
+  keep one total per currency. Now 84 tests.
+- Frontend: 55 unit tests, for the formatting pipes and per currency totals, the translation service and
   its dictionaries, the theme service, how a facade stacks apartments into floors and lights them,
   the delete confirmation and the toasts, and for the session and route guard logic that decides which
   screens exist, including that a refused profile is what "signed out" means and
   that an account owing us a password reaches no screen but the one that takes
   it, and that an administrator and a suspended account each see only theirs.
-- End to end: 11 Playwright specs against the running stack, covering an
+- End to end: 12 Playwright specs against the running stack, covering an
   administrator signing an owner up and ending their subscription, the link
   from the sign in page to registration, signing up and landing on a full
   portfolio, the duplicate email refusal, an owner creating an assistant who
   then has to choose a password and sees only their one granted screen, adding a
-  building with an apartment in it, switching the app to French and back,
+  building with an apartment in it, a building in CFA francs showing its rent in
+  whole francs, switching the app to French and back,
   choosing a theme in the app and on the registration page and finding it kept
   after a reload, a
   French browser landing on a French registration page, and a walk through every
@@ -413,6 +425,28 @@ blue, with the system set to light and to dark.
   the choice after that. It lives in the browser, like the language: a new
   browser starts on Classic.
 
+- **Currency belongs to the building, not the owner (BM-5).** An owner may hold
+  buildings in different countries, and an assistant may work for owners in
+  different ones. Every response with an amount carries the currency of the
+  building it belongs to, and the `money` pipe is given it rather than
+  assuming one. Totals are kept per currency, on the dashboard, in the profit
+  and loss and under the expense list, and never added across them: there are
+  no exchange rates anywhere. A figure holding more than one currency is set a
+  step smaller, because a rent roll in CFA francs runs to millions.
+
+- **An invoice keeps the currency it was issued in (BM-5).** It is copied from
+  the building when the invoice is created and is not updatable, so changing a
+  building's currency relabels its rent, deposits and expenses, as the form
+  warns, but never a document a tenant already has. Its lines round to that
+  currency's own digits, none for the CFA francs, so the total printed is the
+  sum of the lines printed. The deployment wide `bms.invoice.currency` setting
+  is gone.
+
+- **The currency list is closed (BM-5).** `CurrencyCode` in the backend and
+  `CURRENCIES` in `models.ts` name the same six. An unknown code is a 400.
+  Taking every ISO 4217 code would mean trusting that each one renders on the
+  PDF, which nobody has looked at.
+
 - **A bare date is a calendar day (BM-14).** `new Date('2026-10-29')` is UTC
   midnight, which is the 28th anywhere west of Greenwich, so `DayPipe` read
   every due date, lease date and subscription end a day early there. A date
@@ -503,6 +537,8 @@ blue, with the system set to light and to dark.
 - The sign in page and the invoice PDF stay Classic whatever the theme. The
   sign in page is Keycloak's and cannot read our storage, and an invoice is a
   document for the tenant rather than a view for the owner.
+- The currency list lives twice, as `CurrencyCode` and as `CURRENCIES` in
+  `models.ts`. Adding one means both, and a look at the invoice PDF.
 - Native `<input type="date">` controls follow the browser's own locale, not the
   app's, so a date field can show a different separator from the dates in the
   table beside it.
