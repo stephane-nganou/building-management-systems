@@ -60,7 +60,7 @@ export const en = {
     'Yesterday becomes its last day. Their data stays readable but can no longer be changed.',
   'confirm.suspendTitle': 'Suspend {name}?',
   'confirm.suspendBody':
-    'They are signed out of everything at once, and their assistants can no longer change their data.',
+    'They are signed out of everything at once, and their assistants can no longer see or change their data.',
 
   'toast.saved': '{name} saved',
   'toast.deleted': '{name} deleted',
@@ -331,6 +331,8 @@ export const en = {
 
   'suspended.title': 'This account is suspended',
   'suspended.body': 'Nothing can be viewed or changed while it is. Contact us to have it reactivated.',
+  'suspended.assisting':
+    'The account of {names} is suspended. Their data cannot be viewed or changed until it is reactivated.',
 
   'register.readyTitle': 'Your account is ready',
   'register.readyBody':

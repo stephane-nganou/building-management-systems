@@ -1,7 +1,7 @@
 # Implementation status
 
-Last updated: 2026-10-01, after BM-22 (an invoice's status only moves forward).
-The security review behind BM-19 to BM-22 is in
+Last updated: 2026-10-01, after BM-23 (suspension, assistants and role-less accounts).
+The security review behind BM-19 to BM-23 is in
 [ADVERSARY_REVIEW/README.md](ADVERSARY_REVIEW/README.md).
 The go live plan and the gaps it found are in [GO-LIVE-PART-1.md](GO-LIVE-PART-1.md).
 
@@ -245,9 +245,21 @@ the end to end suite passes against it.
   answered registration with a bare 401 and an empty body. That reads as "you
   are not signed in" on an endpoint that needs no sign in, which is the worst
   possible signpost. The reason is logged; the caller is only told to try later.
-- **An owner is anyone whose token does not say `assistant`.** Registration
-  assigns the `owner` role, but treating a missing role as an owner keeps
-  accounts made before roles existed working.
+- **Only the `owner` role makes an owner (BM-23).** A missing role used to count
+  as owning, for accounts made before roles existed; none exist now, and the
+  fallback made any role-less principal, the backend's own service account
+  included, an owner with a trial. A role-less account is now `NONE`: it owns
+  nothing, gets no trial, and cannot be linked as an assistant. Managing
+  assistants and starting a building need the role in the security
+  configuration itself, rather than failing only because a non-owner has no
+  subscription.
+- **Suspension closes an owner's data to their assistants too (BM-23).** The
+  assignment queries skip suspended owners, so every screen loses them at once;
+  `/api/me` still lists the delegation, with its status, so the assistant is told
+  why. An expired subscription stays as it was: readable, not changeable.
+- **A lapsed owner can still cut an assistant off (BM-23).** Revoking, or
+  narrowing permissions, only reduces risk, so neither needs a writable
+  subscription; widening them, adding an assistant or resetting a password does.
 - **Translation is a runtime lookup, not Angular's build time i18n.** `$localize`
   produces a bundle per language, served under its own path, which needs the web
   server to route and a full rebuild to change a word. A signal held dictionary

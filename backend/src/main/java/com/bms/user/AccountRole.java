@@ -8,5 +8,7 @@ package com.bms.user;
 public enum AccountRole {
     OWNER,
     ASSISTANT,
-    ADMIN
+    ADMIN,
+    /** Signed in, but the realm gives it no role: it owns nothing and assists no one. */
+    NONE
 }

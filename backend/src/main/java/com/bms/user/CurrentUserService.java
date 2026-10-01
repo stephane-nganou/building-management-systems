@@ -81,7 +81,10 @@ public class CurrentUserService {
         if (Roles.isAdmin(authentication)) {
             return AccountRole.ADMIN;
         }
-        return Roles.isOwner(authentication) ? AccountRole.OWNER : AccountRole.ASSISTANT;
+        if (Roles.isOwner(authentication)) {
+            return AccountRole.OWNER;
+        }
+        return Roles.isAssistant(authentication) ? AccountRole.ASSISTANT : AccountRole.NONE;
     }
 
     @Transactional(readOnly = true)

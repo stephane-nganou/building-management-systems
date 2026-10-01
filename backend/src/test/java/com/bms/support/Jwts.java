@@ -34,6 +34,11 @@ public final class Jwts {
         return withRole(keycloakId, email, "ROLE_ADMIN");
     }
 
+    /** Signed in, but given no realm role at all, like an account made by hand in Keycloak. */
+    public static RequestPostProcessor withoutRole(String keycloakId, String email) {
+        return withRole(keycloakId, email, "SCOPE_openid");
+    }
+
     private static RequestPostProcessor withRole(String keycloakId, String email, String authority) {
         RequestPostProcessor authentication = jwt()
                 .jwt(builder -> builder
