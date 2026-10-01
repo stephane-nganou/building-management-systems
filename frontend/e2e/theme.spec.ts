@@ -1,10 +1,10 @@
 import { expect, test } from '@playwright/test';
 
-import { DEMO_OWNER, signIn } from './support';
+import { DEMO_OWNER, openSignIn, signIn } from './support';
 
 test.describe('theme', () => {
   test('the app takes on a theme and keeps it', async ({ page }) => {
-    await page.goto('/');
+    await openSignIn(page);
     await signIn(page, DEMO_OWNER.username, DEMO_OWNER.password);
 
     const html = page.locator('html');

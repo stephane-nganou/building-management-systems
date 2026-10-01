@@ -29,7 +29,8 @@
               "src/styles/themes.css",
               "src/styles/base.css",
               "src/styles/shell.css",
-              "src/styles/components.css"
+              "src/styles/components.css",
+              "src/styles/home.css"
             ]
           },
           "configurations": {

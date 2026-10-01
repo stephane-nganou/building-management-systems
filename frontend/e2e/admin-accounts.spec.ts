@@ -4,6 +4,7 @@ import {
   DEMO_ADMIN,
   chooseNewPassword,
   expectNavLabels,
+  openSignIn,
   signIn,
   signOut,
   submitSignIn,
@@ -18,7 +19,7 @@ import {
 test('an administrator signs an owner up and ends their subscription, leaving it read only', async ({ page }) => {
   const email = uniqueEmail('customer');
 
-  await page.goto('/');
+  await openSignIn(page);
   await signIn(page, DEMO_ADMIN.username, DEMO_ADMIN.password);
 
   // An administrator owns nothing, so the accounts are all there is.
@@ -50,6 +51,7 @@ test('an administrator signs an owner up and ends their subscription, leaving it
   await subscription.locator('footer').getByRole('button', { name: 'Close' }).click();
   await expect(row).toContainText('Expired');
   await signOut(page);
+  await openSignIn(page);
 
   // The new owner can still sign in and read, but is told why nothing changes.
   await submitSignIn(page, email, temporaryPassword);

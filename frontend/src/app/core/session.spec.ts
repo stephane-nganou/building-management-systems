@@ -12,6 +12,7 @@ import {
   passwordChangeGuard,
   permissionGuard,
   suspendedGuard,
+  visitorGuard,
 } from './guards';
 import { Me, Permission } from './models';
 import { SessionService } from './session';
@@ -267,5 +268,18 @@ describe('route guards', () => {
     sessionFor(profile(true, ['BUILDING_READ']));
 
     expect(await runGuard(suspendedGuard)).toBe(false);
+  });
+
+  it('shows a signed out visitor the landing page, without asking them to sign in', async () => {
+    sessionFor(null);
+
+    expect(await runGuard(visitorGuard)).toBe(true);
+    expect(signIn).not.toHaveBeenCalled();
+  });
+
+  it('passes over the landing page for anybody signed in', async () => {
+    sessionFor(profile(true, ['BUILDING_READ']));
+
+    expect(await runGuard(visitorGuard)).toBe(false);
   });
 });

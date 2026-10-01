@@ -19,8 +19,8 @@ export const authGuard: CanMatchFn = () => {
   const path = currentPath();
   return session.load().then(() => {
     if (!session.signedIn()) {
-      // The profile request was refused, which the interceptor has already
-      // turned into a sign in. Nothing here should match in the meantime.
+      // The profile request was refused, and quietly, so a visitor can be
+      // shown the landing page. Here it means it is time to sign in.
       auth.signIn(path);
       return false;
     }
@@ -32,6 +32,12 @@ export const authGuard: CanMatchFn = () => {
     }
     return true;
   });
+};
+
+/** Nobody is signed in: the visitor sees the landing page rather than a sign in. */
+export const visitorGuard: CanMatchFn = () => {
+  const session = inject(SessionService);
+  return session.load().then(() => !session.signedIn());
 };
 
 /**

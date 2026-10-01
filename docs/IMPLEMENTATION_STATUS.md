@@ -1,6 +1,6 @@
 # Implementation status
 
-Last updated: 2026-10-01, after BM-28 (reading the containers' logs).
+Last updated: 2026-10-01, after BM-25 (the landing page).
 The security review behind BM-19 to BM-24 is in
 [ADVERSARY_REVIEW/README.md](ADVERSARY_REVIEW/README.md).
 The go live plan and the gaps it found are in [GO-LIVE-PART-1.md](GO-LIVE-PART-1.md).
@@ -20,6 +20,7 @@ main flow. This file records what is built and why it is built that way.
 | Container logs | Done | `scripts/logs.sh`, `logs-windows.ps1` and `logs-prod.sh` follow or save them; a Dozzle web viewer behind the `logs` compose profile |
 | Database schema | Done | Flyway `V1__init.sql`, validated against JPA mappings by every integration test |
 | Authentication | Done | The backend runs the authorization code flow and gives the browser a session cookie; other clients present a bearer token to the same API |
+| Landing page | Done | `/` for a visitor: what Hausbuch does, the free month, questions and contact; anybody signed in goes past it into the app. Contacts are placeholders in `features/home-content.ts` |
 | Registration | Done | Public `/register` page and `POST /api/auth/register`; new users get the `owner` realm role |
 | Sign in page | Done | Keycloak login theme in `docker/keycloak/themes/bms`, linking to our registration page; reached only because the backend redirects there |
 | Assistant accounts | Done | The owner creates them; a password is returned once, and the app makes the assistant replace it on its own screen |
@@ -95,7 +96,14 @@ Secure. A backup was taken, the application's users deleted, both dumps
 restored with the commands in `docs/DEPLOYMENT.md`, and the administrator
 signed in again with the password chosen before the backup. The development
 stack still seeds its demo users, on a fresh realm and on an existing one, and
-the end to end suite passes against it.
+the end to end suite passes against it. For BM-25, against a throwaway stack: a
+visitor at `/` sees the landing page and not Keycloak, its free month buttons
+open the registration page, its sign in button reaches Keycloak and comes back
+into the app, a deep link such as `/buildings` still asks to sign in, somebody
+signed in who opens `/` lands on their first screen, and signing out ends on the
+landing page. It was looked at 1440 and 390 wide, light and dark, in Classic,
+Magic and Ocean blue and in both languages, with no horizontal scroll at 390,
+and the CSP spec now walks the landing page too.
 
 ## Tests
 
@@ -119,7 +127,8 @@ the end to end suite passes against it.
   one request may ask for: amounts that fit their columns, the line cap, the
   one year report, and the paged lists with their size cap and ignored sort.
   Now 140 tests.
-- Frontend: 58 unit tests, for the formatting pipes and per currency totals, the translation service and
+- Frontend: 67 unit tests (BM-25 added the quiet profile request, the visitor
+  guard and the landing page's headline, buttons and contacts), for the formatting pipes and per currency totals, the translation service and
   its dictionaries, the theme service, how a facade stacks apartments into floors and lights them,
   the delete confirmation and the toasts, and for the session and route guard logic that decides which
   screens exist, including that a refused profile is what "signed out" means and
@@ -137,11 +146,29 @@ the end to end suite passes against it.
   French browser landing on a French registration page, and a walk through every
   screen that watches the wire and fails if any request leaves our own origin,
   a font or a stylesheet included, or anything at all reaches Keycloak, and
-  another that fails on any Content-Security-Policy violation. `scripts/e2e` starts the
+  another that fails on any Content-Security-Policy violation, and the landing
+  page in both languages, its way to sign up, and who it lets past (BM-25).
+  `openSignIn` in `e2e/support.ts` is how a spec reaches the sign in form now
+  that `/` is the landing page. `scripts/e2e` starts the
   stack on its own compose project, waits for every part, runs them and tears it
   down.
 
 ## Deliberate decisions
+
+- **A visitor at `/` sees the landing page, and the profile request no longer
+  signs anybody in (BM-25).** Whether anybody is signed in is only known by
+  asking for `/api/me`, and its 401 used to send the browser to Keycloak from
+  the interceptor. That request now carries `QUIET_UNAUTHORIZED`, so a refusal
+  only leaves nobody signed in; `authGuard` and the guards of the password and
+  suspended screens already called `signIn` themselves, so every screen of the
+  app still asks for it. Every other request keeps the interceptor's sign in, so
+  a session that expires mid-use behaves as before. `visitorGuard` matches the
+  landing page only while nobody is signed in, and the existing `''` route
+  behind it still redirects everybody else. A backend that is down therefore
+  shows the landing page rather than a sign in that would fail anyway. Sign out
+  and a failed sign in, which return to `/`, now end there too. The page uses
+  only what the CSP already allowed: the street is the app's own facade, and
+  the icons are inline.
 
 - **An invoice's status only moves forward (BM-22).** A draft may be sent or
   cancelled, a sent invoice paid or cancelled, a paid one cancelled (for a
@@ -640,6 +667,8 @@ the end to end suite passes against it.
 
 ## Not built yet
 
+- Real contact details on the landing page. `CONTACTS` in
+  `frontend/src/app/features/home-content.ts` holds placeholders until launch.
 - Payment. An administrator records periods by hand; nothing charges an owner
   or renews a subscription on its own, and nobody is told before one runs out.
 
@@ -683,6 +712,10 @@ the end to end suite passes against it.
   (`git update-index --chmod=+x`). Windows checkouts run with
   `core.fileMode=false`, so a local `chmod` is not recorded, and a script
   committed without it fails on Linux and macOS, including in CI.
+- `scripts/e2e.ps1` stops at its first `docker ps` under Windows PowerShell 5.1,
+  which drops the double quotes inside `{{.Label "com.docker.compose.project"}}`
+  on the way to docker ("function "com" not defined"). PowerShell 7 passes
+  them. For BM-25 the steps were run by hand.
 - The end to end stack uses the same ports as the development one, because the
   realm's redirect URIs name them, so the two cannot run at once.
 - The `bms-backend` client secret defaults to `bms-backend-secret` in the

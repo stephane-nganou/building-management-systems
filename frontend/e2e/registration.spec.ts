@@ -1,11 +1,17 @@
 import { expect, test } from '@playwright/test';
 
-import { confirmationLink, expectNavLabels, signIn, submitSignIn, uniqueEmail } from './support';
+import {
+  confirmationLink,
+  expectNavLabels,
+  openSignIn,
+  signIn,
+  submitSignIn,
+  uniqueEmail,
+} from './support';
 
 test.describe('registration', () => {
   test('the sign in page offers a way to register', async ({ page }) => {
-    await page.goto('/');
-    // The app has no session, so Keycloak's sign in page is what loads.
+    await openSignIn(page);
     await expect(page.getByRole('heading', { name: /sign in to your account/i })).toBeVisible();
 
     await page.getByRole('link', { name: /register here/i }).click();
@@ -70,6 +76,8 @@ test.describe('registration', () => {
     await phone.getByRole('link', { name: /click here to proceed/i }).click();
     await expect(phone.getByRole('heading', { name: /email address verified/i })).toBeVisible();
     await phone.getByRole('link', { name: /back to application/i }).click();
+    // The application's address is its landing page, which a visitor signs in from.
+    await phone.getByRole('button', { name: 'Sign in', exact: true }).click();
     await signIn(phone, email, 'a-good-secret');
     await expect(phone.locator('.spine-foot .role')).toHaveText(/owner/i);
     await phone.close();

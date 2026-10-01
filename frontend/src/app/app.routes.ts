@@ -7,12 +7,14 @@ import {
   passwordChangeGuard,
   permissionGuard,
   suspendedGuard,
+  visitorGuard,
 } from './core/guards';
 
 /**
  * Every screen is gated with canMatch, so a route the caller may not use is
  * never matched and its chunk is never downloaded. Anything unmatched falls
- * through to the empty path, which lands them on the first page they may see.
+ * through to the empty path: a visitor sees the landing page, and anybody
+ * signed in lands on the first page they may see.
  */
 export const routes: Routes = [
   {
@@ -78,6 +80,12 @@ export const routes: Routes = [
     path: 'no-access',
     canMatch: [authGuard],
     loadComponent: () => import('./features/no-access').then((m) => m.NoAccessPage),
+  },
+  {
+    path: '',
+    pathMatch: 'full',
+    canMatch: [visitorGuard],
+    loadComponent: () => import('./features/home').then((m) => m.HomePage),
   },
   {
     path: '',

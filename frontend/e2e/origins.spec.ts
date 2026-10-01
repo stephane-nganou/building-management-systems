@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { DEMO_OWNER, signIn } from './support';
+import { DEMO_OWNER, openSignIn, signIn } from './support';
 
 const APP_ORIGIN = 'http://localhost:4200/';
 const KEYCLOAK_ORIGIN = 'http://localhost:8081/';
@@ -18,7 +18,7 @@ const KEYCLOAK_ORIGIN = 'http://localhost:8081/';
  * This watches the wire.
  */
 test('the application never calls anything but its own backend', async ({ page }) => {
-  await page.goto('/');
+  await openSignIn(page);
   await signIn(page, DEMO_OWNER.username, DEMO_OWNER.password);
   await expect(page.locator('aside.spine')).toBeVisible();
 

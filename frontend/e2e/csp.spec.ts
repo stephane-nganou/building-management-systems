@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { DEMO_OWNER, signIn } from './support';
+import { DEMO_OWNER, openSignIn, signIn } from './support';
 
 /**
  * The page is served with a strict Content-Security-Policy, and the app runs
@@ -16,7 +16,8 @@ test('the app runs under its content security policy without a violation', async
     }
   });
 
-  const response = await page.goto('/');
+  // The landing page runs under the policy too, before anybody signs in.
+  const response = await openSignIn(page);
   expect(response?.headers()['content-security-policy']).toContain("default-src 'self'");
 
   await signIn(page, DEMO_OWNER.username, DEMO_OWNER.password);

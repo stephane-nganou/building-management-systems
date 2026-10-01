@@ -380,4 +380,75 @@ export const fr: Messages = {
   'noAccess.title': 'Rien à afficher pour le moment',
   'noAccess.body':
     'Demandez au propriétaire que vous assistez de vous donner des droits, puis reconnectez-vous.',
+
+  'home.skip': 'Aller au contenu',
+  'home.nav': 'Compte',
+  'home.signIn': 'Se connecter',
+  'home.hero.title': 'Vos immeubles, loyers et reçus dans un seul registre',
+  'home.hero.lead':
+    "Hausbuch suit vos appartements, locataires, loyers et dépenses, imprime vos factures, et tient votre compte de résultat prêt pour la déclaration d'impôts.",
+  'home.hero.talk': 'Nous contacter',
+  'home.trial.cta': 'Commencer le mois gratuit',
+  'home.trial.note': '30 jours offerts. Sans carte bancaire, rien à résilier.',
+  'home.trial.title': 'Essayez Hausbuch gratuitement pendant 30 jours',
+  'home.trial.body':
+    "Tout est inclus dès le premier jour. Si ce n'est pas pour vous, arrêtez simplement : rien ne vous est jamais facturé sans votre demande.",
+  'home.features.title': "Tout ce qu'un petit propriétaire doit suivre",
+  'home.features.lead': 'Un immeuble ou plusieurs, chacun à part, et tout au même endroit.',
+  'home.feature.buildings.title': 'Immeubles',
+  'home.feature.buildings.body':
+    'Ajoutez chacun de vos immeubles et gardez séparés ses appartements, ses locataires et ses comptes.',
+  'home.feature.apartments.title': 'Appartements',
+  'home.feature.apartments.body':
+    "Numéro, loyer et pièces de chaque appartement, et s'il est loué.",
+  'home.feature.tenants.title': 'Locataires',
+  'home.feature.tenants.body': 'Qui habite où, et comment le joindre.',
+  'home.feature.expenses.title': 'Dépenses',
+  'home.feature.expenses.body':
+    'Réparations, taxes et factures, rattachées à un immeuble avec leur motif.',
+  'home.feature.invoices.title': 'Factures',
+  'home.feature.invoices.body':
+    "Des factures PDF professionnelles pour le loyer et l'eau froide, prêtes à imprimer ou à envoyer.",
+  'home.feature.assistants.title': 'Vos assistants',
+  'home.feature.assistants.body':
+    "Faites-vous aider, en choisissant précisément ce qu'ils peuvent voir et modifier.",
+  'home.feature.summary.title': 'Recettes et dépenses',
+  'home.feature.summary.body':
+    'Ce qui est entré et sorti, par immeuble ou au total, sur toute période.',
+  'home.feature.profitLoss.title': 'Compte de résultat',
+  'home.feature.profitLoss.body':
+    "Un état pour toute période, prêt pour votre déclaration d'impôts.",
+  'home.how.title': 'Opérationnel en un après-midi',
+  'home.how.step1.title': 'Créez votre compte',
+  'home.how.step1.body':
+    'Votre nom, votre adresse e-mail et un mot de passe. Le mois gratuit commence aussitôt.',
+  'home.how.step2.title': 'Ajoutez vos immeubles',
+  'home.how.step2.body':
+    "Saisissez une fois vos appartements et locataires. Loyers et factures s'appuient dessus.",
+  'home.how.step3.title': 'Tenez vos comptes',
+  'home.how.step3.body':
+    "Enregistrez loyers et dépenses au fil de l'eau, et imprimez votre compte de résultat quand il le faut.",
+  'home.faq.title': 'Vos questions',
+  'home.faq.q1': 'Que comprend le mois gratuit ?',
+  'home.faq.a1':
+    'Tout : tous vos immeubles et appartements, les factures, les rapports et les assistants.',
+  'home.faq.q2': 'Faut-il une carte bancaire pour commencer ?',
+  'home.faq.a2':
+    'Non. Vous vous inscrivez avec votre nom, votre adresse e-mail et un mot de passe, rien de plus.',
+  'home.faq.q3': 'Que se passe-t-il après 30 jours ?',
+  'home.faq.a3':
+    'Vos données restent les vôtres et restent consultables. Pour continuer à ajouter et modifier, contactez-nous pour vous abonner.',
+  'home.faq.q4': 'Qui peut voir mes données ?',
+  'home.faq.a4':
+    'Vous seul, et les assistants que vous invitez, dans la limite de ce que vous leur permettez.',
+  'home.faq.q5': 'Est-ce disponible en anglais ?',
+  'home.faq.a5':
+    'Oui. Hausbuch fonctionne en français et en anglais, et vous pouvez changer à tout moment.',
+  'home.contact.title': 'Nous écrire',
+  'home.contact.lead':
+    'Une question sur Hausbuch, ou sur un abonnement après votre mois gratuit ? Nous sommes là pour vous aider.',
+  'home.contact.email': 'E-mail',
+  'home.contact.phone': 'Téléphone',
+  'home.contact.address': 'Adresse',
+  'home.foot.rights': '© {year} Hausbuch. Tous droits réservés.',
 };
