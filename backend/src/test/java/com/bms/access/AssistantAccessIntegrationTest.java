@@ -8,6 +8,7 @@ import com.jayway.jsonpath.JsonPath;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 import static com.bms.support.Jwts.asAdmin;
@@ -30,6 +31,9 @@ class AssistantAccessIntegrationTest extends AbstractIntegrationTest {
 
     @Autowired
     private ScenarioBuilder scenario;
+
+    @Autowired
+    private JdbcTemplate jdbc;
 
     /** The assistant must exist locally before they can be granted access. */
     private void assistantSignsInOnce() throws Exception {
@@ -178,7 +182,32 @@ class AssistantAccessIntegrationTest extends AbstractIntegrationTest {
                                 {"email":"owner-a@example.com","firstName":"Olivia","lastName":"Owner",
                                  "permissions":["BUILDING_READ"]}
                                 """))
-                .andExpect(status().isUnprocessableEntity());
+                .andExpect(status().isUnprocessableEntity())
+                .andExpect(jsonPath("$.detail").value("You cannot add yourself as an assistant"));
+    }
+
+    /**
+     * The owner who created an assistant can be deleted. The assistant stays, for
+     * anyone else they work for, with nobody left who can reset their password.
+     */
+    @Test
+    void deletingTheCreatorKeepsTheAssistantWithoutACreator() throws Exception {
+        given(keycloak.createUser(eq("kept@example.com"), eq("Kim"), eq("Kept"),
+                anyString(), eq("assistant"))).willReturn("kc-kept");
+        mockMvc.perform(get("/api/me").with(OWNER)).andExpect(status().isOk());
+        mockMvc.perform(post("/api/assistants").with(OWNER)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"kept@example.com","firstName":"Kim","lastName":"Kept",
+                                 "permissions":["BUILDING_READ"]}
+                                """))
+                .andExpect(status().isCreated());
+
+        jdbc.update("delete from app_user where keycloak_id = 'owner-a'");
+
+        assertThat(jdbc.queryForObject(
+                "select created_by_owner_id is null from app_user where keycloak_id = 'kc-kept'",
+                Boolean.class)).isTrue();
     }
 
     /** An owner is not an assistant, so linking one and resetting it cannot take it over. */
