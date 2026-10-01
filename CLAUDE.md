@@ -42,10 +42,20 @@ When instructed to build a feature:
 
 ## Implementation status
 
-`docs/IMPLEMENTATION_STATUS.md` is the per-ticket history: one `### BM-nn`
-section per Jira ticket (~80 of them, ~360k tokens), each recording what was
-decided and why, what was measured, and what bit. **Never read it whole.** When
-a ticket touches an area, grep it for the ticket ids, routes or files involved
-and read only those sections. Its "Standing notes" at the top hold the
-verification conventions every section used to repeat. When a ticket is done,
-append its section there.
+`docs/IMPLEMENTATION_STATUS.md` records what is built and why, organised by
+topic rather than by ticket (about 770 lines). Grep it for the ticket ids,
+routes or files a ticket touches and read only those parts. Its sections:
+
+- **Built and working end to end**: one table row per area, then a paragraph of
+  what was verified against the running stack, one "For BM-nn, ..." passage per
+  ticket. The conventions are there: 1440 and 390 wide, light and dark, every
+  theme, both languages, the wire watched, the Playwright suite run.
+- **Tests**: what the backend, frontend unit and end to end suites cover, and
+  how many there are.
+- **Deliberate decisions**: one bullet per decision, tagged `(BM-nn)`, newest
+  first.
+- **Not built yet** and **Known rough edges**.
+
+When a ticket is done, update "Last updated", add or change its table row,
+append its "For BM-nn" passage, adjust the test counts, and add its decisions,
+gaps and rough edges to their sections.
