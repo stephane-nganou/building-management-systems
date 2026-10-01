@@ -6,11 +6,11 @@ import jakarta.validation.constraints.Size;
 /**
  * Chooses a new password for the signed in account.
  *
- * <p>The current one is not asked for. Proving it would mean sending it back to
- * Keycloak through the direct access grant this application deliberately does
- * not enable, and the caller has already proved as much as that would: a session
- * cookie no script can read, or an access token of their own.
+ * <p>The current one is asked for, so that a session someone else got hold of
+ * cannot be turned into the account itself. For an account given a password
+ * to replace, the current one is the password it was handed.
  */
 public record PasswordChangeRequest(
+        @NotBlank @Size(max = 128) String currentPassword,
         @NotBlank @Size(min = 12, max = 128, message = "must be 12 to 128 characters") String newPassword) {
 }

@@ -12,6 +12,7 @@ import {
   Invoice,
   InvoiceStatus,
   Me,
+  Page,
   Permission,
   ProfitLossReport,
   Registration,
@@ -102,13 +103,14 @@ export class TenantsApi {
 export class ExpensesApi {
   private http = inject(HttpClient);
 
-  search(filters: {
-    buildingId?: string;
-    apartmentId?: string;
-    from?: string;
-    to?: string;
-  }): Observable<Expense[]> {
-    return this.http.get<Expense[]>('/api/expenses', { params: params(filters) });
+  /** Newest first, a page at a time. */
+  search(
+    filters: { buildingId?: string; apartmentId?: string; from?: string; to?: string },
+    page: number,
+  ): Observable<Page<Expense>> {
+    return this.http.get<Page<Expense>>('/api/expenses', {
+      params: params({ ...filters, page: String(page) }),
+    });
   }
 
   create(body: unknown): Observable<Expense> {
@@ -128,13 +130,14 @@ export class ExpensesApi {
 export class InvoicesApi {
   private http = inject(HttpClient);
 
-  search(filters: {
-    buildingId?: string;
-    status?: InvoiceStatus | '';
-    from?: string;
-    to?: string;
-  }): Observable<Invoice[]> {
-    return this.http.get<Invoice[]>('/api/invoices', { params: params(filters) });
+  /** Newest first, a page at a time. */
+  search(
+    filters: { buildingId?: string; status?: InvoiceStatus | ''; from?: string; to?: string },
+    page: number,
+  ): Observable<Page<Invoice>> {
+    return this.http.get<Page<Invoice>>('/api/invoices', {
+      params: params({ ...filters, page: String(page) }),
+    });
   }
 
   create(body: unknown): Observable<Invoice> {
@@ -257,8 +260,8 @@ export class AuthApi {
   }
 
   /** Replaces the caller's own password. Signing in is a navigation, not a call. */
-  changePassword(newPassword: string): Observable<void> {
-    return this.http.post<void>('/api/auth/password', { newPassword });
+  changePassword(currentPassword: string, newPassword: string): Observable<void> {
+    return this.http.post<void>('/api/auth/password', { currentPassword, newPassword });
   }
 }
 

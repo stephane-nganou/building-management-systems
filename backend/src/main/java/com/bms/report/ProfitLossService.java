@@ -58,6 +58,11 @@ public class ProfitLossService {
         if (to.isBefore(from)) {
             throw new ValidationException("error.report.dateOrder");
         }
+        // Every matching row is loaded to be added up, so a period is bounded.
+        // A year is what a tax return covers.
+        if (!to.isBefore(from.plusYears(1))) {
+            throw new ValidationException("error.report.rangeTooLong");
+        }
         List<UUID> ownerIds = accessControl.accessibleOwnerIds(Permission.REPORT_READ);
 
         Map<UUID, Bucket> perBuilding = new LinkedHashMap<>();
@@ -66,7 +71,7 @@ public class ProfitLossService {
         }
 
         Map<CategoryInCurrency, BigDecimal> byCategory = new LinkedHashMap<>();
-        for (Expense expense : expenses.search(ownerIds, buildingId, null, from, to)) {
+        for (Expense expense : expenses.findForReport(ownerIds, buildingId, from, to)) {
             bucketFor(perBuilding, expense.getBuilding()).addExpense(expense.getAmount());
             byCategory.merge(new CategoryInCurrency(expense.getCategory(), expense.getBuilding().getCurrency()),
                     expense.getAmount(), BigDecimal::add);

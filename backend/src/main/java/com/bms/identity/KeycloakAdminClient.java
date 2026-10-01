@@ -8,7 +8,6 @@ import com.bms.common.exception.IdentityProviderException;
 import com.bms.common.exception.ValidationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
@@ -19,13 +18,27 @@ import org.springframework.web.client.RestClientException;
 
 /**
  * The slice of Keycloak's admin REST API this application needs: create an
- * account, set its password, give it a realm role, and disable it.
+ * account, set its password, give it a realm role, and disable it. Besides the
+ * admin API, it checks a user's current password by signing in with it through
+ * a second client.
  *
  * <p>Written against {@link RestClient} rather than the official admin client,
- * which would pull an entire JAX-RS stack in for four calls.
+ * which would pull an entire JAX-RS stack in for a handful of calls.
  */
 @Component
 public class KeycloakAdminClient {
+
+    /** Direct access grants only, and holding the same secret as the main client; see realm-bms.json. */
+    private static final String PASSWORD_CHECK_CLIENT_ID = "bms-password-check";
+
+    private static final String TOKEN_PATH = "/realms/{realm}/protocol/openid-connect/token";
+
+    /** Keycloak's description of a sign in refused while a required action is pending. */
+    private static final String ACCOUNT_NOT_SET_UP = "Account is not fully set up";
+
+    private static final ParameterizedTypeReference<Map<String, Object>> JSON_OBJECT =
+            new ParameterizedTypeReference<>() {
+            };
 
     private final RestClient http;
     private final KeycloakProperties properties;
@@ -62,6 +75,70 @@ public class KeycloakAdminClient {
 
     public void resetPassword(String keycloakId, String password) {
         setPassword(accessToken(), keycloakId, password);
+    }
+
+    /**
+     * Proves a user knows their current password by signing in with it, through
+     * a client that allows nothing else. A wrong password counts towards the
+     * realm's lockout like any failed sign in. The session that sign in opened is
+     * ended at once.
+     */
+    public void verifyPassword(String username, String password) {
+        MultiValueMap<String, String> form = clientForm(PASSWORD_CHECK_CLIENT_ID);
+        form.add("grant_type", "password");
+        form.add("username", username);
+        form.add("password", password);
+        Map<String, Object> tokens = http.post()
+                .uri(TOKEN_PATH, properties.realm())
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .body(form)
+                .exchange((request, response) -> {
+                    if (response.getStatusCode().is4xxClientError()) {
+                        failOnRefusedSignIn(response.bodyTo(JSON_OBJECT));
+                    }
+                    failOnError(response.getStatusCode(),
+                            "check the current password through the '" + PASSWORD_CHECK_CLIENT_ID
+                                    + "' client; check that it exists and its secret matches");
+                    return response.bodyTo(JSON_OBJECT);
+                });
+        endSession(String.valueOf(tokens.get("refresh_token")));
+    }
+
+    /**
+     * Keycloak answers {@code invalid_grant} to a sign in it refuses for the
+     * user's sake. Every other refusal, {@code invalid_client} above all, is our
+     * configuration and is left to {@link #failOnError}. A locked out account is
+     * deliberately told apart from a wrong password by nobody, Keycloak included.
+     */
+    private void failOnRefusedSignIn(Map<String, Object> error) {
+        if (!"invalid_grant".equals(error.get("error"))) {
+            return;
+        }
+        if (ACCOUNT_NOT_SET_UP.equals(error.get("error_description"))) {
+            throw new ValidationException("error.password.accountNotReady");
+        }
+        throw new ValidationException("error.password.current");
+    }
+
+    private void endSession(String refreshToken) {
+        MultiValueMap<String, String> form = clientForm(PASSWORD_CHECK_CLIENT_ID);
+        form.add("refresh_token", refreshToken);
+        http.post()
+                .uri("/realms/{realm}/protocol/openid-connect/logout", properties.realm())
+                .contentType(MediaType.APPLICATION_FORM_URLENCODED)
+                .body(form)
+                .exchange((request, response) -> {
+                    failOnError(response.getStatusCode(), "end the password check session");
+                    return null;
+                });
+    }
+
+    /** Both clients hold the same secret. */
+    private MultiValueMap<String, String> clientForm(String clientId) {
+        MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+        form.add("client_id", clientId);
+        form.add("client_secret", properties.clientSecret());
+        return form;
     }
 
     /** A disabled account cannot sign in. Keycloak only changes the fields it is sent. */
@@ -141,8 +218,7 @@ public class KeycloakAdminClient {
                     .uri("/admin/realms/{realm}/roles/{role}", properties.realm(), role)
                     .headers(headers -> headers.setBearerAuth(token))
                     .retrieve()
-                    .body(new ParameterizedTypeReference<>() {
-                    });
+                    .body(JSON_OBJECT);
         } catch (RestClientException exception) {
             throw new IdentityProviderException(
                     "Could not read the realm role '" + role + "' from realm '" + properties.realm() + "'",
@@ -160,20 +236,17 @@ public class KeycloakAdminClient {
     }
 
     private String accessToken() {
-        MultiValueMap<String, String> form = new LinkedMultiValueMap<>();
+        MultiValueMap<String, String> form = clientForm(properties.clientId());
         form.add("grant_type", "client_credentials");
-        form.add("client_id", properties.clientId());
-        form.add("client_secret", properties.clientSecret());
 
         Map<String, Object> body;
         try {
             body = http.post()
-                    .uri("/realms/{realm}/protocol/openid-connect/token", properties.realm())
-                    .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_FORM_URLENCODED_VALUE)
+                    .uri(TOKEN_PATH, properties.realm())
+                    .contentType(MediaType.APPLICATION_FORM_URLENCODED)
                     .body(form)
                     .retrieve()
-                    .body(new ParameterizedTypeReference<>() {
-                    });
+                    .body(JSON_OBJECT);
         } catch (RestClientException exception) {
             // Almost always the realm was imported before this client existed:
             // Keycloak only imports a realm that is not already in its database.

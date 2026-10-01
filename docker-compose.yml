@@ -94,6 +94,8 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-bms}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-bms}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:-bms}
+      # A development stack, so the committed client secret is allowed here.
+      BMS_KEYCLOAK_ALLOW_DEFAULT_SECRET: "true"
       # Two addresses for one Keycloak. The browser is sent to the public one,
       # which is also the issuer every token claims; the token exchange, the
       # signing keys and the admin API go over the internal network.

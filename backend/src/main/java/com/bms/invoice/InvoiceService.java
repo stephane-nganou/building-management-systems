@@ -2,7 +2,6 @@ package com.bms.invoice;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
-import java.util.List;
 import java.util.UUID;
 
 import com.bms.access.AccessControl;
@@ -15,6 +14,9 @@ import com.bms.invoice.dto.InvoiceRequest;
 import com.bms.invoice.dto.InvoiceResponse;
 import com.bms.tenant.Tenant;
 import com.bms.tenant.TenantService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -37,12 +39,14 @@ public class InvoiceService {
         this.messages = messages;
     }
 
+    /** Newest first, always: a caller picks the page, never the order. */
     @Transactional(readOnly = true)
-    public List<InvoiceResponse> search(UUID buildingId, UUID apartmentId, InvoiceStatus status,
-                                        LocalDate from, LocalDate to) {
+    public Page<InvoiceResponse> search(UUID buildingId, UUID apartmentId, InvoiceStatus status,
+                                        LocalDate from, LocalDate to, Pageable page) {
         return invoices.search(accessControl.accessibleOwnerIds(Permission.INVOICE_READ),
-                        buildingId, apartmentId, status, from, to)
-                .stream().map(InvoiceResponse::from).toList();
+                        buildingId, apartmentId, status, from, to,
+                        PageRequest.of(page.getPageNumber(), page.getPageSize()))
+                .map(InvoiceResponse::from);
     }
 
     @Transactional(readOnly = true)

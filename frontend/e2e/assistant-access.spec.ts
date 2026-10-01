@@ -41,7 +41,7 @@ test('an owner creates an assistant who then sees only what they were granted', 
 
   // The assistant signs in for the first time and has to choose their own password.
   await submitSignIn(page, email, temporaryPassword);
-  await chooseNewPassword(page, 'assistant-own-secret');
+  await chooseNewPassword(page, temporaryPassword, 'assistant-own-secret');
 
   await expect(page.locator('.spine-foot .role')).toHaveText(/assisting/i);
   await expectNavLabels(page, ['Expenses']);

@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, linkedSignal, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { rxResource } from '@angular/core/rxjs-interop';
 
@@ -11,6 +11,7 @@ import { Dialog } from '../shared/dialog';
 import { Facade } from '../shared/facade';
 import { Icon } from '../shared/icon';
 import { IconButton } from '../shared/icon-button';
+import { Pager, stepBackFromEmptyPage } from '../shared/pager';
 import { DayPipe, LabelPipe, MoneyPipe } from '../shared/money.pipe';
 import { ToastService } from '../shared/toasts';
 import { TranslatePipe } from '../shared/translate.pipe';
@@ -61,7 +62,7 @@ const blank = (): InvoiceForm => {
 
 @Component({
   selector: 'bms-invoices',
-  imports: [FormsModule, Dialog, Facade, Icon, IconButton, MoneyPipe, DayPipe, LabelPipe, TranslatePipe],
+  imports: [FormsModule, Dialog, Facade, Icon, IconButton, Pager, MoneyPipe, DayPipe, LabelPipe, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="band">
@@ -115,7 +116,7 @@ const blank = (): InvoiceForm => {
             <p>{{ 'invoices.needTenantBody' | t }}</p>
           </div>
         </div>
-      } @else if (invoices.hasValue() && invoices.value()!.length === 0) {
+      } @else if (invoices.hasValue() && invoices.value()!.page.totalElements === 0) {
         <div class="empty">
           <bms-facade [units]="[]" [scale]="2" />
           <div>
@@ -144,7 +145,7 @@ const blank = (): InvoiceForm => {
               </tr>
             </thead>
             <tbody>
-              @for (invoice of invoices.value(); track invoice.id) {
+              @for (invoice of invoices.value()!.content; track invoice.id) {
                 <tr>
                   <td class="strong">{{ invoice.invoiceNumber }}</td>
                   <td>{{ invoice.tenantName }}</td>
@@ -183,6 +184,7 @@ const blank = (): InvoiceForm => {
             </tbody>
           </table>
         </div>
+        <bms-pager [page]="invoices.value()!.page" (go)="page.set($event)" />
       }
 
       @if (error()) {
@@ -302,11 +304,19 @@ export class InvoicesPage {
     defaultValue: [],
   });
 
-  protected readonly invoices = rxResource({
-    params: () => ({ buildingId: this.filterBuilding(), status: this.filterStatus() }),
-    stream: ({ params }) =>
-      this.api.search({ buildingId: params.buildingId || undefined, status: params.status }),
+  /** Back to the first page whenever the filters change. */
+  protected readonly page = linkedSignal({
+    source: () => [this.filterBuilding(), this.filterStatus()],
+    computation: () => 0,
   });
+
+  protected readonly invoices = rxResource({
+    params: () => ({ buildingId: this.filterBuilding(), status: this.filterStatus(), page: this.page() }),
+    stream: ({ params }) =>
+      this.api.search({ buildingId: params.buildingId || undefined, status: params.status }, params.page),
+  });
+
+  private readonly emptyPage = stepBackFromEmptyPage(this.page, this.invoices.value);
 
   protected hasTenants(): boolean {
     return this.tenants.value().length > 0;

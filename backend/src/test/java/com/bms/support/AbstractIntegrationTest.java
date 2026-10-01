@@ -23,9 +23,12 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
 /**
  * Every request here comes from the same address, so the registration limit is
  * lifted for the suites at large; {@code RegistrationRateLimitIntegrationTest}
- * runs with a tight one of its own.
+ * runs with a tight one of its own. No Keycloak is reached, so the development
+ * client secret is allowed.
  */
-@SpringBootTest(properties = "bms.registration.max-per-hour=1000")
+@SpringBootTest(properties = {
+        "bms.registration.max-per-hour=1000",
+        "bms.keycloak.allow-default-secret=true"})
 @AutoConfigureMockMvc
 public abstract class AbstractIntegrationTest {
 

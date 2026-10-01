@@ -6,6 +6,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
@@ -46,14 +48,15 @@ public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
               and (:status is null or i.status = :status)
               and (cast(:from as date) is null or i.issueDate >= :from)
               and (cast(:to as date) is null or i.issueDate <= :to)
-            order by i.issueDate desc, i.invoiceNumber desc
+            order by i.issueDate desc, i.invoiceNumber desc, i.id desc
             """)
-    List<Invoice> search(@Param("ownerIds") Collection<UUID> ownerIds,
+    Page<Invoice> search(@Param("ownerIds") Collection<UUID> ownerIds,
                          @Param("buildingId") UUID buildingId,
                          @Param("apartmentId") UUID apartmentId,
                          @Param("status") InvoiceStatus status,
                          @Param("from") LocalDate from,
-                         @Param("to") LocalDate to);
+                         @Param("to") LocalDate to,
+                         Pageable pageable);
 
     /** Invoices counted as income for a reporting period, with their lines already loaded. */
     @Query("""

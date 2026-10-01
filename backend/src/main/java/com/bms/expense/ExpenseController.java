@@ -1,12 +1,14 @@
 package com.bms.expense;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.UUID;
 
 import com.bms.expense.dto.ExpenseRequest;
 import com.bms.expense.dto.ExpenseResponse;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.PagedModel;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -31,12 +33,13 @@ public class ExpenseController {
     }
 
     @GetMapping
-    public List<ExpenseResponse> search(
+    public PagedModel<ExpenseResponse> search(
             @RequestParam(required = false) UUID buildingId,
             @RequestParam(required = false) UUID apartmentId,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
-        return expenses.search(buildingId, apartmentId, from, to);
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @PageableDefault(size = 50) Pageable page) {
+        return new PagedModel<>(expenses.search(buildingId, apartmentId, from, to, page));
     }
 
     @GetMapping("/{id}")

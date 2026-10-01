@@ -53,7 +53,7 @@ test('an administrator signs an owner up and ends their subscription, leaving it
 
   // The new owner can still sign in and read, but is told why nothing changes.
   await submitSignIn(page, email, temporaryPassword);
-  await chooseNewPassword(page, 'customer-own-secret');
+  await chooseNewPassword(page, temporaryPassword, 'customer-own-secret');
   // The toasts are a status region too, so the banner is found by what it says.
   await expect(page.getByRole('status').filter({ hasText: /your subscription ended/i })).toBeVisible();
 

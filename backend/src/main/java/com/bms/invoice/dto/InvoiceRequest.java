@@ -18,5 +18,5 @@ public record InvoiceRequest(
         @NotNull LocalDate dueDate,
         @Size(max = 1000) String notes,
         /* Optional for RENT invoices: left empty, the lines are derived from the apartment rent. */
-        @Valid List<InvoiceLineRequest> lines) {
+        @Valid @Size(max = 50) List<InvoiceLineRequest> lines) {
 }

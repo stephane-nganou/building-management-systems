@@ -75,7 +75,7 @@ services:
       KC_DB: postgres
       KC_DB_URL: jdbc:postgresql://postgres:5432/keycloak
       KC_DB_USERNAME: ${POSTGRES_USER:-bms}
-      KC_DB_PASSWORD: ${POSTGRES_PASSWORD}
+      KC_DB_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env.production}
       KC_HEALTH_ENABLED: "true"
       # Plain HTTP inside the network; Caddy terminates TLS in front of it.
       KC_HTTP_ENABLED: "true"
@@ -114,11 +114,11 @@ services:
     environment:
       <<: *smtp
       KEYCLOAK_URL: http://keycloak:8080/auth
-      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
-      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
+      KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:?set KEYCLOAK_ADMIN in .env.production}
+      KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?set KEYCLOAK_ADMIN_PASSWORD in .env.production}
       KEYCLOAK_USERS_FILE: docker/keycloak/users-prod.json
       BMS_PUBLIC_URL: https://${BMS_DOMAIN}
-      BMS_KEYCLOAK_CLIENT_SECRET: ${BMS_KEYCLOAK_CLIENT_SECRET}
+      BMS_KEYCLOAK_CLIENT_SECRET: ${BMS_KEYCLOAK_CLIENT_SECRET:?set BMS_KEYCLOAK_CLIENT_SECRET in .env.production}
       BMS_ADMIN_USERNAME: ${BMS_ADMIN_USERNAME:?set BMS_ADMIN_USERNAME in .env.production}
       BMS_ADMIN_EMAIL: ${BMS_ADMIN_EMAIL:?set BMS_ADMIN_EMAIL in .env.production}
       BMS_ADMIN_PASSWORD: ${BMS_ADMIN_PASSWORD:?set BMS_ADMIN_PASSWORD in .env.production}
@@ -138,10 +138,10 @@ services:
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-bms}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:-bms}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env.production}
       BMS_KEYCLOAK_PUBLIC_URL: https://${BMS_DOMAIN}/auth
       BMS_KEYCLOAK_SERVER_URL: http://keycloak:8080/auth
-      BMS_KEYCLOAK_CLIENT_SECRET: ${BMS_KEYCLOAK_CLIENT_SECRET}
+      BMS_KEYCLOAK_CLIENT_SECRET: ${BMS_KEYCLOAK_CLIENT_SECRET:?set BMS_KEYCLOAK_CLIENT_SECRET in .env.production}
       BMS_FRONTEND_BASE_URL: https://${BMS_DOMAIN}
       BMS_CORS_ALLOWED_ORIGINS: https://${BMS_DOMAIN}
       BMS_INVOICE_ISSUER_NAME: ${BMS_INVOICE_ISSUER_NAME:-Hausbuch}
@@ -179,7 +179,7 @@ services:
     environment:
       PGHOST: postgres
       PGUSER: ${POSTGRES_USER:-bms}
-      PGPASSWORD: ${POSTGRES_PASSWORD}
+      PGPASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env.production}
       APP_DB: ${POSTGRES_DB:-bms}
       BACKUP_KEEP_DAYS: ${BACKUP_KEEP_DAYS:-14}
     volumes:

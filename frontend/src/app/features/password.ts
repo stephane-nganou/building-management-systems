@@ -29,6 +29,20 @@ import { TranslatePipe } from '../shared/translate.pipe';
       </div>
 
       <div class="field">
+        <label for="currentPassword">{{ 'password.current' | t }}</label>
+        <input
+          id="currentPassword"
+          name="currentPassword"
+          type="password"
+          [(ngModel)]="currentPassword"
+          autocomplete="current-password"
+        />
+        <p class="hint">
+          {{ 'password.currentHint' | t }}
+        </p>
+      </div>
+
+      <div class="field">
         <label for="newPassword">{{ 'password.new' | t }}</label>
         <input
           id="newPassword"
@@ -76,18 +90,24 @@ export class PasswordPage {
   protected readonly saving = signal(false);
   protected readonly error = signal<string | null>(null);
 
+  protected currentPassword = '';
   protected newPassword = '';
   protected confirmPassword = '';
 
   protected complete(): boolean {
-    return acceptablePassword(this.newPassword) && this.newPassword === this.confirmPassword;
+    return (
+      this.currentPassword.length > 0 &&
+      acceptablePassword(this.newPassword) &&
+      this.newPassword === this.confirmPassword
+    );
   }
 
   protected submit(): void {
     this.saving.set(true);
     this.error.set(null);
-    this.api.changePassword(this.newPassword).subscribe({
+    this.api.changePassword(this.currentPassword, this.newPassword).subscribe({
       next: () => {
+        this.currentPassword = '';
         this.newPassword = '';
         this.confirmPassword = '';
         this.saving.set(false);

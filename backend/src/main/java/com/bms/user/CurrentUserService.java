@@ -103,10 +103,18 @@ public class CurrentUserService {
     /** False for an anonymous caller, who has no account to suspend. */
     @Transactional(readOnly = true)
     public boolean isSuspended() {
-        return currentClaims()
-                .flatMap(claims -> users.findByKeycloakId(subjectOf(claims)))
-                .map(AppUser::isSuspended)
-                .orElse(false);
+        return currentRecord().map(AppUser::isSuspended).orElse(false);
+    }
+
+    /** False for an anonymous caller, who has no password to replace. */
+    @Transactional(readOnly = true)
+    public boolean mustChangePassword() {
+        return currentRecord().map(AppUser::isMustChangePassword).orElse(false);
+    }
+
+    /** The caller's local record, if they presented a credential and have one. */
+    private Optional<AppUser> currentRecord() {
+        return currentClaims().flatMap(claims -> users.findByKeycloakId(subjectOf(claims)));
     }
 
     private void syncProfile(AppUser user, ClaimAccessor claims) {

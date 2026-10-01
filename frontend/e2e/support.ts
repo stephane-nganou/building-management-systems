@@ -59,8 +59,13 @@ export async function signIn(page: Page, username: string, password: string): Pr
  * ours, not Keycloak's: the obligation is recorded on our own record, so that
  * nobody has to leave the application to discharge it.
  */
-export async function chooseNewPassword(page: Page, password: string): Promise<void> {
+export async function chooseNewPassword(
+  page: Page,
+  currentPassword: string,
+  password: string,
+): Promise<void> {
   await expect(page.getByRole('heading', { name: /choose your password/i })).toBeVisible();
+  await page.getByLabel('Current password').fill(currentPassword);
   await page.getByLabel('New password', { exact: true }).fill(password);
   await page.getByLabel('Repeat it').fill(password);
   await page.getByRole('button', { name: /save password/i }).click();

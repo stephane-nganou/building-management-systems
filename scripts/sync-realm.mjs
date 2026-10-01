@@ -180,7 +180,8 @@ async function syncServiceAccountRoles(token, realm, exported) {
 async function checkConfidentialClients(realm, exported) {
   const checked = [];
   for (const client of exported.clients ?? []) {
-    if (client.publicClient !== false || !client.secret) {
+    // Only a client with a service account may sign in as itself.
+    if (client.publicClient !== false || !client.secret || !client.serviceAccountsEnabled) {
       continue;
     }
     const response = await fetch(`${keycloakUrl}/realms/${realm}/protocol/openid-connect/token`, {

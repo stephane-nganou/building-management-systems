@@ -2,6 +2,7 @@ package com.bms.config;
 
 import java.util.List;
 
+import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -77,9 +78,11 @@ public class SecurityConfig {
                         .csrfTokenRequestHandler(csrfTokenRequestHandler())
                         // A caller holding a bearer token brought its own credential
                         // rather than an ambient cookie, so no other site can make
-                        // that request on its behalf. Registration is open to
-                        // everyone and rides no session at all.
-                        .ignoringRequestMatchers(request -> request.getHeader(HttpHeaders.AUTHORIZATION) != null)
+                        // that request on its behalf. Any other Authorization
+                        // header leaves the session cookie authenticating, so it
+                        // excuses nothing. Registration is open to everyone and
+                        // rides no session at all.
+                        .ignoringRequestMatchers(SecurityConfig::carriesBearerToken)
                         .ignoringRequestMatchers("/api/auth/register"))
                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
                 .authorizeHttpRequests(requests -> requests
@@ -116,6 +119,12 @@ public class SecurityConfig {
                 .oauth2ResourceServer(oauth2 -> oauth2
                         .jwt(jwt -> jwt.jwtAuthenticationConverter(converter)));
         return http.build();
+    }
+
+    /** The scheme is case insensitive, as the bearer token resolver reads it. */
+    private static boolean carriesBearerToken(HttpServletRequest request) {
+        String authorization = request.getHeader(HttpHeaders.AUTHORIZATION);
+        return authorization != null && authorization.regionMatches(true, 0, "Bearer ", 0, 7);
     }
 
     /** Ends the Keycloak session too, then returns the browser to the application. */

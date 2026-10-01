@@ -62,7 +62,7 @@ class CurrencyIntegrationTest extends AbstractIntegrationTest {
         mockMvc.perform(get("/api/tenants/" + tenant).with(OWNER))
                 .andExpect(jsonPath("$.currency").value("XAF"));
         mockMvc.perform(get("/api/expenses").param("buildingId", building).with(OWNER))
-                .andExpect(jsonPath("$[0].currency").value("XAF"));
+                .andExpect(jsonPath("$.content[0].currency").value("XAF"));
     }
 
     /** The CFA franc has no cents, so a line is rounded to whole francs and the total adds up on paper. */

@@ -1,7 +1,6 @@
 package com.bms.invoice;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.Locale;
 import java.util.UUID;
 
@@ -9,6 +8,9 @@ import com.bms.access.Permission;
 import com.bms.invoice.dto.InvoiceRequest;
 import com.bms.invoice.dto.InvoiceResponse;
 import jakarta.validation.Valid;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.web.PageableDefault;
+import org.springframework.data.web.PagedModel;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ContentDisposition;
 import org.springframework.http.HttpHeaders;
@@ -39,13 +41,14 @@ public class InvoiceController {
     }
 
     @GetMapping
-    public List<InvoiceResponse> search(
+    public PagedModel<InvoiceResponse> search(
             @RequestParam(required = false) UUID buildingId,
             @RequestParam(required = false) UUID apartmentId,
             @RequestParam(required = false) InvoiceStatus status,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate from,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to) {
-        return invoices.search(buildingId, apartmentId, status, from, to);
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate to,
+            @PageableDefault(size = 50) Pageable page) {
+        return new PagedModel<>(invoices.search(buildingId, apartmentId, status, from, to, page));
     }
 
     @GetMapping("/{id}")

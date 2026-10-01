@@ -14,6 +14,20 @@ export type ExpenseCategory =
 export const CURRENCIES = ['EUR', 'XAF', 'XOF', 'USD', 'GBP', 'CHF'] as const;
 export type Currency = (typeof CURRENCIES)[number];
 
+/** Where a page sits in the whole list; Spring Data's PagedModel metadata. */
+export interface PageInfo {
+  size: number;
+  number: number;
+  totalElements: number;
+  totalPages: number;
+}
+
+/** One page of a list the server hands out a page at a time. */
+export interface Page<T> {
+  content: T[];
+  page: PageInfo;
+}
+
 export type InvoiceType = 'RENT' | 'COLD_WATER';
 export type InvoiceStatus = 'DRAFT' | 'SENT' | 'PAID' | 'CANCELLED';
 
