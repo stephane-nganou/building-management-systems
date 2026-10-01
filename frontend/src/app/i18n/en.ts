@@ -142,6 +142,9 @@ export const en = {
   'buildings.postalCode': 'Postal code',
   'buildings.city': 'City',
   'buildings.country': 'Country',
+  'buildings.currency': 'Currency',
+  'buildings.currencyHint':
+    'Changing it converts nothing: rent, deposits and expenses are shown in the new currency as they are. Invoices already issued keep theirs.',
   'buildings.saveFailed': 'The building could not be saved.',
   'buildings.deleteFailed': '{name} could not be deleted.',
 

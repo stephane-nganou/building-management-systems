@@ -83,9 +83,9 @@ class InvoiceAndReportIntegrationTest extends AbstractIntegrationTest {
         mockMvc.perform(get("/api/reports/profit-loss")
                         .param("from", "2026-01-01").param("to", "2026-12-31").with(OWNER))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalIncome").value(0))
-                .andExpect(jsonPath("$.totalExpenses").value(400.00))
-                .andExpect(jsonPath("$.netResult").value(-400.00));
+                .andExpect(jsonPath("$.totals[0].income").value(0))
+                .andExpect(jsonPath("$.totals[0].expenses").value(400.00))
+                .andExpect(jsonPath("$.totals[0].netResult").value(-400.00));
 
         mockMvc.perform(post("/api/invoices/" + invoiceId + "/status").param("status", "SENT").with(OWNER))
                 .andExpect(status().isOk());
@@ -93,9 +93,9 @@ class InvoiceAndReportIntegrationTest extends AbstractIntegrationTest {
         mockMvc.perform(get("/api/reports/profit-loss")
                         .param("from", "2026-01-01").param("to", "2026-12-31").with(OWNER))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalIncome").value(1000.00))
-                .andExpect(jsonPath("$.totalExpenses").value(400.00))
-                .andExpect(jsonPath("$.netResult").value(600.00))
+                .andExpect(jsonPath("$.totals[0].income").value(1000.00))
+                .andExpect(jsonPath("$.totals[0].expenses").value(400.00))
+                .andExpect(jsonPath("$.totals[0].netResult").value(600.00))
                 .andExpect(jsonPath("$.buildings.length()").value(1))
                 .andExpect(jsonPath("$.expensesByCategory[0].category").value("MAINTENANCE"));
     }
@@ -108,7 +108,7 @@ class InvoiceAndReportIntegrationTest extends AbstractIntegrationTest {
         mockMvc.perform(get("/api/reports/profit-loss")
                         .param("from", "2026-03-01").param("to", "2026-12-31").with(OWNER))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$.totalExpenses").value(0));
+                .andExpect(jsonPath("$.totals[0].expenses").value(0));
     }
 
     @Test

@@ -10,7 +10,7 @@ import { Dialog } from '../shared/dialog';
 import { Facade } from '../shared/facade';
 import { Icon } from '../shared/icon';
 import { IconButton } from '../shared/icon-button';
-import { DayPipe, LabelPipe, MoneyPipe } from '../shared/money.pipe';
+import { DayPipe, LabelPipe, MoneyPipe, totalsByCurrency } from '../shared/money.pipe';
 import { ToastService } from '../shared/toasts';
 import { TranslatePipe } from '../shared/translate.pipe';
 
@@ -135,7 +135,7 @@ const blank = (buildingId: string): ExpenseForm => ({
                     }
                   </td>
                   <td class="muted">{{ expense.vendor || '-' }}</td>
-                  <td class="right strong neg">{{ expense.amount | money }}</td>
+                  <td class="right strong neg">{{ expense.amount | money: expense.currency }}</td>
                   <td class="actions-cell">
                     <span class="row-actions">
                       <button bmsIconButton icon="edit" [label]="'common.edit' | t" (click)="startEdit(expense)"></button>
@@ -146,11 +146,13 @@ const blank = (buildingId: string): ExpenseForm => ({
               }
             </tbody>
             <tfoot>
-              <tr>
-                <td colspan="5" class="strong">{{ 'common.total' | t }}</td>
-                <td class="right strong neg">{{ total() | money }}</td>
-                <td></td>
-              </tr>
+              @for (total of totals(); track total.currency) {
+                <tr>
+                  <td colspan="5" class="strong">{{ 'common.total' | t }}</td>
+                  <td class="right strong neg">{{ total.amount | money: total.currency }}</td>
+                  <td></td>
+                </tr>
+              }
             </tfoot>
           </table>
         </div>
@@ -262,8 +264,9 @@ export class ExpensesPage {
       }),
   });
 
-  protected readonly total = computed(() =>
-    (this.expenses.value() ?? []).reduce((sum, expense) => sum + expense.amount, 0),
+  /** One line per currency: buildings in different countries are never added up. */
+  protected readonly totals = computed(() =>
+    totalsByCurrency(this.expenses.value() ?? [], (expense) => expense.amount),
   );
 
   protected hasBuildings(): boolean {

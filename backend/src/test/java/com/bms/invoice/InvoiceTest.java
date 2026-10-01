@@ -3,6 +3,7 @@ package com.bms.invoice;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 
+import com.bms.common.CurrencyCode;
 import com.bms.common.exception.ValidationException;
 import org.junit.jupiter.api.Test;
 
@@ -15,8 +16,12 @@ class InvoiceTest {
     private static final LocalDate END = LocalDate.of(2026, 1, 31);
 
     private Invoice newInvoice() {
+        return newInvoice(CurrencyCode.EUR);
+    }
+
+    private Invoice newInvoice(CurrencyCode currency) {
         return new Invoice(null, null, "INV-2026-000001", InvoiceType.RENT,
-                START, END, START, START.plusDays(14), null);
+                START, END, START, START.plusDays(14), null, currency);
     }
 
     @Test
@@ -38,6 +43,16 @@ class InvoiceTest {
     }
 
     @Test
+    void lineAmountRoundsToWholeFrancsInCfaFrancs() {
+        Invoice invoice = newInvoice(CurrencyCode.XAF);
+        invoice.addLine("Cold water", new BigDecimal("12.345"), new BigDecimal("3.30"), "m3");
+
+        // 40.7385 -> 41: the franc has no smaller unit to bill in
+        assertThat(invoice.getLines().getFirst().getAmount()).isEqualByComparingTo("41");
+        assertThat(invoice.getLines().getFirst().getAmount().scale()).isZero();
+    }
+
+    @Test
     void totalIsZeroWithoutLines() {
         assertThat(newInvoice().getTotal()).isEqualByComparingTo("0");
     }
@@ -45,7 +60,7 @@ class InvoiceTest {
     @Test
     void periodEndBeforeStartIsRejected() {
         assertThatThrownBy(() -> new Invoice(null, null, "INV-1", InvoiceType.RENT,
-                END, START, START, START.plusDays(14), null))
+                END, START, START, START.plusDays(14), null, CurrencyCode.EUR))
                 .isInstanceOf(ValidationException.class)
                 .hasMessage("error.invoice.periodOrder");
     }
@@ -53,7 +68,7 @@ class InvoiceTest {
     @Test
     void dueDateBeforeIssueDateIsRejected() {
         assertThatThrownBy(() -> new Invoice(null, null, "INV-1", InvoiceType.RENT,
-                START, END, END, START, null))
+                START, END, END, START, null, CurrencyCode.EUR))
                 .isInstanceOf(ValidationException.class)
                 .hasMessage("error.invoice.dueBeforeIssue");
     }

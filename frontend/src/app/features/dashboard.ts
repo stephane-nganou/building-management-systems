@@ -3,6 +3,7 @@ import { RouterLink } from '@angular/router';
 import { rxResource } from '@angular/core/rxjs-interop';
 
 import { ApartmentsApi, BuildingsApi, ReportsApi } from '../core/api';
+import { Currency } from '../core/models';
 import { SessionService } from '../core/session';
 import { Facade, Unit } from '../shared/facade';
 import { Icon } from '../shared/icon';
@@ -18,6 +19,7 @@ interface Lot {
   name: string;
   units: Unit[];
   net: number;
+  currency: Currency;
 }
 
 @Component({
@@ -68,7 +70,7 @@ interface Lot {
                     <bms-facade [units]="lot.units" [scale]="2.4" [animate]="true" />
                     <span class="lot-name">{{ lot.name }}</span>
                     <span class="lot-net" [class.pos]="lot.net > 0" [class.neg]="lot.net < 0">
-                      {{ lot.net | money }}
+                      {{ lot.net | money: lot.currency }}
                     </span>
                   </div>
                 }
@@ -76,24 +78,33 @@ interface Lot {
             </div>
           }
 
-          <div class="figures">
+          <!-- One line per currency in each figure: buildings in different countries are never added up. -->
+          <div class="figures" [class.several]="summary.value()!.totals.length > 1">
             <div class="figure">
               <span class="caption">{{ 'dashboard.collected' | t }}</span>
-              <span class="amount pos">{{ summary.value()!.yearToDateIncome | money }}</span>
+              @for (totals of summary.value()!.totals; track totals.currency) {
+                <span class="amount pos">{{ totals.yearToDateIncome | money: totals.currency }}</span>
+              }
             </div>
             <div class="figure">
               <span class="caption">{{ 'dashboard.spent' | t }}</span>
-              <span class="amount neg">{{ summary.value()!.yearToDateExpenses | money }}</span>
+              @for (totals of summary.value()!.totals; track totals.currency) {
+                <span class="amount neg">{{ totals.yearToDateExpenses | money: totals.currency }}</span>
+              }
             </div>
             <div class="figure">
               <span class="caption">{{ 'dashboard.net' | t }}</span>
-              <span class="amount" [class.pos]="net() >= 0" [class.neg]="net() < 0">
-                {{ net() | money }}
-              </span>
+              @for (totals of summary.value()!.totals; track totals.currency) {
+                <span class="amount" [class.pos]="totals.yearToDateNet >= 0" [class.neg]="totals.yearToDateNet < 0">
+                  {{ totals.yearToDateNet | money: totals.currency }}
+                </span>
+              }
             </div>
             <div class="figure">
               <span class="caption">{{ 'dashboard.rentRoll' | t }}</span>
-              <span class="amount">{{ summary.value()!.monthlyRentRoll | money }}</span>
+              @for (totals of summary.value()!.totals; track totals.currency) {
+                <span class="amount">{{ totals.monthlyRentRoll | money: totals.currency }}</span>
+              }
             </div>
           </div>
         }
@@ -115,7 +126,7 @@ interface Lot {
                 <tr>
                   <td class="strong">{{ row.buildingName }}</td>
                   <td class="right strong" [class.pos]="row.netResult >= 0" [class.neg]="row.netResult < 0">
-                    {{ row.netResult | money }}
+                    {{ row.netResult | money: row.currency }}
                   </td>
                 </tr>
               }
@@ -183,8 +194,6 @@ export class DashboardPage {
     defaultValue: [],
   });
 
-  protected readonly net = computed(() => this.summary.value()?.yearToDateNet ?? 0);
-
   protected readonly lots = computed<Lot[]>(() => {
     const nets = new Map(
       (this.report.value()?.buildings ?? []).map((row) => [row.buildingId, row.netResult]),
@@ -195,6 +204,7 @@ export class DashboardPage {
       name: building.name,
       units: apartments.filter((apartment) => apartment.buildingId === building.id),
       net: nets.get(building.id) ?? 0,
+      currency: building.currency,
     }));
   });
 }

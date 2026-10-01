@@ -64,6 +64,6 @@ public class InvoiceLine extends BaseEntity {
     }
 
     public BigDecimal getAmount() {
-        return quantity.multiply(unitPrice).setScale(2, RoundingMode.HALF_UP);
+        return quantity.multiply(unitPrice).setScale(invoice.getCurrency().fractionDigits(), RoundingMode.HALF_UP);
     }
 }

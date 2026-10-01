@@ -1,6 +1,7 @@
 import { Pipe, PipeTransform, inject } from '@angular/core';
 
 import { TranslationService } from '../core/i18n';
+import { Currency } from '../core/models';
 import { MessageKey } from '../i18n/en';
 
 /** The enum families the app renders. Each one is a group of message keys. */
@@ -15,11 +16,11 @@ export type EnumGroup =
 const money = new Map<string, Intl.NumberFormat>();
 const day = new Map<string, Intl.DateTimeFormat>();
 
-function formatter<T>(cache: Map<string, T>, locale: string, build: () => T): T {
-  let existing = cache.get(locale);
+function formatter<T>(cache: Map<string, T>, key: string, build: () => T): T {
+  let existing = cache.get(key);
   if (!existing) {
     existing = build();
-    cache.set(locale, existing);
+    cache.set(key, existing);
   }
   return existing;
 }
@@ -27,23 +28,31 @@ function formatter<T>(cache: Map<string, T>, locale: string, build: () => T): T 
 /**
  * Amounts and dates follow the chosen language, so they are impure for the same
  * reason the translation pipe is: the value they are given does not change when
- * the language does.
+ * the language does. An amount is written in the currency of the building it
+ * belongs to, with that currency's own digits: none for the CFA francs.
  */
+/** Adds amounts up per currency, in the order the currencies first appear. Never across currencies. */
+export function totalsByCurrency<T extends { currency: Currency }>(
+  items: readonly T[],
+  amount: (item: T) => number,
+): { currency: Currency; amount: number }[] {
+  const totals = new Map<Currency, number>();
+  for (const item of items) {
+    totals.set(item.currency, (totals.get(item.currency) ?? 0) + amount(item));
+  }
+  return [...totals].map(([currency, sum]) => ({ currency, amount: sum }));
+}
+
 @Pipe({ name: 'money', pure: false })
 export class MoneyPipe implements PipeTransform {
   private i18n = inject(TranslationService);
 
-  transform(value: number | null | undefined): string {
+  transform(value: number | null | undefined, currency: Currency): string {
     const locale = this.i18n.locale();
     return formatter(
       money,
-      locale,
-      () =>
-        new Intl.NumberFormat(locale, {
-          style: 'currency',
-          currency: 'EUR',
-          maximumFractionDigits: 2,
-        }),
+      `${locale} ${currency}`,
+      () => new Intl.NumberFormat(locale, { style: 'currency', currency }),
     ).format(value ?? 0);
   }
 }

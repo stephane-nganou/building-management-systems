@@ -57,7 +57,8 @@ public class InvoiceService {
 
         Invoice invoice = new Invoice(apartment, tenant, numberGenerator.next(request.issueDate()),
                 request.type(), request.periodStart(), request.periodEnd(),
-                request.issueDate(), request.dueDate(), request.notes());
+                request.issueDate(), request.dueDate(), request.notes(),
+                apartment.getBuilding().getCurrency());
         addLines(invoice, request, apartment);
         return InvoiceResponse.from(invoices.save(invoice));
     }

@@ -231,7 +231,8 @@ classDiagram
         String name
         Address address
         String notes
-        update(name, address, notes)
+        CurrencyCode currency
+        update(name, address, notes, currency)
     }
 
     class Address {
@@ -298,6 +299,7 @@ classDiagram
         LocalDate issueDate
         LocalDate dueDate
         String notes
+        CurrencyCode currency "its building's, when created"
         addLine(description, quantity, unitPrice, unit)
         getTotal() BigDecimal
         transitionTo(status)
@@ -564,7 +566,7 @@ flowchart TB
     end
 
     subgraph sharedui["shared/"]
-        pipes["TranslatePipe (t), MoneyPipe (money),<br/>DayPipe (day), LabelPipe (label)<br/>impure on purpose"]
+        pipes["TranslatePipe (t), MoneyPipe (money: currency),<br/>DayPipe (day), LabelPipe (label)<br/>impure on purpose"]
         lang["LanguageSwitcher, ThemeSwitcher"]
         ui["Dialog (native dialog), ConfirmService,<br/>ToastService, IconButton, Icon"]
         look["Facade (floorsOf), Brand, Gate"]
@@ -659,6 +661,7 @@ erDiagram
         varchar postal_code
         varchar country
         varchar notes
+        varchar currency "EUR XAF XOF USD GBP CHF"
         timestamptz created_at
         timestamptz updated_at
     }
@@ -721,6 +724,7 @@ erDiagram
         date issue_date
         date due_date
         varchar notes
+        varchar currency "kept from issue"
         timestamptz created_at
         timestamptz updated_at
     }

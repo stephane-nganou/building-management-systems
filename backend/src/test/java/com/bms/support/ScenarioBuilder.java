@@ -20,9 +20,14 @@ public class ScenarioBuilder {
     }
 
     public String createBuilding(RequestPostProcessor user, String name) throws Exception {
+        return createBuilding(user, name, "EUR");
+    }
+
+    public String createBuilding(RequestPostProcessor user, String name, String currency) throws Exception {
         String body = """
-                {"name":"%s","street":"Hauptstrasse 1","city":"Berlin","postalCode":"10115","country":"DE"}
-                """.formatted(name);
+                {"name":"%s","street":"Hauptstrasse 1","city":"Berlin","postalCode":"10115","country":"DE",
+                 "currency":"%s"}
+                """.formatted(name, currency);
         return idOf(post("/api/buildings"), user, body);
     }
 
