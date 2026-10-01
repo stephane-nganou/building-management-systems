@@ -50,12 +50,24 @@ public class AssistantService {
         AppUser owner = currentUser.require();
         accessControl.requireWritable(owner);
         return users.findByEmailIgnoreCase(request.email())
-                .map(assistant -> assign(owner, assistant, request.permissions(), null))
+                .map(existing -> assign(owner, existingAssistant(existing), request.permissions(), null))
                 .orElseGet(() -> {
                     AccountService.NewAccount created = accounts.createAssistant(
-                            request.email(), request.firstName(), request.lastName());
+                            request.email(), request.firstName(), request.lastName(), owner.getId());
                     return assign(owner, created.user(), request.permissions(), created.password());
                 });
+    }
+
+    /**
+     * An existing account may be granted only if it is itself an assistant. An
+     * owner or administrator must never be managed as one: linking them and then
+     * resetting their password would be an account takeover.
+     */
+    private AppUser existingAssistant(AppUser account) {
+        if (!account.isAssistant()) {
+            throw new ValidationException("error.assistant.notAssistant");
+        }
+        return account;
     }
 
     @Transactional
@@ -65,11 +77,20 @@ public class AssistantService {
         return AssistantResponse.from(assignment);
     }
 
-    /** Hands the owner a new password to pass on when their assistant lost theirs. */
+    /**
+     * Hands the owner a new password to pass on when their assistant lost theirs.
+     *
+     * <p>Only for an assistant this owner created. Resetting the password of an
+     * account someone else manages would hand its holder's access to this owner.
+     */
     @Transactional
     public AssistantResponse resetPassword(UUID assignmentId) {
         AssistantAssignment assignment = require(assignmentId);
-        return AssistantResponse.from(assignment, accounts.resetPassword(assignment.getAssistant()));
+        AppUser assistant = assignment.getAssistant();
+        if (!assistant.isAssistant() || !assignment.getOwner().getId().equals(assistant.getCreatedByOwnerId())) {
+            throw new ValidationException("error.assistant.notManaged");
+        }
+        return AssistantResponse.from(assignment, accounts.resetPassword(assistant));
     }
 
     @Transactional

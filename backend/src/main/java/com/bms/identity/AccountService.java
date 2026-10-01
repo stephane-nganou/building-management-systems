@@ -4,6 +4,7 @@ import java.util.UUID;
 
 import com.bms.common.exception.ValidationException;
 import com.bms.subscription.SubscriptionService;
+import com.bms.user.AccountRole;
 import com.bms.user.AppUser;
 import com.bms.user.AppUserRepository;
 import org.springframework.stereotype.Service;
@@ -33,14 +34,14 @@ public class AccountService {
     /** Registers someone who manages their own buildings, on a trial. They chose their password. */
     @Transactional
     public AppUser createOwner(String email, String firstName, String lastName, String password) {
-        return owner(create(email, firstName, lastName, password, OWNER_ROLE, false));
+        return owner(create(email, firstName, lastName, password, AccountRole.OWNER, false));
     }
 
     /** An administrator signs an owner up, with a password to hand over like an assistant's. */
     @Transactional
     public NewAccount createOwnerWithGeneratedPassword(String email, String firstName, String lastName) {
         String password = GeneratedPassword.next();
-        return new NewAccount(owner(create(email, firstName, lastName, password, OWNER_ROLE, true)), password);
+        return new NewAccount(owner(create(email, firstName, lastName, password, AccountRole.OWNER, true)), password);
     }
 
     /** Keycloak first, so a refusal there leaves our record as it was. */
@@ -64,9 +65,11 @@ public class AccountService {
      * {@code POST /api/auth/password} discharges it.
      */
     @Transactional
-    public NewAccount createAssistant(String email, String firstName, String lastName) {
+    public NewAccount createAssistant(String email, String firstName, String lastName, UUID createdByOwnerId) {
         String password = GeneratedPassword.next();
-        return new NewAccount(create(email, firstName, lastName, password, ASSISTANT_ROLE, true), password);
+        AppUser assistant = create(email, firstName, lastName, password, AccountRole.ASSISTANT, true);
+        assistant.createdBy(createdByOwnerId);
+        return new NewAccount(assistant, password);
     }
 
     /** Issues a fresh password for an existing account, to be replaced in turn. */
@@ -94,12 +97,13 @@ public class AccountService {
     }
 
     private AppUser create(String email, String firstName, String lastName, String password,
-                           String realmRole, boolean mustChangePassword) {
+                           AccountRole role, boolean mustChangePassword) {
         users.findByEmailIgnoreCase(email).ifPresent(existing -> {
             throw new ValidationException("error.account.exists", email);
         });
+        String realmRole = role == AccountRole.ASSISTANT ? ASSISTANT_ROLE : OWNER_ROLE;
         String keycloakId = keycloak.createUser(email, firstName, lastName, password, realmRole);
-        return users.save(new AppUser(keycloakId, email, firstName, lastName, mustChangePassword));
+        return users.save(new AppUser(keycloakId, email, firstName, lastName, role, mustChangePassword));
     }
 
     private AppUser owner(AppUser user) {

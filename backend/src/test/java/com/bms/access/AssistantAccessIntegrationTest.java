@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
+import static com.bms.support.Jwts.asAdmin;
 import static com.bms.support.Jwts.asAssistant;
 import static com.bms.support.Jwts.asUser;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -177,6 +178,55 @@ class AssistantAccessIntegrationTest extends AbstractIntegrationTest {
                                 {"email":"owner-a@example.com","firstName":"Olivia","lastName":"Owner",
                                  "permissions":["BUILDING_READ"]}
                                 """))
+                .andExpect(status().isUnprocessableEntity());
+    }
+
+    /** An owner is not an assistant, so linking one and resetting it cannot take it over. */
+    @Test
+    void ownerCannotAddAnotherOwnerAsAssistant() throws Exception {
+        mockMvc.perform(get("/api/me").with(OWNER)).andExpect(status().isOk());
+        mockMvc.perform(get("/api/me").with(asUser("owner-b", "owner-b@example.com")))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/assistants").with(OWNER)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"owner-b@example.com","firstName":"Bob","lastName":"Owner",
+                                 "permissions":["BUILDING_READ"]}
+                                """))
+                .andExpect(status().isUnprocessableEntity());
+    }
+
+    /** The administrator is not an assistant either. */
+    @Test
+    void ownerCannotAddTheAdministratorAsAssistant() throws Exception {
+        mockMvc.perform(get("/api/me").with(OWNER)).andExpect(status().isOk());
+        mockMvc.perform(get("/api/me").with(asAdmin("admin-a", "admin-a@example.com")))
+                .andExpect(status().isOk());
+
+        mockMvc.perform(post("/api/assistants").with(OWNER)
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"admin-a@example.com","firstName":"Ada","lastName":"Admin",
+                                 "permissions":["BUILDING_READ"]}
+                                """))
+                .andExpect(status().isUnprocessableEntity());
+    }
+
+    /**
+     * An assistant who signed in on their own, rather than being created by this
+     * owner, keeps their own password; the owner cannot reset it.
+     */
+    @Test
+    void ownerCannotResetThePasswordOfAnAssistantTheyDidNotCreate() throws Exception {
+        assistantSignsInOnce();
+        grant("\"BUILDING_READ\"");
+        String assistants = mockMvc.perform(get("/api/assistants").with(OWNER))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString();
+        String assignmentId = JsonPath.read(assistants, "$[0].id");
+
+        mockMvc.perform(post("/api/assistants/" + assignmentId + "/password").with(OWNER))
                 .andExpect(status().isUnprocessableEntity());
     }
 }
