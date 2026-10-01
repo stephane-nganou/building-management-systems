@@ -85,7 +85,7 @@ class AdminAccountIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void anAdministratorSignsAnOwnerUpWithAPasswordToHandOver() throws Exception {
-        given(keycloak.createUser(eq("new@example.com"), eq("Nina"), eq("Neu"), anyString(), eq("owner")))
+        given(keycloak.createUser(eq("new@example.com"), eq("Nina"), eq("Neu"), anyString(), eq("owner"), eq(true)))
                 .willReturn("kc-nina");
 
         mockMvc.perform(post("/api/admin/accounts").with(ADMIN).contentType(MediaType.APPLICATION_JSON)

@@ -39,6 +39,11 @@ public class ApiExceptionHandler {
         return problem(HttpStatus.UNPROCESSABLE_ENTITY, exception);
     }
 
+    @ExceptionHandler(TooManyRequestsException.class)
+    ProblemDetail handleTooManyRequests(TooManyRequestsException exception) {
+        return problem(HttpStatus.TOO_MANY_REQUESTS, exception);
+    }
+
     /**
      * A misconfigured or unreachable Keycloak is our problem, not the caller's,
      * so the reason is logged here and only a neutral message is sent back. That

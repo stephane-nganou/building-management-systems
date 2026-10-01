@@ -4,6 +4,7 @@ import { FormsModule } from '@angular/forms';
 import { AuthApi } from '../core/api';
 import { AuthService } from '../core/auth';
 import { TranslationService } from '../core/i18n';
+import { acceptablePassword } from '../core/password-rule';
 import { Gate } from '../shared/gate';
 import { TranslatePipe } from '../shared/translate.pipe';
 
@@ -96,7 +97,7 @@ export class RegisterPage {
       this.firstName.trim() !== '' &&
       this.lastName.trim() !== '' &&
       this.email.trim() !== '' &&
-      this.password.length >= 8
+      acceptablePassword(this.password, this.email)
     );
   }
 

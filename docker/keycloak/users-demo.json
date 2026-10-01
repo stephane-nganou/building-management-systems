@@ -10,7 +10,7 @@
       "credentials": [
         {
           "type": "password",
-          "value": "owner",
+          "value": "owner-demo-pass",
           "temporary": false
         }
       ],
@@ -28,7 +28,7 @@
       "credentials": [
         {
           "type": "password",
-          "value": "assistant",
+          "value": "assistant-demo-pass",
           "temporary": false
         }
       ],
@@ -46,7 +46,7 @@
       "credentials": [
         {
           "type": "password",
-          "value": "admin",
+          "value": "admin-demo-pass",
           "temporary": false
         }
       ],

@@ -20,7 +20,12 @@ import org.testcontainers.postgresql.PostgreSQLContainer;
  * classes, so a container torn down after the first class would leave later
  * classes pointing at a dead database. Ryuk removes it when the JVM exits.
  */
-@SpringBootTest
+/**
+ * Every request here comes from the same address, so the registration limit is
+ * lifted for the suites at large; {@code RegistrationRateLimitIntegrationTest}
+ * runs with a tight one of its own.
+ */
+@SpringBootTest(properties = "bms.registration.max-per-hour=1000")
 @AutoConfigureMockMvc
 public abstract class AbstractIntegrationTest {
 

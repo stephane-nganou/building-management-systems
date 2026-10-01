@@ -346,13 +346,13 @@ export const fr: Messages = {
 
   'register.readyTitle': 'Votre compte est prêt',
   'register.readyBody':
-    'Connectez-vous avec {email} et commencez par ajouter votre premier immeuble.',
+    'Connectez-vous avec {email}. La première fois, nous vous envoyons un lien pour confirmer l’adresse ; commencez ensuite par ajouter votre premier immeuble.',
   'register.signIn': 'Se connecter',
   'register.title': 'Créer votre compte',
   'register.subtitle':
     "Pour les propriétaires qui gèrent leurs propres immeubles. Les assistants ne s'inscrivent pas ici : leur propriétaire crée leur compte.",
   'register.password': 'Mot de passe',
-  'register.passwordHint': 'Au moins 8 caractères.',
+  'register.passwordHint': 'De 12 à 128 caractères, et pas votre adresse e-mail.',
   'register.submit': 'Créer le compte',
   'register.submitting': 'Création',
   'register.haveAccount': "J'ai déjà un compte",
@@ -363,7 +363,7 @@ export const fr: Messages = {
     'Votre compte a été créé avec un mot de passe choisi par quelqu’un d’autre. Remplacez-le par un mot de passe que vous seul connaissez.',
   'password.new': 'Nouveau mot de passe',
   'password.confirm': 'Répétez-le',
-  'password.hint': 'Au moins 8 caractères.',
+  'password.hint': 'De 12 à 128 caractères, et pas votre adresse e-mail.',
   'password.submit': 'Enregistrer le mot de passe',
   'password.saving': 'Enregistrement',
   'password.failed': "Ce mot de passe n'a pas pu être enregistré.",

@@ -102,7 +102,11 @@ public class AccountService {
             throw new ValidationException("error.account.exists", email);
         });
         String realmRole = role == AccountRole.ASSISTANT ? ASSISTANT_ROLE : OWNER_ROLE;
-        String keycloakId = keycloak.createUser(email, firstName, lastName, password, realmRole);
+        // A password handed over means someone who knows the holder set the
+        // account up and typed the address. One chosen by its holder came through
+        // public registration, and Keycloak asks them to confirm the address.
+        boolean emailVerified = mustChangePassword;
+        String keycloakId = keycloak.createUser(email, firstName, lastName, password, realmRole, emailVerified);
         return users.save(new AppUser(keycloakId, email, firstName, lastName, role, mustChangePassword));
     }
 

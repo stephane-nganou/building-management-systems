@@ -12,5 +12,5 @@ import jakarta.validation.constraints.Size;
  * cookie no script can read, or an access token of their own.
  */
 public record PasswordChangeRequest(
-        @NotBlank @Size(min = 8, message = "must be at least 8 characters") String newPassword) {
+        @NotBlank @Size(min = 12, max = 128, message = "must be 12 to 128 characters") String newPassword) {
 }

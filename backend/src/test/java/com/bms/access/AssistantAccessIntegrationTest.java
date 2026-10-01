@@ -144,7 +144,7 @@ class AssistantAccessIntegrationTest extends AbstractIntegrationTest {
     @Test
     void addingAnUnknownEmailCreatesTheAccountAndReturnsItsPasswordOnce() throws Exception {
         given(keycloak.createUser(eq("new-assistant@example.com"), eq("Nora"), eq("New"),
-                anyString(), eq("assistant"))).willReturn("kc-new-assistant");
+                anyString(), eq("assistant"), eq(true))).willReturn("kc-new-assistant");
         mockMvc.perform(get("/api/me").with(OWNER)).andExpect(status().isOk());
 
         String created = mockMvc.perform(post("/api/assistants").with(OWNER)
@@ -193,7 +193,7 @@ class AssistantAccessIntegrationTest extends AbstractIntegrationTest {
     @Test
     void deletingTheCreatorKeepsTheAssistantWithoutACreator() throws Exception {
         given(keycloak.createUser(eq("kept@example.com"), eq("Kim"), eq("Kept"),
-                anyString(), eq("assistant"))).willReturn("kc-kept");
+                anyString(), eq("assistant"), eq(true))).willReturn("kc-kept");
         mockMvc.perform(get("/api/me").with(OWNER)).andExpect(status().isOk());
         mockMvc.perform(post("/api/assistants").with(OWNER)
                         .contentType(MediaType.APPLICATION_JSON)

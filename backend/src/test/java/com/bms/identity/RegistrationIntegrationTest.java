@@ -12,6 +12,7 @@ import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -29,7 +30,7 @@ class RegistrationIntegrationTest extends AbstractIntegrationTest {
     @Test
     void anyoneCanSignUpAsAnOwnerWithoutAToken() throws Exception {
         given(keycloak.createUser(eq("nina@example.com"), eq("Nina"), eq("Neu"),
-                eq("a-good-secret"), eq("owner"))).willReturn("kc-nina");
+                eq("a-good-secret"), eq("owner"), eq(false))).willReturn("kc-nina");
 
         mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content(SIGN_UP))
                 .andExpect(status().isCreated())
@@ -39,12 +40,12 @@ class RegistrationIntegrationTest extends AbstractIntegrationTest {
         // The local record exists straight away, so an owner can be given work
         // before they have signed in for the first time.
         assertThat(users.findByEmailIgnoreCase("nina@example.com")).isPresent();
-        verify(keycloak).createUser(anyString(), anyString(), anyString(), anyString(), eq("owner"));
+        verify(keycloak).createUser(anyString(), anyString(), anyString(), anyString(), eq("owner"), eq(false));
     }
 
     @Test
     void signingUpTwiceWithTheSameEmailIsRejected() throws Exception {
-        given(keycloak.createUser(anyString(), anyString(), anyString(), anyString(), eq("owner")))
+        given(keycloak.createUser(anyString(), anyString(), anyString(), anyString(), eq("owner"), eq(false)))
                 .willReturn("kc-nina");
         mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content(SIGN_UP))
                 .andExpect(status().isCreated());
@@ -64,13 +65,51 @@ class RegistrationIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.fieldErrors.password").exists());
     }
 
+    /** The realm asks for twelve characters; eleven are refused here, before Keycloak. */
+    @Test
+    void elevenCharactersAreOneTooFew() throws Exception {
+        mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"nina@example.com","firstName":"Nina","lastName":"Neu","password":"elevenchars"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.password").exists());
+        verifyNoInteractions(keycloak);
+    }
+
+    /** The email is the username too, and the realm refuses a password equal to either. */
+    @Test
+    void thePasswordCannotBeTheEmail() throws Exception {
+        mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"nina@example.com","firstName":"Nina","lastName":"Neu",
+                                 "password":"Nina@Example.com"}
+                                """))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.passwordNotTheEmail").exists());
+        verifyNoInteractions(keycloak);
+    }
+
+    /** Refused here, rather than by the database after Keycloak had made the account. */
+    @Test
+    void anOverlongNameIsRejectedBeforeKeycloakIsCalled() throws Exception {
+        String name = "N".repeat(256);
+        mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"email":"nina@example.com","firstName":"%s","lastName":"Neu","password":"a-good-secret"}
+                                """.formatted(name)))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.fieldErrors.firstName").exists());
+        verifyNoInteractions(keycloak);
+    }
+
     /**
      * A Keycloak that will not talk to us is a server side fault. Reporting it
      * as a 401 made a configuration problem look like an authentication one.
      */
     @Test
     void aKeycloakFailureIsReportedAsABadGatewayRatherThanUnauthorized() throws Exception {
-        given(keycloak.createUser(anyString(), anyString(), anyString(), anyString(), eq("owner")))
+        given(keycloak.createUser(anyString(), anyString(), anyString(), anyString(), eq("owner"), eq(false)))
                 .willThrow(new IdentityProviderException("the bms-backend client is missing"));
 
         mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content(SIGN_UP))

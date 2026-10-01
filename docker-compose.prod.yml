@@ -7,6 +7,17 @@
 
 name: hausbuch
 
+# Keycloak sends every email (confirming a new owner's address, resetting a
+# password), and both it and the realm sync need the same settings.
+x-smtp: &smtp
+  BMS_SMTP_HOST: ${BMS_SMTP_HOST:?set BMS_SMTP_HOST in .env.production}
+  BMS_SMTP_PORT: ${BMS_SMTP_PORT:-587}
+  BMS_SMTP_FROM: ${BMS_SMTP_FROM:?set BMS_SMTP_FROM in .env.production}
+  BMS_SMTP_AUTH: "true"
+  BMS_SMTP_USER: ${BMS_SMTP_USER:?set BMS_SMTP_USER in .env.production}
+  BMS_SMTP_PASSWORD: ${BMS_SMTP_PASSWORD:?set BMS_SMTP_PASSWORD in .env.production}
+  BMS_SMTP_STARTTLS: "true"
+
 x-logging: &logging
   driver: json-file
   options:
@@ -58,6 +69,7 @@ services:
     logging: *logging
     command: ["start", "--import-realm"]
     environment:
+      <<: *smtp
       KC_BOOTSTRAP_ADMIN_USERNAME: ${KEYCLOAK_ADMIN:?set KEYCLOAK_ADMIN in .env.production}
       KC_BOOTSTRAP_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:?set KEYCLOAK_ADMIN_PASSWORD in .env.production}
       KC_DB: postgres
@@ -100,6 +112,7 @@ services:
     logging: *logging
     command: ["node", "/app/scripts/sync-realm.mjs"]
     environment:
+      <<: *smtp
       KEYCLOAK_URL: http://keycloak:8080/auth
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD}
