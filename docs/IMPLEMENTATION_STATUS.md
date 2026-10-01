@@ -1,7 +1,7 @@
 # Implementation status
 
-Last updated: 2026-10-01, after BM-21 (hardening registration and the realm).
-The security review behind BM-19 to BM-21 is in
+Last updated: 2026-10-01, after BM-22 (an invoice's status only moves forward).
+The security review behind BM-19 to BM-22 is in
 [ADVERSARY_REVIEW/README.md](ADVERSARY_REVIEW/README.md).
 The go live plan and the gaps it found are in [GO-LIVE-PART-1.md](GO-LIVE-PART-1.md).
 
@@ -137,6 +137,14 @@ the end to end suite passes against it.
   down.
 
 ## Deliberate decisions
+
+- **An invoice's status only moves forward (BM-22).** A draft may be sent or
+  cancelled, a sent invoice paid or cancelled, a paid one cancelled (for a
+  refund), and a cancelled one nothing. A sent invoice used to be able to go
+  back to draft, and a draft is the one state that can be deleted, so an issued
+  invoice could vanish without a trace. Draft straight to paid is refused too:
+  an invoice is issued before it is paid. The table is `InvoiceStatus.canBecome`,
+  and the interface already only offered the forward moves.
 
 - **A new owner proves their address, and registration is rate limited (BM-21).**
   - *Realm:* brute force protection (ten failures lock an account, longer each

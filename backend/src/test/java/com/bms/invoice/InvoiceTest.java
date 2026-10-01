@@ -2,6 +2,7 @@ package com.bms.invoice;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
+import java.util.Set;
 
 import com.bms.common.CurrencyCode;
 import com.bms.common.exception.ValidationException;
@@ -82,9 +83,33 @@ class InvoiceTest {
         assertThat(invoice.getStatus()).isEqualTo(InvoiceStatus.PAID);
     }
 
+    /** Every pair of statuses: only the forward moves are allowed. */
+    @Test
+    void anInvoiceOnlyEverMovesForward() {
+        Set<String> allowed = Set.of(
+                "DRAFT>SENT", "DRAFT>CANCELLED", "SENT>PAID", "SENT>CANCELLED", "PAID>CANCELLED");
+        for (InvoiceStatus from : InvoiceStatus.values()) {
+            for (InvoiceStatus to : InvoiceStatus.values()) {
+                assertThat(from.canBecome(to)).as(from + " to " + to).isEqualTo(allowed.contains(from + ">" + to));
+            }
+        }
+    }
+
+    /** A sent invoice is in the books; back to draft, it could be deleted. */
+    @Test
+    void aSentInvoiceNeverBecomesADraftAgain() {
+        Invoice invoice = newInvoice();
+        invoice.transitionTo(InvoiceStatus.SENT);
+
+        assertThatThrownBy(() -> invoice.transitionTo(InvoiceStatus.DRAFT))
+                .isInstanceOf(ValidationException.class);
+        assertThat(invoice.getStatus()).isEqualTo(InvoiceStatus.SENT);
+    }
+
     @Test
     void paidInvoiceCanOnlyBeCancelled() {
         Invoice invoice = newInvoice();
+        invoice.transitionTo(InvoiceStatus.SENT);
         invoice.transitionTo(InvoiceStatus.PAID);
 
         assertThatThrownBy(() -> invoice.transitionTo(InvoiceStatus.SENT))
