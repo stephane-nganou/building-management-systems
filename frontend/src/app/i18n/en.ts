@@ -425,8 +425,8 @@ export const en = {
     'Your records stay yours and you can still read them. To keep adding and changing things, contact us to subscribe.',
   'home.faq.q4': 'Who can see my data?',
   'home.faq.a4': 'Only you, and the assistants you invite, limited to what you allow them.',
-  'home.faq.q5': 'Is it available in French?',
-  'home.faq.a5': 'Yes. Hausbuch works in English and French, and you can switch at any time.',
+  'home.faq.q5': 'Which languages does Hausbuch speak?',
+  'home.faq.a5': 'English, French and German, and you can switch at any time.',
   'home.contact.title': 'Get in touch',
   'home.contact.lead':
     'A question about Hausbuch, or about a subscription after your free month? We are happy to help.',

@@ -50,13 +50,23 @@ class LanguageIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.detail").value("L’immeuble " + missing + " est introuvable"));
     }
 
+    @Test
+    void anErrorIsWordedInGermanWhenTheCallerAsksForIt() throws Exception {
+        UUID missing = UUID.randomUUID();
+
+        mockMvc.perform(get("/api/buildings/" + missing).with(OWNER)
+                        .header(HttpHeaders.ACCEPT_LANGUAGE, "de-DE"))
+                .andExpect(status().isNotFound())
+                .andExpect(jsonPath("$.detail").value("Das Gebäude " + missing + " wurde nicht gefunden"));
+    }
+
     /** A language we do not speak falls back to English rather than to a half translated page. */
     @Test
     void anUnsupportedLanguageFallsBackToEnglish() throws Exception {
         UUID missing = UUID.randomUUID();
 
         mockMvc.perform(get("/api/buildings/" + missing).with(OWNER)
-                        .header(HttpHeaders.ACCEPT_LANGUAGE, "de-DE"))
+                        .header(HttpHeaders.ACCEPT_LANGUAGE, "es-ES"))
                 .andExpect(status().isNotFound())
                 .andExpect(jsonPath("$.detail").value("Building " + missing + " was not found"));
     }
@@ -74,8 +84,49 @@ class LanguageIntegrationTest extends AbstractIntegrationTest {
 
         mockMvc.perform(post("/api/invoices").with(OWNER).header(HttpHeaders.ACCEPT_LANGUAGE, "fr")
                         .contentType(MediaType.APPLICATION_JSON).content(body))
-                .andExpect(status().isUnprocessableEntity())
+                .andExpect(status().isUnprocessableContent())
                 .andExpect(jsonPath("$.detail").value("Une facture Eau froide demande au moins une ligne"));
+
+        mockMvc.perform(post("/api/invoices").with(OWNER).header(HttpHeaders.ACCEPT_LANGUAGE, "de")
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.detail").value("Eine Rechnung über Kaltwasser braucht mindestens eine Position"));
+    }
+
+    /**
+     * German writes its dates with dots, English and French with slashes. The
+     * umlauts have to read back out of the PDF as the letters they are.
+     */
+    @Test
+    void anInvoiceCreatedInGermanReadsInGermanWithGermanDates() throws Exception {
+        String building = scenario.createBuilding(OWNER, "Lindenweg 3");
+        String apartment = scenario.createApartment(OWNER, building, "3C", "900.00");
+        String tenant = scenario.createTenant(OWNER, apartment, "Schulz");
+
+        String body = """
+                {"tenantId":"%s","type":"RENT","periodStart":"2026-03-01","periodEnd":"2026-03-31",
+                 "issueDate":"2026-03-01","dueDate":"2026-03-15"}
+                """.formatted(tenant);
+        String created = mockMvc.perform(post("/api/invoices").with(OWNER)
+                        .header(HttpHeaders.ACCEPT_LANGUAGE, "de")
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.lines[0].description").value("Miete 3C"))
+                .andExpect(jsonPath("$.lines[0].unit").value("Monat"))
+                .andExpect(jsonPath("$.lines[1].description").value("Nebenkostenvorauszahlung"))
+                .andReturn().getResponse().getContentAsString();
+
+        String invoiceId = com.jayway.jsonpath.JsonPath.read(created, "$.id");
+
+        assertThat(pdfText(invoiceId, "de"))
+                .contains("Mietrechnung", "Rechnung an", "Abrechnungszeitraum", "Zu zahlender Betrag")
+                .contains("Fällig am", "Bitte überweisen Sie den Gesamtbetrag bis zum 15.03.2026")
+                .contains("Miete 3C", "Nebenkostenvorauszahlung")
+                .doesNotContain("15/03/2026", "Total due");
+
+        assertThat(pdfText(invoiceId, "en"))
+                .contains("15/03/2026")
+                .doesNotContain("15.03.2026");
     }
 
     /**

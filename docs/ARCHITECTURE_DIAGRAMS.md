@@ -1246,8 +1246,8 @@ flowchart TB
     subgraph choose["Choosing"]
         stored{"localStorage<br/>bms.language?"}
         stored -->|set| use["TranslationService.language signal"]
-        stored -->|unset| navlang{"navigator.language<br/>starts with fr?"}
-        navlang -->|yes| fr["fr"] --> use
+        stored -->|unset or unknown| navlang{"navigator.language<br/>starts with fr or de?"}
+        navlang -->|yes| frde["fr or de"] --> use
         navlang -->|no| en["en"] --> use
     end
 
@@ -1256,21 +1256,26 @@ flowchart TB
     use --> hdr["acceptLanguageInterceptor<br/>Accept-Language on every request"]
     use --> uilocales["keycloak.login({ locale })<br/>ui_locales on the sign in page"]
 
-    hdr --> resolver["AcceptHeaderLocaleResolver<br/>supported: en, fr; default en"]
-    resolver --> msgs["Messages.get(code, args)<br/>messages.properties / messages_fr.properties"]
+    hdr --> resolver["AcceptHeaderLocaleResolver<br/>supported: en, fr, de; default en"]
+    resolver --> msgs["Messages.get(code, args)<br/>messages.properties / _fr / _de"]
     msgs --> errs["API error messages"]
     msgs --> lines["Generated invoice lines,<br/>stored once at creation"]
     resolver --> pdfwords["Invoice PDF template wording"]
-    uilocales --> theme["Keycloak bms theme,<br/>both languages"]
+    uilocales --> theme["Keycloak bms theme,<br/>every language"]
 ```
 
-The resolver's list of supported locales is closed on purpose, so a header
-asking for something else falls back to English rather than to whatever locale
-the container happens to run under.
+The resolver's list of supported locales, `LocaleConfig.SUPPORTED`, is closed on
+purpose, so a header asking for something else falls back to English rather
+than to whatever locale the container happens to run under. The same list
+decides which `ui_locales` reach the sign in page, and
+`spring.messages.fallback-to-system-locale` is off so that English, which has no
+`messages_en` of its own, never resolves to the server's language.
 
 The English dictionary is the source of truth for the keys: `MessageKey` is
-derived from it and French is typed as `Record<MessageKey, string>`, so a key
-missing from French fails the build rather than leaving a blank on screen.
+derived from it and French and German are typed as `Record<MessageKey, string>`,
+so a key missing from either fails the build rather than leaving a blank on
+screen. On the backend, `MessageBundleParityTest` holds every
+`messages_xx.properties` to the English keys.
 
 ## 18. How a failure becomes a status code
 

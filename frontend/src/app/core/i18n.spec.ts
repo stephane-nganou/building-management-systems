@@ -4,7 +4,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { TranslationService, acceptLanguageInterceptor } from './i18n';
 import { NAV_ENTRIES } from './navigation';
-import { en } from '../i18n/en';
+import { de } from '../i18n/de';
+import { MessageKey, Messages, en } from '../i18n/en';
 import { fr } from '../i18n/fr';
 
 function serviceWith(browserLanguage: string): TranslationService {
@@ -23,9 +24,21 @@ describe('TranslationService', () => {
     expect(serviceWith('fr-FR').language()).toBe('fr');
   });
 
+  it('starts in German for a German browser, Austrian and Swiss included', () => {
+    expect(serviceWith('de-DE').language()).toBe('de');
+    expect(serviceWith('de-AT').language()).toBe('de');
+    expect(serviceWith('de-CH').language()).toBe('de');
+  });
+
   it('starts in English for anything else', () => {
-    expect(serviceWith('de-DE').language()).toBe('en');
+    expect(serviceWith('es-ES').language()).toBe('en');
     expect(serviceWith('en-US').language()).toBe('en');
+  });
+
+  it('ignores a stored choice it does not know', () => {
+    localStorage.setItem('bms.language', 'xx');
+
+    expect(serviceWith('de-DE').language()).toBe('de');
   });
 
   it('remembers a choice across sessions, ahead of the browser', () => {
@@ -46,6 +59,9 @@ describe('TranslationService', () => {
 
     i18n.use('fr');
     expect(i18n.translate('buildings.title')).toBe('Immeubles');
+
+    i18n.use('de');
+    expect(i18n.translate('buildings.title')).toBe('Gebäude');
   });
 
   it('asks Intl for the locale that matches the language', () => {
@@ -54,18 +70,41 @@ describe('TranslationService', () => {
 
     i18n.use('fr');
     expect(i18n.locale()).toBe('fr-FR');
+
+    i18n.use('de');
+    expect(i18n.locale()).toBe('de-DE');
   });
 });
 
-describe('the dictionaries', () => {
-  it('translate every key, bar the words that are the same in both languages', () => {
-    // TypeScript already refuses a French dictionary with a key missing. What it
-    // cannot see is a key left holding the English text, which this catches.
-    const identical = Object.keys(en).filter(
-      (key) => fr[key as keyof typeof fr] === en[key as keyof typeof en],
-    );
+/** The keys whose text in a dictionary is the same as the English one. */
+function sameAsEnglish(dictionary: Messages): Set<string> {
+  return new Set(Object.keys(en).filter((key) => dictionary[key as MessageKey] === en[key as MessageKey]));
+}
 
-    expect(new Set(identical)).toEqual(
+/** The {placeholders} a text expects, which a translation has to keep. */
+function placeholders(text: string): string[] {
+  return [...text.matchAll(/\{(\w+)\}/g)].map((match) => match[1]).sort();
+}
+
+describe('the dictionaries', () => {
+  // TypeScript already refuses a dictionary with a key missing. What it cannot
+  // see is a key left holding the English text, which these catch.
+  it('translate every key into German, bar the words that are the same', () => {
+    expect(sameAsEnglish(de)).toEqual(
+      new Set(['app.role.admin', 'common.name', 'common.status']),
+    );
+  });
+
+  it('keep every placeholder in every language', () => {
+    for (const dictionary of [fr, de]) {
+      for (const key of Object.keys(en) as MessageKey[]) {
+        expect(placeholders(dictionary[key]), key).toEqual(placeholders(en[key]));
+      }
+    }
+  });
+
+  it('translate every key into French, bar the words that are the same', () => {
+    expect(sameAsEnglish(fr)).toEqual(
       new Set([
         'nav.assistants',
         'common.total',
@@ -95,13 +134,18 @@ describe('acceptLanguageInterceptor', () => {
 
   it('tells the backend which language to answer in', () => {
     const i18n = serviceWith('en-GB');
-    i18n.use('fr');
     const next = vi.fn((request: HttpRequest<unknown>) => request);
 
-    TestBed.runInInjectionContext(() =>
-      acceptLanguageInterceptor(new HttpRequest('GET', '/api/buildings'), next as never),
-    );
+    for (const language of ['fr', 'de'] as const) {
+      i18n.use(language);
+      TestBed.runInInjectionContext(() =>
+        acceptLanguageInterceptor(new HttpRequest('GET', '/api/buildings'), next as never),
+      );
+    }
 
-    expect(next.mock.calls[0][0].headers.get('Accept-Language')).toBe('fr');
+    expect(next.mock.calls.map(([request]) => request.headers.get('Accept-Language'))).toEqual([
+      'fr',
+      'de',
+    ]);
   });
 });

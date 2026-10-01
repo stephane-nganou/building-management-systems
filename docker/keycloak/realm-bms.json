@@ -6,7 +6,8 @@
   "internationalizationEnabled": true,
   "supportedLocales": [
     "en",
-    "fr"
+    "fr",
+    "de"
   ],
   "defaultLocale": "en",
   "registrationAllowed": false,

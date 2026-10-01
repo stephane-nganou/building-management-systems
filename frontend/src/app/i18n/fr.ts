@@ -441,9 +441,8 @@ export const fr: Messages = {
   'home.faq.q4': 'Qui peut voir mes données ?',
   'home.faq.a4':
     'Vous seul, et les assistants que vous invitez, dans la limite de ce que vous leur permettez.',
-  'home.faq.q5': 'Est-ce disponible en anglais ?',
-  'home.faq.a5':
-    'Oui. Hausbuch fonctionne en français et en anglais, et vous pouvez changer à tout moment.',
+  'home.faq.q5': 'Quelles langues Hausbuch parle-t-il ?',
+  'home.faq.a5': 'Français, anglais et allemand, et vous pouvez changer à tout moment.',
   'home.contact.title': 'Nous écrire',
   'home.contact.lead':
     'Une question sur Hausbuch, ou sur un abonnement après votre mois gratuit ? Nous sommes là pour vous aider.',

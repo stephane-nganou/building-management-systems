@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { LANGUAGES, TranslationService } from '../core/i18n';
 import { TranslatePipe } from './translate.pipe';
 
-/** Two buttons, EN and FR. Shown in the sidebar, and on the pages that have none. */
+/** One button per language: EN, FR and DE. Shown in the sidebar, and on the pages that have none. */
 @Component({
   selector: 'bms-language-switcher',
   imports: [TranslatePipe],

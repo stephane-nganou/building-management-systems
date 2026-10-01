@@ -24,11 +24,23 @@ const FRENCH = [
   'Assistants',
 ];
 
-/** The EN and FR buttons in the sidebar. */
+const GERMAN = [
+  'Übersicht',
+  'Gebäude',
+  'Wohnungen',
+  'Mieter',
+  'Ausgaben',
+  'Rechnungen',
+  'Gewinn und Verlust',
+  'Assistenz',
+];
+
+/** The EN, FR and DE buttons in the sidebar. */
 function switcher(page: Page) {
   return {
     en: page.getByRole('button', { name: 'EN', exact: true }),
     fr: page.getByRole('button', { name: 'FR', exact: true }),
+    de: page.getByRole('button', { name: 'DE', exact: true }),
   };
 }
 
@@ -58,6 +70,53 @@ test.describe('language', () => {
 
     await switcher(page).en.click();
     await expectNavLabels(page, ENGLISH);
+  });
+
+  test('the whole app switches to German', async ({ page }) => {
+    await openSignIn(page);
+    await signIn(page, DEMO_OWNER.username, DEMO_OWNER.password);
+
+    await switcher(page).de.click();
+
+    await expectNavLabels(page, GERMAN);
+    await expect(page.locator('.spine-foot .role')).toHaveText(/eigentümer/i);
+    await expect(page.locator('html')).toHaveAttribute('lang', 'de');
+
+    // The overview has a "Gebäude" link of its own; this is the sidebar's.
+    await page.locator('aside.spine').getByRole('link', { name: 'Gebäude' }).click();
+    await expect(page.getByRole('button', { name: 'Gebäude anlegen' }).first()).toBeVisible();
+
+    await switcher(page).en.click();
+    await expectNavLabels(page, ENGLISH);
+  });
+
+  /** The sign in page is Keycloak's, so it takes realm, theme and backend together to speak German. */
+  test('a German visitor signs in on a German page', async ({ browser }) => {
+    const context = await browser.newContext({ locale: 'de-DE' });
+    const page = await context.newPage();
+
+    await page.goto('/');
+    await expect(page.getByRole('heading', { level: 1 })).toHaveText(
+      'Ihre Gebäude, Mieten und Belege in einem Buch',
+    );
+    await page.getByRole('button', { name: 'Anmelden', exact: true }).click();
+
+    await expect(page.getByRole('link', { name: 'Hier registrieren' })).toBeVisible();
+    await expect(page.locator('html')).toHaveAttribute('lang', 'de');
+
+    await context.close();
+  });
+
+  test('a German visitor lands on a German registration page', async ({ browser }) => {
+    const context = await browser.newContext({ locale: 'de-DE' });
+    const page = await context.newPage();
+
+    await page.goto('/register');
+
+    await expect(page.getByRole('heading', { name: 'Konto erstellen' })).toBeVisible();
+    await expect(page.getByLabel('Vorname')).toBeVisible();
+
+    await context.close();
   });
 
   test('a French visitor lands on a French registration page', async ({ browser }) => {

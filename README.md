@@ -2,7 +2,7 @@
 
 Manage apartment buildings: units, tenants, running costs, rent and cold water
 invoices as PDF, and a profit and loss statement for your tax declaration.
-Owners can delegate fine grained access to assistants. In English or French.
+Owners can delegate fine grained access to assistants. In English, French or German.
 
 ## Run it
 
@@ -49,8 +49,8 @@ or `admin` / `admin-demo-pass` for the administrator of the service (a user of
 the `bms` realm, not Keycloak's own console admin). These live in
 `docker/keycloak/users-demo.json` and exist for local development only.
 
-The app opens in French for a French browser and English for anything else;
-**EN / FR** in the sidebar changes it and the choice is remembered. The sign in
+The app opens in French or German for a browser set to either, and English for
+anything else; **EN / FR / DE** in the sidebar changes it and the choice is remembered. The sign in
 page, the API's error messages and invoice PDFs follow the same choice.
 
 Keycloak takes about a minute on first start while it imports the realm. The
@@ -86,7 +86,7 @@ of the first pilot users.
 | Identity | Keycloak 26.7.3, behind the backend: OAuth2 client for the browser, resource server for everyone else |
 | Invoice PDF | Thymeleaf template rendered by openhtmltopdf |
 | End to end tests | Playwright, driving the real stack |
-| Languages | English and French, switched at runtime without a reload |
+| Languages | English, French and German, switched at runtime without a reload |
 
 **Why Flyway over Liquibase:** migrations stay plain, versioned Postgres SQL that
 reads and reviews like the schema it produces. Liquibase's changelog abstraction

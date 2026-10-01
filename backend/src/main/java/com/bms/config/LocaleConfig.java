@@ -17,10 +17,13 @@ import org.springframework.web.servlet.i18n.AcceptHeaderLocaleResolver;
 @Configuration
 public class LocaleConfig {
 
+    /** The languages the application speaks, which the sign in page is offered in too. */
+    static final List<Locale> SUPPORTED = List.of(Locale.ENGLISH, Locale.FRENCH, Locale.GERMAN);
+
     @Bean
     LocaleResolver localeResolver() {
         AcceptHeaderLocaleResolver resolver = new AcceptHeaderLocaleResolver();
-        resolver.setSupportedLocales(List.of(Locale.ENGLISH, Locale.FRENCH));
+        resolver.setSupportedLocales(SUPPORTED);
         resolver.setDefaultLocale(Locale.ENGLISH);
         return resolver;
     }

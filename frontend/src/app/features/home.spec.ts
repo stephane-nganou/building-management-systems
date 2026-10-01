@@ -71,4 +71,11 @@ describe('HomePage', () => {
       'Vos immeubles, loyers et reçus dans un seul registre',
     );
   });
+
+  it('reads in German for a German visitor', () => {
+    localStorage.setItem('bms.language', 'de');
+    const page = render();
+
+    expect(page.querySelector('h1')!.textContent).toBe('Ihre Gebäude, Mieten und Belege in einem Buch');
+  });
 });

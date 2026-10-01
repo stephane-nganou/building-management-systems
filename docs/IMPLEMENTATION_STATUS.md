@@ -1,6 +1,6 @@
 # Implementation status
 
-Last updated: 2026-10-01, after BM-25 (the landing page).
+Last updated: 2026-10-02, after BM-29 (German).
 The security review behind BM-19 to BM-24 is in
 [ADVERSARY_REVIEW/README.md](ADVERSARY_REVIEW/README.md).
 The go live plan and the gaps it found are in [GO-LIVE-PART-1.md](GO-LIVE-PART-1.md).
@@ -38,7 +38,7 @@ main flow. This file records what is built and why it is built that way.
 | Dashboard | Done | Portfolio counts, rent roll, year to date position |
 | Visual design | Done | "Lights on": Mona Sans served from our own origin, a night and lamplight palette, and each building drawn as its floors with a lit window per let apartment. The sign in page and the invoice PDF match |
 | Themes | Done | Classic, Magic and Ocean blue, chosen from the sidebar or the gate and remembered in the browser; Classic still follows the system's light or dark |
-| English and French | Done | Every screen, API error, sign in page and invoice PDF |
+| English, French and German | Done | Every screen, API error, sign in page and invoice PDF; German since BM-29, addressed with "Sie" |
 | API documentation | Done | OpenAPI at `/swagger-ui.html` |
 | Architecture diagrams | Done | `docs/ARCHITECTURE_DIAGRAMS.md`, Mermaid, rendered by GitHub |
 | End to end tests | Done | Playwright against the real stack, run before every push and on every pull request |
@@ -103,7 +103,14 @@ into the app, a deep link such as `/buildings` still asks to sign in, somebody
 signed in who opens `/` lands on their first screen, and signing out ends on the
 landing page. It was looked at 1440 and 390 wide, light and dark, in Classic,
 Magic and Ocean blue and in both languages, with no horizontal scroll at 390,
-and the CSP spec now walks the landing page too.
+and the CSP spec now walks the landing page too. For BM-29, against a throwaway
+stack: a German browser lands on a German landing page and registration page,
+its sign in button opens Keycloak's page in German with our own "Hier
+registrieren" link, the signed in app switches to German and back from the
+sidebar, and an invoice created in German downloads with German wording, dotted
+dates and its umlauts intact. The German screens were looked at 1440 and 390
+wide; the sidebar footer, which a third language button pushed past the rail
+(measured: "Se déconnecter" 40px over, "Abmelden" 7px), now wraps.
 
 ## Tests
 
@@ -126,9 +133,13 @@ and the CSP spec now walks the landing page too.
   keep one total per currency. `InputLimitsIntegrationTest` covers the bounds
   one request may ask for: amounts that fit their columns, the line cap, the
   one year report, and the paged lists with their size cap and ignored sort.
-  Now 140 tests.
-- Frontend: 67 unit tests (BM-25 added the quiet profile request, the visitor
-  guard and the landing page's headline, buttons and contacts), for the formatting pipes and per currency totals, the translation service and
+  `LanguageIntegrationTest` covers English, French and German, and
+  `MessageBundleParityTest` the bundles' keys (BM-29). Now 134 tests, counted
+  from a full run.
+- Frontend: 73 unit tests (BM-25 added the quiet profile request, the visitor
+  guard and the landing page's headline, buttons and contacts; BM-29 German
+  detection, formats and a check that every translation keeps the English
+  `{placeholders}`), for the formatting pipes and per currency totals, the translation service and
   its dictionaries, the theme service, how a facade stacks apartments into floors and lights them,
   the delete confirmation and the toasts, and for the session and route guard logic that decides which
   screens exist, including that a refused profile is what "signed out" means and
@@ -147,13 +158,35 @@ and the CSP spec now walks the landing page too.
   screen that watches the wire and fails if any request leaves our own origin,
   a font or a stylesheet included, or anything at all reaches Keycloak, and
   another that fails on any Content-Security-Policy violation, and the landing
-  page in both languages, its way to sign up, and who it lets past (BM-25).
+  page in both languages, its way to sign up, and who it lets past (BM-25), and
+  the app, the landing page, the registration page and the sign in page in
+  German (BM-29).
   `openSignIn` in `e2e/support.ts` is how a spec reaches the sign in form now
   that `/` is the landing page. `scripts/e2e` starts the
   stack on its own compose project, waits for every part, runs them and tears it
   down.
 
 ## Deliberate decisions
+
+- **German, and English never answered in the server's language (BM-29).**
+  - *The system locale fallback is off.* English has no `messages_en`, so Spring
+    looked for the server's own language next and only then the base bundle.
+    Once `messages_de` existed, every English request on a German machine was
+    answered in German, which the language tests caught on the development
+    machine. `spring.messages.fallback-to-system-locale: false` makes English
+    the base bundle wherever the server runs.
+  - *One list of languages in the backend.* `LocaleConfig.SUPPORTED` decides
+    both `Accept-Language` and which `ui_locales` reach Keycloak; the second,
+    hand kept list in `LocalizedAuthorizationRequestResolver` is gone.
+  - *Each language picks its PDF date format.* `invoice.datePattern` is a
+    message: `dd/MM/yyyy` in English and French as before, `dd.MM.yyyy` in
+    German. `ofLocalizedDate` was not used because it would have turned English
+    month first.
+  - *Bundle parity is tested.* `MessageBundleParityTest` holds every
+    `messages_xx.properties` to the English keys, as the compiler already does
+    for the frontend dictionaries.
+  - German says "Sie", like the French "vous". The landing page's last question
+    now names all three languages instead of asking about French.
 
 - **A visitor at `/` sees the landing page, and the profile request no longer
   signs anybody in (BM-25).** Whether anybody is signed in is only known by
@@ -481,7 +514,7 @@ and the CSP spec now walks the landing page too.
   session on the way out and joined to the configured frontend address on the way
   back, and anything not beginning with a single slash is dropped. A value that
   cannot name a host cannot turn our sign in link into someone else's redirect.
-  `ui_locales` is checked against the two languages we have, for the same reason.
+  `ui_locales` is checked against the languages we have, for the same reason.
 
 - **An unauthenticated request gets 401, never a redirect.** A 302 towards
   another host is unreadable to a background request: the browser follows it and
@@ -677,9 +710,12 @@ and the CSP spec now walks the landing page too.
   do carry one. The browser does not, so it gains nothing there.
 - A mobile client. The API accepts a bearer token today and the realm would
   need a public client with PKCE for one to exist.
-- Languages beyond English and French. Adding one is a dictionary, a
-  `messages_xx.properties`, a locale in `LocaleConfig` and an entry in the
-  realm's `supportedLocales`.
+- Languages beyond English, French and German. Adding one, as BM-29 found, is:
+  a frontend dictionary plus its entries in `core/i18n.ts`; a
+  `messages_xx.properties` with its `invoice.datePattern`; a locale in
+  `LocaleConfig.SUPPORTED`; the realm's `supportedLocales`; `locales=` in the
+  Keycloak theme's `theme.properties` and a theme `messages_xx.properties`; and
+  the language's own tests.
 - An Impressum and a privacy policy, and a feedback link in the app; all three
   are needed before the pilot in [GO-LIVE-PART-1.md](GO-LIVE-PART-1.md).
 - Deleting an account or exporting its data from the app. Until then it is done
@@ -748,8 +784,8 @@ and the CSP spec now walks the landing page too.
   it.
 - `docker/keycloak/themes/bms/login/messages` only holds the two keys the theme
   adds. Everything else on the sign in page comes from Keycloak's own bundles,
-  which ship both languages; a third language would need only a realm setting
-  and one small file.
+  which ship all three languages; a fourth needs the realm setting, the theme's
+  `locales=` and one small file.
 - "Today" for a subscription is the backend's clock, which is UTC in the
   container, so a period runs out at midnight UTC rather than at the owner's own
   midnight.

@@ -153,8 +153,10 @@
   color: color-mix(in srgb, var(--dusk-ink) 56%, transparent);
 }
 
+/* Three languages and a long "Sign out" do not always share the rail's width. */
 .foot-row {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 8px;

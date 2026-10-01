@@ -28,6 +28,10 @@ describe('MoneyPipe', () => {
     expect(pipes('fr').money.transform(1234.5, 'EUR')).toContain('234,50');
   });
 
+  it('formats the same amount the German way', () => {
+    expect(pipes('de').money.transform(1234.5, 'EUR')).toContain('1.234,50');
+  });
+
   it('treats a missing amount as zero', () => {
     const { money } = pipes('en');
     expect(money.transform(null, 'EUR')).toContain('0.00');
@@ -82,9 +86,10 @@ describe('totalsByCurrency', () => {
 describe('DayPipe', () => {
   beforeEach(() => localStorage.clear());
 
-  it('puts the day before the month in both languages', () => {
+  it('puts the day before the month in every language', () => {
     expect(pipes('en').day.transform('2026-02-09')).toBe('09/02/2026');
     expect(pipes('fr').day.transform('2026-02-09')).toBe('09/02/2026');
+    expect(pipes('de').day.transform('2026-02-09')).toBe('09.02.2026');
   });
 
   it('returns nothing for a missing date', () => {
@@ -103,6 +108,7 @@ describe('LabelPipe', () => {
   it('reads an enum value from the dictionary', () => {
     expect(pipes('en').label.transform('COLD_WATER', 'invoiceType')).toBe('Cold water');
     expect(pipes('fr').label.transform('COLD_WATER', 'invoiceType')).toBe('Eau froide');
+    expect(pipes('de').label.transform('COLD_WATER', 'invoiceType')).toBe('Kaltwasser');
   });
 
   it('tells the two meanings of MAINTENANCE apart', () => {

@@ -87,6 +87,8 @@ class AuthenticationIntegrationTest extends AbstractIntegrationTest {
     void theSignInPageIsAskedForTheReadersLanguage() throws Exception {
         mockMvc.perform(get("/api/auth/login/keycloak").param("ui_locales", "fr"))
                 .andExpect(header().string("Location", containsString("ui_locales=fr")));
+        mockMvc.perform(get("/api/auth/login/keycloak").param("ui_locales", "de"))
+                .andExpect(header().string("Location", containsString("ui_locales=de")));
     }
 
     @Test

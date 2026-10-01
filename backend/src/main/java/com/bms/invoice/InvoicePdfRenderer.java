@@ -7,6 +7,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
 
+import com.bms.common.i18n.Messages;
 import com.openhtmltopdf.outputdevice.helper.BaseRendererBuilder.FontStyle;
 import com.openhtmltopdf.pdfboxout.PDFontSupplier;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
@@ -25,9 +26,6 @@ import org.thymeleaf.context.Context;
 @Component
 public class InvoicePdfRenderer {
 
-    /** Day before month, as both languages the app speaks write it. */
-    private static final DateTimeFormatter DATE = DateTimeFormatter.ofPattern("dd/MM/yyyy");
-
     /** A static cut of the app's typeface; the PDF renderer cannot read variable fonts. */
     private record Face(String file, String family, int weight) {
     }
@@ -38,11 +36,13 @@ public class InvoicePdfRenderer {
             new Face("MonaSansExpanded-Bold.ttf", "Mona Sans Expanded", 700));
 
     private final TemplateEngine templateEngine;
+    private final Messages messages;
     private final String issuerName;
 
-    public InvoicePdfRenderer(TemplateEngine templateEngine,
+    public InvoicePdfRenderer(TemplateEngine templateEngine, Messages messages,
                               @Value("${bms.invoice.issuer-name}") String issuerName) {
         this.templateEngine = templateEngine;
+        this.messages = messages;
         this.issuerName = issuerName;
     }
 
@@ -60,10 +60,12 @@ public class InvoicePdfRenderer {
         // The invoice's own currency, which its building may since have changed.
         context.setVariable("currency", invoice.getCurrency().name());
         context.setVariable("digits", invoice.getCurrency().fractionDigits());
-        context.setVariable("issueDate", DATE.format(invoice.getIssueDate()));
-        context.setVariable("dueDate", DATE.format(invoice.getDueDate()));
-        context.setVariable("periodStart", DATE.format(invoice.getPeriodStart()));
-        context.setVariable("periodEnd", DATE.format(invoice.getPeriodEnd()));
+        // Each language writes the day first, but not with the same separator.
+        DateTimeFormatter date = DateTimeFormatter.ofPattern(messages.get(locale, "invoice.datePattern"));
+        context.setVariable("issueDate", date.format(invoice.getIssueDate()));
+        context.setVariable("dueDate", date.format(invoice.getDueDate()));
+        context.setVariable("periodStart", date.format(invoice.getPeriodStart()));
+        context.setVariable("periodEnd", date.format(invoice.getPeriodEnd()));
 
         String html = templateEngine.process("invoice", context);
 
