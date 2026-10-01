@@ -13,6 +13,10 @@ import com.bms.apartment.BuildingApartmentCount;
 import com.bms.building.dto.BuildingRequest;
 import com.bms.building.dto.BuildingResponse;
 import com.bms.common.exception.NotFoundException;
+import com.bms.common.exception.ValidationException;
+import com.bms.expense.ExpenseRepository;
+import com.bms.invoice.InvoiceRepository;
+import com.bms.invoice.InvoiceStatus;
 import com.bms.user.AppUser;
 import com.bms.user.CurrentUserService;
 import org.springframework.stereotype.Service;
@@ -23,13 +27,18 @@ public class BuildingService {
 
     private final BuildingRepository buildings;
     private final ApartmentRepository apartments;
+    private final InvoiceRepository invoices;
+    private final ExpenseRepository expenses;
     private final AccessControl accessControl;
     private final CurrentUserService currentUser;
 
     public BuildingService(BuildingRepository buildings, ApartmentRepository apartments,
+                           InvoiceRepository invoices, ExpenseRepository expenses,
                            AccessControl accessControl, CurrentUserService currentUser) {
         this.buildings = buildings;
         this.apartments = apartments;
+        this.invoices = invoices;
+        this.expenses = expenses;
         this.accessControl = accessControl;
         this.currentUser = currentUser;
     }
@@ -68,9 +77,21 @@ public class BuildingService {
         return BuildingResponse.from(building, counts.getOrDefault(id, 0L));
     }
 
+    /**
+     * Refused once the building has an issued invoice or a recorded expense; both
+     * belong in the books for good. Its apartments, tenants and drafts go with it.
+     */
     @Transactional
     public void delete(UUID id) {
-        buildings.delete(require(id, Permission.BUILDING_WRITE));
+        Building building = require(id, Permission.BUILDING_WRITE);
+        if (invoices.existsByApartmentBuildingIdAndStatusNot(building.getId(), InvoiceStatus.DRAFT)) {
+            throw new ValidationException("error.building.hasIssuedInvoices");
+        }
+        if (expenses.existsByBuildingId(building.getId())) {
+            throw new ValidationException("error.building.hasExpenses");
+        }
+        invoices.deleteDraftsOfBuilding(building.getId());
+        buildings.delete(building);
     }
 
     /** Loads a building the caller is allowed to touch, or fails. */

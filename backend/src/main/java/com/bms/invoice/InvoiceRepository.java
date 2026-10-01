@@ -7,12 +7,36 @@ import java.util.Optional;
 import java.util.UUID;
 
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
 public interface InvoiceRepository extends JpaRepository<Invoice, UUID> {
 
     Optional<Invoice> findByIdAndApartmentBuildingOwnerIdIn(UUID id, Collection<UUID> ownerIds);
+
+    boolean existsByTenantIdAndStatusNot(UUID tenantId, InvoiceStatus status);
+
+    boolean existsByApartmentIdAndStatusNot(UUID apartmentId, InvoiceStatus status);
+
+    boolean existsByApartmentBuildingIdAndStatusNot(UUID buildingId, InvoiceStatus status);
+
+    /** Drafts were never issued, so they go when their tenant does. Lines follow in the database. */
+    @Modifying
+    @Query("delete from Invoice i where i.tenant.id = :tenantId and i.status = com.bms.invoice.InvoiceStatus.DRAFT")
+    void deleteDraftsOfTenant(@Param("tenantId") UUID tenantId);
+
+    @Modifying
+    @Query("delete from Invoice i where i.apartment.id = :apartmentId and i.status = com.bms.invoice.InvoiceStatus.DRAFT")
+    void deleteDraftsOfApartment(@Param("apartmentId") UUID apartmentId);
+
+    @Modifying
+    @Query("""
+            delete from Invoice i
+            where i.status = com.bms.invoice.InvoiceStatus.DRAFT
+              and i.apartment.id in (select a.id from Apartment a where a.building.id = :buildingId)
+            """)
+    void deleteDraftsOfBuilding(@Param("buildingId") UUID buildingId);
 
     @Query("""
             select i from Invoice i
