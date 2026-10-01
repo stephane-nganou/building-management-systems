@@ -55,7 +55,9 @@ node scripts/sync-realm.mjs
 
 `docker-compose.prod.yml` serves everything on one domain behind Caddy, with
 HTTPS from Let's Encrypt, nightly database backups and no demo accounts. See
-[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md).
+[docs/DEPLOYMENT.md](docs/DEPLOYMENT.md), and
+[docs/GO-LIVE-PART-1.md](docs/GO-LIVE-PART-1.md) for the plan to put it in front
+of the first pilot users.
 
 ## Stack
 
@@ -166,7 +168,7 @@ frontend/   Angular app, one lazy loaded route per feature
 docker/     Keycloak realm export, sign in theme and Postgres bootstrap
 scripts/    start, stop, end to end, realm sync and hook installation
 .githooks/  pre-push, so a branch is never pushed broken
-docs/       implementation status and architecture diagrams
+docs/       status, architecture diagrams, deployment and go live
 ```
 
 See [docs/IMPLEMENTATION_STATUS.md](docs/IMPLEMENTATION_STATUS.md) for what is

@@ -1,6 +1,7 @@
 # Implementation status
 
-Last updated: 2026-10-01, after BM-16 (a production compose file behind Caddy).
+Last updated: 2026-10-01, after BM-17 (a plan for a first, free pilot).
+The go live plan and the gaps it found are in [GO-LIVE-PART-1.md](GO-LIVE-PART-1.md).
 
 The architecture is drawn out in
 [ARCHITECTURE_DIAGRAMS.md](ARCHITECTURE_DIAGRAMS.md): containers, backend and
@@ -509,7 +510,13 @@ the end to end suite passes against it.
   `messages_xx.properties`, a locale in `LocaleConfig` and an entry in the
   realm's `supportedLocales`.
 - Email verification and password reset by email; both are Keycloak features
-  that need an SMTP server configured.
+  that need an SMTP server configured. `resetPasswordAllowed` is on, so the
+  link is offered today and fails to send.
+- Brute force protection and a password policy on the realm (BM-17).
+- An Impressum and a privacy policy, and a feedback link in the app; all three
+  are needed before the pilot in [GO-LIVE-PART-1.md](GO-LIVE-PART-1.md).
+- Deleting an account or exporting its data from the app. Until then it is done
+  by hand on request.
 - Emailing invoices to tenants; today they are downloaded as PDF.
 - Cold water meter readings; a cold water invoice takes its lines directly.
 - Attachments or receipts on expenses.
