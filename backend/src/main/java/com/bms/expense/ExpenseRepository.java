@@ -14,6 +14,8 @@ public interface ExpenseRepository extends JpaRepository<Expense, UUID> {
 
     Optional<Expense> findByIdAndBuildingOwnerIdIn(UUID id, Collection<UUID> ownerIds);
 
+    boolean existsByBuildingId(UUID buildingId);
+
     @Query("""
             select e from Expense e
             where e.building.owner.id in :ownerIds

@@ -11,6 +11,8 @@ import com.bms.building.Building;
 import com.bms.building.BuildingService;
 import com.bms.common.exception.NotFoundException;
 import com.bms.common.exception.ValidationException;
+import com.bms.invoice.InvoiceRepository;
+import com.bms.invoice.InvoiceStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -19,11 +21,14 @@ public class ApartmentService {
 
     private final ApartmentRepository apartments;
     private final BuildingService buildings;
+    private final InvoiceRepository invoices;
     private final AccessControl accessControl;
 
-    public ApartmentService(ApartmentRepository apartments, BuildingService buildings, AccessControl accessControl) {
+    public ApartmentService(ApartmentRepository apartments, BuildingService buildings, InvoiceRepository invoices,
+                            AccessControl accessControl) {
         this.apartments = apartments;
         this.buildings = buildings;
+        this.invoices = invoices;
         this.accessControl = accessControl;
     }
 
@@ -70,9 +75,18 @@ public class ApartmentService {
         return ApartmentResponse.from(apartment);
     }
 
+    /**
+     * Refused once any invoice for the apartment was issued. Its tenants and draft
+     * invoices go with it; its expenses stay, no longer tied to an apartment.
+     */
     @Transactional
     public void delete(UUID id) {
-        apartments.delete(require(id, Permission.APARTMENT_WRITE));
+        Apartment apartment = require(id, Permission.APARTMENT_WRITE);
+        if (invoices.existsByApartmentIdAndStatusNot(apartment.getId(), InvoiceStatus.DRAFT)) {
+            throw new ValidationException("error.apartment.hasIssuedInvoices");
+        }
+        invoices.deleteDraftsOfApartment(apartment.getId());
+        apartments.delete(apartment);
     }
 
     @Transactional(readOnly = true)

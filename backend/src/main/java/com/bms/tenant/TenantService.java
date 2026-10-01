@@ -10,6 +10,8 @@ import com.bms.apartment.ApartmentService;
 import com.bms.apartment.ApartmentStatus;
 import com.bms.common.exception.NotFoundException;
 import com.bms.common.exception.ValidationException;
+import com.bms.invoice.InvoiceRepository;
+import com.bms.invoice.InvoiceStatus;
 import com.bms.tenant.dto.TenantRequest;
 import com.bms.tenant.dto.TenantResponse;
 import org.springframework.stereotype.Service;
@@ -20,11 +22,14 @@ public class TenantService {
 
     private final TenantRepository tenants;
     private final ApartmentService apartments;
+    private final InvoiceRepository invoices;
     private final AccessControl accessControl;
 
-    public TenantService(TenantRepository tenants, ApartmentService apartments, AccessControl accessControl) {
+    public TenantService(TenantRepository tenants, ApartmentService apartments, InvoiceRepository invoices,
+                         AccessControl accessControl) {
         this.tenants = tenants;
         this.apartments = apartments;
+        this.invoices = invoices;
         this.accessControl = accessControl;
     }
 
@@ -72,9 +77,18 @@ public class TenantService {
         return TenantResponse.from(tenant);
     }
 
+    /**
+     * Refused once the tenant has an issued invoice, which belongs in the books
+     * for good; a tenant who left is marked inactive instead. Drafts go with them.
+     */
     @Transactional
     public void delete(UUID id) {
-        tenants.delete(require(id, Permission.TENANT_WRITE));
+        Tenant tenant = require(id, Permission.TENANT_WRITE);
+        if (invoices.existsByTenantIdAndStatusNot(tenant.getId(), InvoiceStatus.DRAFT)) {
+            throw new ValidationException("error.tenant.hasIssuedInvoices");
+        }
+        invoices.deleteDraftsOfTenant(tenant.getId());
+        tenants.delete(tenant);
     }
 
     @Transactional(readOnly = true)

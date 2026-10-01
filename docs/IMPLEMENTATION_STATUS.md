@@ -1,7 +1,7 @@
 # Implementation status
 
-Last updated: 2026-10-01, after BM-19 (closing the assistant account takeover).
-The review that found it and the other holes is in
+Last updated: 2026-10-01, after BM-20 (keeping issued invoices and expenses).
+The security review behind BM-19 and BM-20 is in
 [ADVERSARY_REVIEW/README.md](ADVERSARY_REVIEW/README.md).
 The go live plan and the gaps it found are in [GO-LIVE-PART-1.md](GO-LIVE-PART-1.md).
 
@@ -137,6 +137,17 @@ the end to end suite passes against it.
   down.
 
 ## Deliberate decisions
+
+- **Issued records outlive what they belong to (BM-20).** Deleting a tenant,
+  apartment or building used to cascade away its invoices, sent and paid ones
+  included, and a building its expenses, although the profit and loss statement
+  for tax is built from them. Such a delete is now refused with a message saying
+  why; a tenant who left is marked inactive instead. Draft invoices were never
+  issued and still go with their parent, deleted by the service first. The
+  foreign keys from `invoice` to `tenant` and `apartment`, and from `expense` to
+  `building`, are `on delete restrict` (V8), so the database refuses the same
+  delete whatever the code path. A cancelled invoice counts as issued: its
+  number was used. An apartment's expenses still stay, unlinked, when it goes.
 
 - **An account carries its role, and an assistant its creator (BM-19).** An
   owner could add any existing account as their assistant and then reset its
