@@ -368,6 +368,72 @@ export const en = {
 
   'noAccess.title': 'Nothing to show yet',
   'noAccess.body': 'Ask the owner you assist to give you access, then sign in again.',
+
+  'home.skip': 'Skip to content',
+  'home.nav': 'Account',
+  'home.signIn': 'Sign in',
+  'home.hero.title': 'Your buildings, rents and receipts in one ledger',
+  'home.hero.lead':
+    'Hausbuch keeps track of your apartments, tenants, rent and expenses, prints your invoices, and has your profit and loss ready when the tax return is due.',
+  'home.hero.talk': 'Talk to us',
+  'home.trial.cta': 'Start your free month',
+  'home.trial.note': '30 days free. No card needed, nothing to cancel.',
+  'home.trial.title': 'Try Hausbuch free for 30 days',
+  'home.trial.body':
+    'Everything is included from the first day. If it is not for you, simply stop: nothing is ever charged without you asking.',
+  'home.features.title': 'Everything a small landlord keeps track of',
+  'home.features.lead': 'One building or several, each kept apart, all of it in one place.',
+  'home.feature.buildings.title': 'Buildings',
+  'home.feature.buildings.body':
+    'Add every building you own and keep the apartments, tenants and money of each one apart.',
+  'home.feature.apartments.title': 'Apartments',
+  'home.feature.apartments.body':
+    'Number, rent and rooms for every apartment, and whether it is let.',
+  'home.feature.tenants.title': 'Tenants',
+  'home.feature.tenants.body': 'Who lives where, and how to reach them.',
+  'home.feature.expenses.title': 'Expenses',
+  'home.feature.expenses.body':
+    'Repairs, taxes and bills, recorded against a building with the reason why.',
+  'home.feature.invoices.title': 'Invoices',
+  'home.feature.invoices.body':
+    'Professional PDF invoices for rent and cold water, ready to print or send.',
+  'home.feature.assistants.title': 'Assistants',
+  'home.feature.assistants.body':
+    'Let someone help, and choose exactly what they may see and change.',
+  'home.feature.summary.title': 'Income and expenses',
+  'home.feature.summary.body':
+    'What came in and what went out, per building or overall, over any period.',
+  'home.feature.profitLoss.title': 'Profit and loss',
+  'home.feature.profitLoss.body': 'A statement for any period, ready for your tax declaration.',
+  'home.how.title': 'Up and running in an afternoon',
+  'home.how.step1.title': 'Create your account',
+  'home.how.step1.body':
+    'Your name, your email address and a password. The free month starts straight away.',
+  'home.how.step2.title': 'Add your buildings',
+  'home.how.step2.body':
+    'Enter your apartments and tenants once. Rents and invoices build on them.',
+  'home.how.step3.title': 'Keep the books',
+  'home.how.step3.body':
+    'Record rent and expenses as they come, and print your profit and loss when you need it.',
+  'home.faq.title': 'Questions',
+  'home.faq.q1': 'What does the free month include?',
+  'home.faq.a1': 'Everything: all your buildings and apartments, invoices, reports and assistants.',
+  'home.faq.q2': 'Do I need a credit card to start?',
+  'home.faq.a2': 'No. You sign up with your name, your email address and a password, nothing else.',
+  'home.faq.q3': 'What happens after 30 days?',
+  'home.faq.a3':
+    'Your records stay yours and you can still read them. To keep adding and changing things, contact us to subscribe.',
+  'home.faq.q4': 'Who can see my data?',
+  'home.faq.a4': 'Only you, and the assistants you invite, limited to what you allow them.',
+  'home.faq.q5': 'Is it available in French?',
+  'home.faq.a5': 'Yes. Hausbuch works in English and French, and you can switch at any time.',
+  'home.contact.title': 'Get in touch',
+  'home.contact.lead':
+    'A question about Hausbuch, or about a subscription after your free month? We are happy to help.',
+  'home.contact.email': 'Email',
+  'home.contact.phone': 'Phone',
+  'home.contact.address': 'Address',
+  'home.foot.rights': '© {year} Hausbuch. All rights reserved.',
 } as const;
 
 export type MessageKey = keyof typeof en;

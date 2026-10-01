@@ -1,4 +1,4 @@
-import { Page, expect } from '@playwright/test';
+import { Page, Response, expect } from '@playwright/test';
 
 /** The demo owner seeded by the realm export. */
 export const DEMO_OWNER = { username: 'owner', password: 'owner-demo-pass' };
@@ -9,6 +9,17 @@ export const DEMO_ADMIN = { username: 'admin', password: 'admin-demo-pass' };
 /** Emails have to be unique per run, because accounts are never deleted. */
 export function uniqueEmail(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000)}@example.test`;
+}
+
+/**
+ * Opens the landing page a visitor sees and follows its sign in button to the
+ * sign in form. Returns the landing page's own response, for its headers.
+ */
+export async function openSignIn(page: Page): Promise<Response | null> {
+  const response = await page.goto('/');
+  await page.getByRole('button', { name: 'Sign in', exact: true }).click();
+  await page.waitForURL(/\/realms\/bms\/protocol\/openid-connect/);
+  return response;
 }
 
 /**
@@ -74,12 +85,12 @@ export async function chooseNewPassword(
 
 /**
  * Signs out through the app. The backend ends the session at both ends, and the
- * browser comes back to an application that has nobody signed in, which asks to
- * sign in again.
+ * browser comes back to an application that has nobody signed in, which shows
+ * the landing page.
  */
 export async function signOut(page: Page): Promise<void> {
   await page.getByRole('button', { name: /sign out/i }).click();
-  await page.waitForURL(/\/realms\/bms\/protocol\/openid-connect/);
+  await expect(page.getByRole('button', { name: 'Sign in', exact: true })).toBeVisible();
 }
 
 /**

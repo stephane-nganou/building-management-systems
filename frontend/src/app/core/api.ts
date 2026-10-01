@@ -1,6 +1,8 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpParams } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { Observable } from 'rxjs';
+
+import { QUIET_UNAUTHORIZED } from './auth';
 
 import {
   Account,
@@ -269,7 +271,8 @@ export class AuthApi {
 export class MeApi {
   private http = inject(HttpClient);
 
+  /** Refused when nobody is signed in; the guards decide what that means. */
   get(): Observable<Me> {
-    return this.http.get<Me>('/api/me');
+    return this.http.get<Me>('/api/me', { context: new HttpContext().set(QUIET_UNAUTHORIZED, true) });
   }
 }

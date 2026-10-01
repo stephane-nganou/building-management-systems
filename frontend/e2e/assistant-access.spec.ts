@@ -4,6 +4,7 @@ import {
   DEMO_OWNER,
   chooseNewPassword,
   expectNavLabels,
+  openSignIn,
   signIn,
   signOut,
   submitSignIn,
@@ -18,7 +19,7 @@ import {
 test('an owner creates an assistant who then sees only what they were granted', async ({ page }) => {
   const email = uniqueEmail('helper');
 
-  await page.goto('/');
+  await openSignIn(page);
   await signIn(page, DEMO_OWNER.username, DEMO_OWNER.password);
 
   await page.getByRole('link', { name: 'Assistants' }).click();
@@ -38,6 +39,7 @@ test('an owner creates an assistant who then sees only what they were granted', 
 
   await expect(page.locator('table.sheet')).toContainText(email);
   await signOut(page);
+  await openSignIn(page);
 
   // The assistant signs in for the first time and has to choose their own password.
   await submitSignIn(page, email, temporaryPassword);

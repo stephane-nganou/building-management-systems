@@ -1,5 +1,5 @@
 import { inject } from '@angular/core';
-import { HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
+import { HttpContextToken, HttpErrorResponse, HttpInterceptorFn } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { catchError, throwError } from 'rxjs';
 
@@ -51,6 +51,12 @@ export function currentPath(): string {
 }
 
 /**
+ * Marks a request whose 401 is an answer rather than a failure: the profile
+ * probe, which is how a visitor's landing page learns nobody is signed in.
+ */
+export const QUIET_UNAUTHORIZED = new HttpContextToken<boolean>(() => false);
+
+/**
  * Turns the backend's "you are not signed in" into a sign in.
  *
  * <p>The API answers 401 rather than redirecting, because a redirect to another
@@ -62,7 +68,11 @@ export const authInterceptor: HttpInterceptorFn = (request, next) => {
   const auth = inject(AuthService);
   return next(request).pipe(
     catchError((error: unknown) => {
-      if (error instanceof HttpErrorResponse && error.status === 401) {
+      if (
+        error instanceof HttpErrorResponse &&
+        error.status === 401 &&
+        !request.context.get(QUIET_UNAUTHORIZED)
+      ) {
         auth.signIn();
       }
       return throwError(() => error);

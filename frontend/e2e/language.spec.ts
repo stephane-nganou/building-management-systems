@@ -1,6 +1,6 @@
 import { Page, expect, test } from '@playwright/test';
 
-import { DEMO_OWNER, expectNavLabels, signIn } from './support';
+import { DEMO_OWNER, expectNavLabels, openSignIn, signIn } from './support';
 
 const ENGLISH = [
   'Overview',
@@ -34,7 +34,7 @@ function switcher(page: Page) {
 
 test.describe('language', () => {
   test('the whole app switches to French and stays there', async ({ page }) => {
-    await page.goto('/');
+    await openSignIn(page);
     await signIn(page, DEMO_OWNER.username, DEMO_OWNER.password);
 
     await expectNavLabels(page, ENGLISH);

@@ -1,0 +1,403 @@
+/* ---------- the landing page: what a visitor sees before signing in ---------- */
+
+/* The street at dusk opens the page, its lights coming on; the rest stays quiet. */
+
+.home-wrap {
+  width: min(1180px, 100% - 48px);
+  margin-inline: auto;
+}
+
+.home-skip {
+  position: absolute;
+  left: 16px;
+  top: -48px;
+  z-index: 10;
+  padding: 8px 14px;
+  border-radius: var(--radius-s);
+  background: var(--surface);
+  color: var(--ink);
+}
+
+.home-skip:focus {
+  top: 12px;
+}
+
+.home-hero h1,
+.home-trial h2 {
+  color: var(--dusk-bright);
+}
+
+/* ---------- buttons at night ---------- */
+
+/* The one lamp the visitor can switch on themselves. */
+.btn.home-lit {
+  background: var(--dusk-bright);
+  border-color: var(--dusk-bright);
+  color: var(--night);
+  font-weight: 650;
+  padding: 11px 20px;
+}
+
+.btn.home-lit:hover {
+  background: var(--lamplight);
+  border-color: var(--lamplight);
+}
+
+.btn.home-ghost {
+  background: transparent;
+  border-color: var(--dusk-frame);
+  color: var(--dusk-ink);
+  padding: 11px 20px;
+}
+
+.btn.home-ghost:hover {
+  border-color: var(--dusk-trim);
+}
+
+button.home-sign-in {
+  background: transparent;
+  border-color: transparent;
+  color: var(--dusk-ink);
+}
+
+button.home-sign-in:hover {
+  border-color: var(--dusk-frame);
+}
+
+/* ---------- the hero ---------- */
+
+.home-hero {
+  overflow: hidden;
+}
+
+.home-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding-block: 20px;
+}
+
+.home-top .brand {
+  padding-inline: 0;
+}
+
+.home-top-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.home-hero-copy {
+  padding-block: clamp(40px, 8vw, 96px) 48px;
+}
+
+.home-hero h1 {
+  max-width: 17ch;
+  font-size: clamp(2.25rem, 5.6vw, 4.25rem);
+  font-weight: 750;
+  letter-spacing: -0.03em;
+  line-height: 1.02;
+}
+
+.home-lead {
+  max-width: 54ch;
+  margin-top: 24px;
+  font-size: var(--step-1);
+  line-height: 1.5;
+  color: color-mix(in srgb, var(--dusk-ink) 82%, transparent);
+}
+
+.home-cta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.home-reassure {
+  margin-top: 14px;
+  font-size: var(--step--1);
+  color: color-mix(in srgb, var(--dusk-ink) 64%, transparent);
+}
+
+/* Buildings of every height along one pavement, running off both edges. */
+.home-street {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: clamp(16px, 4vw, 56px);
+  border-bottom: 4px solid var(--pavement);
+}
+
+/* ---------- sections ---------- */
+
+.home-section {
+  padding-block: clamp(56px, 9vw, 112px);
+}
+
+.home-sunk {
+  background: var(--surface);
+  border-block: 1px solid var(--line);
+}
+
+.home-section h2,
+.home-trial h2 {
+  font-size: clamp(1.5rem, 3vw, 2.25rem);
+  font-weight: 700;
+  font-stretch: var(--wider);
+  letter-spacing: -0.02em;
+  max-width: 24ch;
+}
+
+.home-section-lead {
+  max-width: 60ch;
+  margin-top: 12px;
+  font-size: var(--step-1);
+  color: var(--ink-2);
+}
+
+/* Reading width, kept on the same left edge as every other section. */
+.home-narrow > * {
+  max-width: 760px;
+}
+
+/* What it does: a plain index, not a wall of cards. */
+.home-features {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 40px 32px;
+  margin: 48px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.home-features li {
+  padding-top: 18px;
+  border-top: 2px solid var(--line-strong);
+}
+
+.home-features bms-icon {
+  display: block;
+  color: var(--ink-2);
+}
+
+.home-features h3 {
+  margin-top: 14px;
+  font-size: var(--step-1);
+  font-stretch: var(--wide);
+}
+
+.home-features p {
+  margin-top: 6px;
+  color: var(--ink-2);
+}
+
+/* Three steps, in order, so they carry their numbers. */
+.home-steps {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 32px;
+  margin: 48px 0 0;
+  padding: 0;
+  list-style: none;
+  counter-reset: step;
+}
+
+.home-steps li {
+  counter-increment: step;
+}
+
+.home-steps li::before {
+  content: counter(step);
+  display: block;
+  margin-bottom: 12px;
+  font-size: var(--step-3);
+  font-weight: 750;
+  font-stretch: var(--wider);
+  line-height: 1;
+  color: var(--ink-3);
+}
+
+.home-steps h3 {
+  font-size: var(--step-1);
+  font-stretch: var(--wide);
+}
+
+.home-steps p {
+  margin-top: 6px;
+  max-width: 34ch;
+  color: var(--ink-2);
+}
+
+/* ---------- the free month ---------- */
+
+.home-trial {
+  padding-block: clamp(48px, 7vw, 80px);
+}
+
+.home-trial-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 24px 48px;
+}
+
+.home-trial p {
+  max-width: 56ch;
+  margin-top: 12px;
+  color: color-mix(in srgb, var(--dusk-ink) 82%, transparent);
+}
+
+/* ---------- questions ---------- */
+
+.home-faq {
+  margin-top: 32px;
+  border-top: 1px solid var(--line-strong);
+}
+
+.home-faq details {
+  border-bottom: 1px solid var(--line-strong);
+}
+
+.home-faq summary {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  min-height: 56px;
+  padding-block: 12px;
+  font-weight: 600;
+  font-size: var(--step-1);
+  cursor: pointer;
+  list-style: none;
+}
+
+.home-faq summary::-webkit-details-marker {
+  display: none;
+}
+
+.home-faq summary::after {
+  content: '+';
+  flex: none;
+  font-size: 1.5rem;
+  font-weight: 400;
+  line-height: 1;
+  color: var(--ink-3);
+  transition: transform 160ms ease;
+}
+
+.home-faq details[open] summary::after {
+  transform: rotate(45deg);
+}
+
+.home-faq details p {
+  max-width: 62ch;
+  padding-bottom: 20px;
+  color: var(--ink-2);
+}
+
+/* ---------- contact ---------- */
+
+.home-contacts {
+  display: grid;
+  gap: 0;
+  margin: 32px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.home-contacts li {
+  display: grid;
+  grid-template-columns: 20px 9rem 1fr;
+  align-items: center;
+  gap: 16px;
+  padding-block: 14px;
+  border-bottom: 1px solid var(--line);
+}
+
+.home-contacts bms-icon {
+  display: flex;
+  color: var(--ink-3);
+}
+
+.home-contact-label {
+  color: var(--ink-3);
+}
+
+.home-contacts a {
+  font-weight: 600;
+  text-underline-offset: 3px;
+}
+
+/* ---------- footer ---------- */
+
+.home-foot {
+  padding-block: 28px;
+  font-size: var(--step--1);
+  color: var(--ink-3);
+}
+
+.home-foot-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+
+.home-settings {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+/* ---------- narrower screens ---------- */
+
+@media (max-width: 1024px) {
+  .home-features {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 860px) {
+  .home-wrap {
+    width: calc(100% - 32px);
+  }
+
+  .home-top .brand .tagline {
+    display: none;
+  }
+
+  .home-top-actions .home-lit {
+    display: none;
+  }
+
+  .home-cta-row .btn {
+    flex: 1 1 100%;
+  }
+
+  .home-street {
+    justify-content: flex-start;
+  }
+
+  /* Smaller, but each building keeps its own height. */
+  .home-street .facade {
+    zoom: 0.6;
+  }
+
+  .home-features,
+  .home-steps {
+    grid-template-columns: 1fr;
+  }
+
+  .home-contacts li {
+    grid-template-columns: 20px 1fr;
+  }
+
+  .home-contacts li > :last-child {
+    grid-column: 2;
+  }
+}

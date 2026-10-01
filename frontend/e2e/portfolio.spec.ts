@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { DEMO_OWNER, signIn } from './support';
+import { DEMO_OWNER, openSignIn, signIn } from './support';
 
 /**
  * The path a landlord actually walks: a building, a unit inside it, and the
@@ -11,7 +11,7 @@ test('an owner adds a building and an apartment inside it', async ({ page }) => 
   // Labels are unique per building, but the list shows every building at once.
   const apartment = `2B-${Date.now()}`;
 
-  await page.goto('/');
+  await openSignIn(page);
   await signIn(page, DEMO_OWNER.username, DEMO_OWNER.password);
 
   await page.getByRole('link', { name: 'Buildings' }).click();
@@ -40,7 +40,7 @@ test('a building in Cameroon shows its rent in CFA francs', async ({ page }) => 
   const building = `Rue de la Joie ${Date.now()}`;
   const apartment = `1A-${Date.now()}`;
 
-  await page.goto('/');
+  await openSignIn(page);
   await signIn(page, DEMO_OWNER.username, DEMO_OWNER.password);
 
   await page.getByRole('link', { name: 'Buildings' }).click();

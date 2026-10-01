@@ -96,7 +96,7 @@ export class SessionService {
         // A failure is not remembered: forgetting it lets the next guard try
         // again, rather than stranding the user on an empty page until they
         // reload because the backend was a moment slower than the browser. A
-        // 401 has already sent the browser off to sign in by this point.
+        // 401 simply leaves nobody signed in, for the guards to act on.
         error: () => {
           this.loading = null;
           resolve(null);
