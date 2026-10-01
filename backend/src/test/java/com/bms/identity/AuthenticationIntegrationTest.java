@@ -3,6 +3,7 @@ package com.bms.identity;
 import java.util.List;
 import java.util.Map;
 
+import com.bms.common.exception.ValidationException;
 import com.bms.support.AbstractIntegrationTest;
 import com.bms.user.AppUser;
 import com.bms.user.AppUserRepository;
@@ -19,6 +20,8 @@ import static org.hamcrest.Matchers.startsWith;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.BDDMockito.willThrow;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.oidcLogin;
@@ -56,6 +59,12 @@ class AuthenticationIntegrationTest extends AbstractIntegrationTest {
                         .claim("family_name", "Session")
                         .claim("realm_access", Map.of("roles", List.of(realmRole))))
                 .authorities(new SimpleGrantedAuthority("ROLE_" + realmRole.toUpperCase()));
+    }
+
+    private static String passwordChange(String currentPassword, String newPassword) {
+        return """
+                {"currentPassword":"%s","newPassword":"%s"}
+                """.formatted(currentPassword, newPassword);
     }
 
     @Test
@@ -113,7 +122,19 @@ class AuthenticationIntegrationTest extends AbstractIntegrationTest {
         mockMvc.perform(post("/api/auth/password")
                         .with(asBrowser(KEYCLOAK_ID, EMAIL, "owner"))
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"newPassword\":\"a-good-secret\"}"))
+                        .content(passwordChange("handed-over-pass", "a-good-secret")))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void anAuthorizationHeaderThatIsNoBearerTokenDoesNotExcuseTheForgeryToken() throws Exception {
+        // Only a bearer token is a credential the caller brought itself. Any
+        // other header leaves the session cookie doing the authenticating.
+        mockMvc.perform(post("/api/auth/password")
+                        .with(asBrowser(KEYCLOAK_ID, EMAIL, "owner"))
+                        .header("Authorization", "Basic c29tZW9uZTpzb21ldGhpbmc=")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(passwordChange("handed-over-pass", "a-good-secret")))
                 .andExpect(status().isForbidden());
     }
 
@@ -129,11 +150,43 @@ class AuthenticationIntegrationTest extends AbstractIntegrationTest {
                         .with(asBrowser("kc-handed", "handed@example.com", "assistant"))
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"newPassword\":\"a-secret-only-i-know\"}"))
+                        .content(passwordChange("handed-over-pass", "a-secret-only-i-know")))
                 .andExpect(status().isNoContent());
 
+        verify(keycloak).verifyPassword(eq("handed@example.com"), eq("handed-over-pass"));
         verify(keycloak).resetPassword(eq("kc-handed"), eq("a-secret-only-i-know"));
         assertThat(users.findById(handedOver.getId()).orElseThrow().isMustChangePassword()).isFalse();
+    }
+
+    @Test
+    void aWrongCurrentPasswordChangesNothing() throws Exception {
+        AppUser handedOver = users.save(new AppUser("kc-handed", "handed@example.com", "Hana", "Over", true));
+        willThrow(new ValidationException("error.password.current"))
+                .given(keycloak).verifyPassword(eq("handed@example.com"), eq("a-guess"));
+
+        mockMvc.perform(post("/api/auth/password")
+                        .with(asBrowser("kc-handed", "handed@example.com", "assistant"))
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(passwordChange("a-guess", "a-secret-only-i-know")))
+                .andExpect(status().isUnprocessableContent())
+                .andExpect(jsonPath("$.detail").value("The current password is not right."));
+
+        verify(keycloak, never()).resetPassword(anyString(), anyString());
+        assertThat(users.findById(handedOver.getId()).orElseThrow().isMustChangePassword()).isTrue();
+    }
+
+    @Test
+    void anAccountHoldingAHandedOverPasswordCanDoNothingElse() throws Exception {
+        users.save(new AppUser("kc-handed", "handed@example.com", "Hana", "Over", true));
+
+        // The application keeps such an account on its password screen; another
+        // client of the API is held to the same.
+        mockMvc.perform(get("/api/buildings").with(asBrowser("kc-handed", "handed@example.com", "assistant")))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.detail").value("Choose your own password before going on."));
+        mockMvc.perform(get("/api/me").with(asBrowser("kc-handed", "handed@example.com", "assistant")))
+                .andExpect(status().isOk());
     }
 
     @Test
@@ -142,7 +195,7 @@ class AuthenticationIntegrationTest extends AbstractIntegrationTest {
                         .with(asBrowser(KEYCLOAK_ID, EMAIL, "owner"))
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"newPassword\":\"short\"}"))
+                        .content(passwordChange("handed-over-pass", "short")))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.fieldErrors.newPassword").exists());
     }

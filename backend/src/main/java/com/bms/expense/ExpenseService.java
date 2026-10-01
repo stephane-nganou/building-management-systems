@@ -1,7 +1,6 @@
 package com.bms.expense;
 
 import java.time.LocalDate;
-import java.util.List;
 import java.util.UUID;
 
 import com.bms.access.AccessControl;
@@ -14,6 +13,9 @@ import com.bms.common.exception.NotFoundException;
 import com.bms.common.exception.ValidationException;
 import com.bms.expense.dto.ExpenseRequest;
 import com.bms.expense.dto.ExpenseResponse;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -33,11 +35,13 @@ public class ExpenseService {
         this.accessControl = accessControl;
     }
 
+    /** Newest first, always: a caller picks the page, never the order. */
     @Transactional(readOnly = true)
-    public List<ExpenseResponse> search(UUID buildingId, UUID apartmentId, LocalDate from, LocalDate to) {
+    public Page<ExpenseResponse> search(UUID buildingId, UUID apartmentId, LocalDate from, LocalDate to,
+                                        Pageable page) {
         return expenses.search(accessControl.accessibleOwnerIds(Permission.EXPENSE_READ),
-                        buildingId, apartmentId, from, to)
-                .stream().map(ExpenseResponse::from).toList();
+                        buildingId, apartmentId, from, to, PageRequest.of(page.getPageNumber(), page.getPageSize()))
+                .map(ExpenseResponse::from);
     }
 
     @Transactional(readOnly = true)

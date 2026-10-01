@@ -29,8 +29,16 @@ server {
     }
 
     # Client side routing: unknown paths are handled by the app.
+    #
+    # The page may only load what this origin serves. The one inline script, which
+    # sets the theme before the first paint, is allowed by its hash: change it in
+    # src/index.html and this hash must change with it. Component styles are
+    # inserted by Angular at runtime, hence 'unsafe-inline' for styles alone.
+    # angular.json turns off critical CSS inlining, whose onload handler this
+    # policy would block, leaving the stylesheet unapplied.
     location / {
         try_files $uri $uri/ /index.html;
         add_header Cache-Control "no-store";
+        add_header Content-Security-Policy "default-src 'self'; script-src 'self' 'sha256-x8lLcjYqckYrOBEJWMyPMXu/pwA0fC8HrWEfbd/XMC4='; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self'; connect-src 'self'; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'" always;
     }
 }

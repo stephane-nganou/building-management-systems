@@ -34,6 +34,10 @@ export const fr: Messages = {
   'common.delete': 'Supprimer',
   'common.done': 'Terminé',
   'common.total': 'Total',
+  'pager.label': 'Pagination',
+  'pager.previous': 'Précédente',
+  'pager.next': 'Suivante',
+  'pager.position': 'Page {page} sur {pages}',
   'common.name': 'Nom',
   'common.email': 'E-mail',
   'common.firstName': 'Prénom',
@@ -207,6 +211,7 @@ export const fr: Messages = {
   'expenses.subtitle':
     "Ce que chaque immeuble coûte à exploiter, et pourquoi. Ces montants viennent en déduction de vos loyers.",
   'expenses.add': 'Enregistrer une dépense',
+  'expenses.pageTotal': 'Total de cette page',
   'expenses.editTitle': 'Modifier la dépense',
   'expenses.loading': 'Chargement des dépenses.',
   'expenses.needBuildingTitle': "Ajoutez d'abord un immeuble",
@@ -267,7 +272,7 @@ export const fr: Messages = {
   'reports.print': 'Imprimer',
   'reports.loading': 'Calcul en cours.',
   'reports.error':
-    "Cette période n'a pas pu être calculée. Vérifiez que les dates sont dans le bon ordre.",
+    "Cette période n'a pas pu être calculée. Vérifiez que les dates sont dans le bon ordre et couvrent au plus une année.",
   'reports.income': 'Loyers facturés',
   'reports.costs': 'Charges engagées',
   'reports.profit': 'Bénéfice',
@@ -363,6 +368,8 @@ export const fr: Messages = {
   'password.title': 'Choisissez votre mot de passe',
   'password.subtitle':
     'Votre compte a été créé avec un mot de passe choisi par quelqu’un d’autre. Remplacez-le par un mot de passe que vous seul connaissez.',
+  'password.current': 'Mot de passe actuel',
+  'password.currentHint': 'Celui qui vous a été remis.',
   'password.new': 'Nouveau mot de passe',
   'password.confirm': 'Répétez-le',
   'password.hint': 'De 12 à 128 caractères, et pas votre adresse e-mail.',

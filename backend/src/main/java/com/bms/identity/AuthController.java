@@ -42,10 +42,13 @@ public class AuthController {
         return new RegistrationResponse(user.getId(), user.getEmail(), user.getFullName());
     }
 
-    /** Replaces the caller's password, and clears any obligation to do so. */
+    /**
+     * Replaces the caller's password once they have proved the current one, and
+     * clears any obligation to do so.
+     */
     @PostMapping("/password")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     public void changePassword(@Valid @RequestBody PasswordChangeRequest request) {
-        accounts.changePassword(currentUser.requireId(), request.newPassword());
+        accounts.changePassword(currentUser.requireId(), request.currentPassword(), request.newPassword());
     }
 }

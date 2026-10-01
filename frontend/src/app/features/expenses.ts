@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, linkedSignal, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { rxResource } from '@angular/core/rxjs-interop';
 
@@ -10,6 +10,7 @@ import { Dialog } from '../shared/dialog';
 import { Facade } from '../shared/facade';
 import { Icon } from '../shared/icon';
 import { IconButton } from '../shared/icon-button';
+import { Pager, stepBackFromEmptyPage } from '../shared/pager';
 import { DayPipe, LabelPipe, MoneyPipe, totalsByCurrency } from '../shared/money.pipe';
 import { ToastService } from '../shared/toasts';
 import { TranslatePipe } from '../shared/translate.pipe';
@@ -47,7 +48,7 @@ const blank = (buildingId: string): ExpenseForm => ({
 
 @Component({
   selector: 'bms-expenses',
-  imports: [FormsModule, Dialog, Facade, Icon, IconButton, MoneyPipe, DayPipe, LabelPipe, TranslatePipe],
+  imports: [FormsModule, Dialog, Facade, Icon, IconButton, Pager, MoneyPipe, DayPipe, LabelPipe, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="band">
@@ -96,7 +97,7 @@ const blank = (buildingId: string): ExpenseForm => ({
             <p>{{ 'expenses.needBuildingBody' | t }}</p>
           </div>
         </div>
-      } @else if (expenses.hasValue() && expenses.value()!.length === 0) {
+      } @else if (expenses.hasValue() && expenses.value()!.page.totalElements === 0) {
         <div class="empty">
           <bms-facade [units]="[]" [scale]="2" />
           <div>
@@ -123,7 +124,7 @@ const blank = (buildingId: string): ExpenseForm => ({
               </tr>
             </thead>
             <tbody>
-              @for (expense of expenses.value(); track expense.id) {
+              @for (expense of expenses.value()!.content; track expense.id) {
                 <tr>
                   <td class="muted">{{ expense.incurredOn | day }}</td>
                   <td class="strong">{{ expense.description }}</td>
@@ -148,7 +149,7 @@ const blank = (buildingId: string): ExpenseForm => ({
             <tfoot>
               @for (total of totals(); track total.currency) {
                 <tr>
-                  <td colspan="5" class="strong">{{ 'common.total' | t }}</td>
+                  <td colspan="5" class="strong">{{ totalLabel() | t }}</td>
                   <td class="right strong neg">{{ total.amount | money: total.currency }}</td>
                   <td></td>
                 </tr>
@@ -156,6 +157,7 @@ const blank = (buildingId: string): ExpenseForm => ({
             </tfoot>
           </table>
         </div>
+        <bms-pager [page]="expenses.value()!.page" (go)="page.set($event)" />
       }
 
       @if (error()) {
@@ -254,19 +256,38 @@ export class ExpensesPage {
     defaultValue: [],
   });
 
-  protected readonly expenses = rxResource({
-    params: () => ({ buildingId: this.filterBuilding(), from: this.from(), to: this.to() }),
-    stream: ({ params }) =>
-      this.api.search({
-        buildingId: params.buildingId || undefined,
-        from: params.from,
-        to: params.to,
-      }),
+  /** Back to the first page whenever the filters change. */
+  protected readonly page = linkedSignal({
+    source: () => [this.filterBuilding(), this.from(), this.to()],
+    computation: () => 0,
   });
 
-  /** One line per currency: buildings in different countries are never added up. */
+  protected readonly expenses = rxResource({
+    params: () => ({
+      buildingId: this.filterBuilding(),
+      from: this.from(),
+      to: this.to(),
+      page: this.page(),
+    }),
+    stream: ({ params }) =>
+      this.api.search(
+        { buildingId: params.buildingId || undefined, from: params.from, to: params.to },
+        params.page,
+      ),
+  });
+
+  private readonly emptyPage = stepBackFromEmptyPage(this.page, this.expenses.value);
+
+  /**
+   * One line per currency: buildings in different countries are never added up.
+   * Only the page on screen is added; the profit and loss report covers a period.
+   */
   protected readonly totals = computed(() =>
-    totalsByCurrency(this.expenses.value() ?? [], (expense) => expense.amount),
+    totalsByCurrency(this.expenses.value()?.content ?? [], (expense) => expense.amount),
+  );
+
+  protected readonly totalLabel = computed(() =>
+    (this.expenses.value()?.page.totalPages ?? 0) > 1 ? 'expenses.pageTotal' : 'common.total',
   );
 
   protected hasBuildings(): boolean {

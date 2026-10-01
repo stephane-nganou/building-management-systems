@@ -54,7 +54,7 @@
     {
       "clientId": "bms-backend",
       "name": "Building Management Backend",
-      "description": "The only client. Signs the browser in on the application's behalf, and holds the service account that creates owner and assistant accounts.",
+      "description": "Signs the browser in on the application's behalf, and holds the service account that creates owner and assistant accounts.",
       "protocol": "openid-connect",
       "baseUrl": "${BMS_PUBLIC_URL:http://localhost:4200}/",
       "publicClient": false,
@@ -93,6 +93,23 @@
             "userinfo.token.claim": "true"
           }
         }
+      ]
+    },
+    {
+      "clientId": "bms-password-check",
+      "name": "Building Management Password Check",
+      "description": "Used by the backend alone, to confirm a user's current password before it is changed. Direct access grants only, so the browser never signs in through it; the backend holds its secret, the same one as bms-backend.",
+      "protocol": "openid-connect",
+      "publicClient": false,
+      "secret": "${BMS_KEYCLOAK_CLIENT_SECRET:bms-backend-secret}",
+      "standardFlowEnabled": false,
+      "implicitFlowEnabled": false,
+      "directAccessGrantsEnabled": true,
+      "serviceAccountsEnabled": false,
+      "authorizationServicesEnabled": false,
+      "redirectUris": [],
+      "defaultClientScopes": [
+        "basic"
       ]
     }
   ],

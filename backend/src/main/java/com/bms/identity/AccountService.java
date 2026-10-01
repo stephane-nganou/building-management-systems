@@ -89,9 +89,10 @@ public class AccountService {
      * detached entity would take the change no further than memory.
      */
     @Transactional
-    public void changePassword(UUID userId, String password) {
+    public void changePassword(UUID userId, String currentPassword, String password) {
         AppUser user = users.findById(userId).orElseThrow(
                 () -> new IllegalStateException("The signed in user has no local record"));
+        keycloak.verifyPassword(user.getEmail(), currentPassword);
         keycloak.resetPassword(user.getKeycloakId(), password);
         user.passwordChosen();
     }

@@ -89,7 +89,8 @@ image tags in the Dockerfiles.
 ```bash
 # Backend: tests run against a real Postgres via Testcontainers, so Docker must be running.
 cd backend && mvn test
-cd backend && mvn spring-boot:run
+# The committed client secret is refused at startup unless this says it is a development machine.
+cd backend && BMS_KEYCLOAK_ALLOW_DEFAULT_SECRET=true mvn spring-boot:run
 
 # Frontend
 cd frontend && npm start
@@ -127,8 +128,10 @@ permission, such as `EXPENSE_READ` or `INVOICE_WRITE`.
 Landlords register themselves and get the `owner` realm role. Assistants never
 sign up: an owner creates them under **Assistants**, and the app returns a
 password once, to hand over. The app then makes them choose their own before
-showing them anything else. Both accounts are created through the Keycloak admin
-API by the `bms-backend` client.
+showing them anything else, and the API refuses them everything else too. To
+choose it they give the current one, which the backend checks by signing in
+through `bms-password-check`, a client that does nothing else. Both accounts
+are created through the Keycloak admin API by the `bms-backend` client.
 
 Every owner has a subscription: a history of dated periods, starting with a
 30 day trial (`BMS_SUBSCRIPTION_TRIAL_DAYS`). Once no period covers today, the

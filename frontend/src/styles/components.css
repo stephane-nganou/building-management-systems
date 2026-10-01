@@ -162,6 +162,14 @@ label {
   min-width: 180px;
 }
 
+.pager {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: flex-end;
+  margin-top: 12px;
+}
+
 .checks {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));

@@ -1,7 +1,8 @@
 # Implementation status
 
-Last updated: 2026-10-01, after BM-23 (suspension, assistants and role-less accounts).
-The security review behind BM-19 to BM-23 is in
+Last updated: 2026-10-01, after BM-24 (the smaller hardening items: CSRF, current
+password, unique email, client secret, bounded requests and a CSP).
+The security review behind BM-19 to BM-24 is in
 [ADVERSARY_REVIEW/README.md](ADVERSARY_REVIEW/README.md).
 The go live plan and the gaps it found are in [GO-LIVE-PART-1.md](GO-LIVE-PART-1.md).
 
@@ -114,8 +115,11 @@ the end to end suite passes against it.
   cannot quietly skip the check. `CurrencyIntegrationTest` covers a building's
   currency reaching everything under it, an invoice keeping its own after the
   building changes, whole francs on the line and on the PDF, and reports that
-  keep one total per currency. Now 84 tests.
-- Frontend: 55 unit tests, for the formatting pipes and per currency totals, the translation service and
+  keep one total per currency. `InputLimitsIntegrationTest` covers the bounds
+  one request may ask for: amounts that fit their columns, the line cap, the
+  one year report, and the paged lists with their size cap and ignored sort.
+  Now 140 tests.
+- Frontend: 58 unit tests, for the formatting pipes and per currency totals, the translation service and
   its dictionaries, the theme service, how a facade stacks apartments into floors and lights them,
   the delete confirmation and the toasts, and for the session and route guard logic that decides which
   screens exist, including that a refused profile is what "signed out" means and
@@ -132,7 +136,8 @@ the end to end suite passes against it.
   after a reload, a
   French browser landing on a French registration page, and a walk through every
   screen that watches the wire and fails if any request leaves our own origin,
-  a font or a stylesheet included, or anything at all reaches Keycloak. `scripts/e2e` starts the
+  a font or a stylesheet included, or anything at all reaches Keycloak, and
+  another that fails on any Content-Security-Policy violation. `scripts/e2e` starts the
   stack on its own compose project, waits for every part, runs them and tears it
   down.
 
@@ -260,6 +265,55 @@ the end to end suite passes against it.
 - **A lapsed owner can still cut an assistant off (BM-23).** Revoking, or
   narrowing permissions, only reduces risk, so neither needs a writable
   subscription; widening them, adding an assistant or resetting a password does.
+- **Only a bearer token excuses the forgery token (BM-24).** Any `Authorization`
+  header used to skip the CSRF check, while a session cookie on the same request
+  still authenticated it. Proved first: a session with `Authorization: Basic ...`
+  and no token wrote a password (204). The header must now start `Bearer `, read
+  case insensitively as the bearer token resolver reads it.
+- **One account per email, ignoring case (BM-24).** `V9__unique_email.sql` adds a
+  unique index on `lower(email)`, since every lookup is `findByEmailIgnoreCase`
+  and two rows would make each one fail. The migration fails on a database that
+  already holds such a pair; none should, as Keycloak refuses duplicate emails.
+- **No start with a known client secret (BM-24).** `KeycloakProperties` refuses a
+  blank secret, and the committed `bms-backend-secret` unless
+  `BMS_KEYCLOAK_ALLOW_DEFAULT_SECRET=true`, which the development compose file
+  and the integration tests set and production never does. The production
+  compose file now guards every use of a secret with `:?`, not only the first;
+  compose already failed on the first, but nothing should hang on its position.
+- **Changing a password needs the current one (BM-24).** Checked by signing in
+  with it through `bms-password-check`, a confidential client with direct access
+  grants and nothing else, holding the same secret as `bms-backend`: one process
+  holds both, so a second secret would separate nothing. The session that check
+  opens is ended at once, and a wrong guess counts towards the realm's lockout
+  like any other. Only `invalid_grant` is the user's mistake; `invalid_client`
+  means the realm lacks the client and is logged as our fault. The sync service
+  writes the client into an existing realm, and now only signs in as clients
+  with a service account. For an account handed a password, the current one is
+  the one it was handed.
+- **The API holds an account to choosing its password (BM-24).** The UI kept
+  such an account on the password screen, but the API served it with the handed
+  over password indefinitely. `PasswordChangeInterceptor`, beside
+  `SuspensionInterceptor`, refuses it everything but `/api/me` and
+  `/api/auth/password`.
+- **Bounded requests (BM-24).** Money takes `@Digits(10, 2)`, quantity
+  `@Digits(9, 3)` and size `@Digits(6, 2)`, matching their columns, so an
+  oversized amount is a 400 instead of a numeric overflow and a 500 (proved
+  first). An invoice takes at most 50 lines. A profit and loss report spans less
+  than a year from its start, a whole leap year included. Invoices and expenses
+  come a page at a time as Spring Data's `PagedModel` (default 50, at most 200),
+  newest first with the id as tie-breaker; a `sort` parameter is ignored, since
+  it would otherwise be appended to the JPQL. The report keeps its own unpaged
+  queries. Buildings, apartments and tenants stay whole lists: they fill
+  dropdowns and the dashboard, and are bounded by a portfolio's size. The
+  expenses screen totals only the page on screen, and says so once there is
+  more than one.
+- **A strict Content-Security-Policy on the app (BM-24).** nginx sends it with
+  `index.html`, so the development stack and production (through Caddy) are the
+  same, and Keycloak's own pages under `/auth` keep Keycloak's policy. The theme
+  script in `index.html` is allowed by its hash. Angular's critical CSS inlining
+  is off: it loads the stylesheet through an `onload` handler the policy blocks.
+  `e2e/csp.spec.ts` fails on any violation, which is how a changed theme script
+  with a stale hash would show.
 - **Translation is a runtime lookup, not Angular's build time i18n.** `$localize`
   produces a bundle per language, served under its own path, which needs the web
   server to route and a full rebuild to change a word. A signal held dictionary
