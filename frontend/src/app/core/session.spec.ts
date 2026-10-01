@@ -132,7 +132,7 @@ describe('SessionService', () => {
     expect(session.ownSubscriptionEnded()).toBeNull();
   });
 
-  it('names only the owners an assistant can no longer change data for', async () => {
+  it('tells lapsed owners, whose data stays readable, from suspended ones, whose data is closed', async () => {
     const session = sessionFor({
       ...profile(false, ['BUILDING_READ']),
       assistingFor: [
@@ -143,7 +143,8 @@ describe('SessionService', () => {
     });
     await session.load();
 
-    expect(session.readOnlyOwners()).toEqual(['Olivia', 'Opal']);
+    expect(session.readOnlyOwners()).toEqual(['Olivia']);
+    expect(session.suspendedOwners()).toEqual(['Opal']);
   });
 
   it('reads a refused profile as nobody being signed in', async () => {

@@ -33,7 +33,6 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class ReadOnlyIntegrationTest extends AbstractIntegrationTest {
 
     private static final String EXPIRED = "The subscription has expired. The data can be read but no longer changed.";
-    private static final String SUSPENDED = "This account is suspended.";
 
     private static final RequestPostProcessor OWNER = asUser("owner-a", "owner-a@example.com");
     private static final RequestPostProcessor OTHER_OWNER = asUser("owner-b", "owner-b@example.com");
@@ -78,6 +77,9 @@ class ReadOnlyIntegrationTest extends AbstractIntegrationTest {
         testData.expire("owner-a");
 
         for (Write write : writes()) {
+            if (ALLOWED_WHILE_EXPIRED.contains(write.route())) {
+                continue;
+            }
             mockMvc.perform(write.toRequest().with(OWNER))
                     .andExpect(status().isForbidden())
                     .andExpect(jsonPath("$.detail").value(EXPIRED));
@@ -131,14 +133,13 @@ class ReadOnlyIntegrationTest extends AbstractIntegrationTest {
         mockMvc.perform(buildingUpdate(building).with(ASSISTANT)).andExpect(status().isForbidden());
     }
 
+    /** Suspension closes the owner's data to their assistants too, reads included (BM-23). */
     @Test
-    void aSuspendedOwnersDataIsReadOnlyForTheirAssistant() throws Exception {
+    void aSuspendedOwnersDataIsClosedToTheirAssistant() throws Exception {
         testData.suspend("owner-a");
 
-        mockMvc.perform(get("/api/buildings/" + building).with(ASSISTANT)).andExpect(status().isOk());
-        mockMvc.perform(buildingUpdate(building).with(ASSISTANT))
-                .andExpect(status().isForbidden())
-                .andExpect(jsonPath("$.detail").value(SUSPENDED));
+        mockMvc.perform(get("/api/buildings/" + building).with(ASSISTANT)).andExpect(status().isNotFound());
+        mockMvc.perform(buildingUpdate(building).with(ASSISTANT)).andExpect(status().isNotFound());
     }
 
     private List<Write> writes() {
@@ -162,8 +163,9 @@ class ReadOnlyIntegrationTest extends AbstractIntegrationTest {
                         "/api/invoices/" + invoice + "/status?status=SENT", null),
                 new Write(HttpMethod.DELETE, "/api/invoices/{id}", "/api/invoices/" + invoice, null),
                 new Write(HttpMethod.POST, "/api/assistants", "/api/assistants", ASSISTANT_GRANT),
+                // Widening: narrowing is allowed while expired, see AssistantLifecycleIntegrationTest.
                 new Write(HttpMethod.PUT, "/api/assistants/{id}", "/api/assistants/" + assignment,
-                        "{\"permissions\":[\"BUILDING_READ\"]}"),
+                        "{\"permissions\":[\"BUILDING_READ\",\"BUILDING_WRITE\",\"INVOICE_READ\",\"EXPENSE_READ\"]}"),
                 new Write(HttpMethod.POST, "/api/assistants/{id}/password",
                         "/api/assistants/" + assignment + "/password", null),
                 new Write(HttpMethod.DELETE, "/api/assistants/{id}", "/api/assistants/" + assignment, null));
@@ -211,6 +213,9 @@ class ReadOnlyIntegrationTest extends AbstractIntegrationTest {
     private static final String TENANT = """
             {"firstName":"Kim","lastName":"Lee","leaseStart":"2026-03-01","active":false}
             """;
+
+    /** Cutting an assistant off only reduces risk, so a lapsed owner may still do it (BM-23). */
+    private static final Set<String> ALLOWED_WHILE_EXPIRED = Set.of("DELETE /api/assistants/{id}");
 
     private static final String ASSISTANT_GRANT = """
             {"email":"someone@example.com","firstName":"Some","lastName":"One","permissions":["BUILDING_READ"]}

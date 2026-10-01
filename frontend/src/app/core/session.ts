@@ -1,7 +1,7 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 
 import { MeApi } from './api';
-import { Me, Permission } from './models';
+import { Me, Permission, SubscriptionStatus } from './models';
 import { NAV_ENTRIES, NavEntry } from './navigation';
 
 /**
@@ -40,12 +40,17 @@ export class SessionService {
     return subscription && subscription.status !== 'ACTIVE' ? (subscription.endsOn ?? '') : null;
   });
 
-  /** The owners an assistant works for whose data can no longer be changed. */
-  readonly readOnlyOwners = computed(() =>
-    (this.me()?.assistingFor ?? [])
-      .filter((delegation) => delegation.ownerStatus !== 'ACTIVE')
-      .map((delegation) => delegation.ownerName),
-  );
+  /** The owners an assistant works for whose subscription lapsed: readable, no longer changeable. */
+  readonly readOnlyOwners = computed(() => this.ownersWhose('EXPIRED'));
+
+  /** The owners an assistant works for who were suspended: their data is closed until reactivated. */
+  readonly suspendedOwners = computed(() => this.ownersWhose('SUSPENDED'));
+
+  private ownersWhose(status: SubscriptionStatus): string[] {
+    return (this.me()?.assistingFor ?? [])
+      .filter((delegation) => delegation.ownerStatus === status)
+      .map((delegation) => delegation.ownerName);
+  }
 
   /** Fetches the profile the first time it is asked for, then hands out the same result. */
   load(): Promise<unknown> {

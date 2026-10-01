@@ -86,6 +86,10 @@ public class SecurityConfig {
                         .requestMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                         .requestMatchers(PUBLIC_PATHS).permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
+                        // Only an owner manages assistants or starts a building of
+                        // their own; assistants work inside an owner's buildings.
+                        .requestMatchers("/api/assistants/**").hasRole("OWNER")
+                        .requestMatchers(HttpMethod.POST, "/api/buildings").hasRole("OWNER")
                         .anyRequest().authenticated())
                 .exceptionHandling(exceptions -> exceptions
                         .authenticationEntryPoint(new HttpStatusEntryPoint(HttpStatus.UNAUTHORIZED)))

@@ -21,14 +21,16 @@ public final class Roles {
     }
 
     /**
-     * Someone is an assistant or an administrator only when the realm says so and
-     * says nothing about owning. Anything else is treated as an owner, which is
-     * what a user who signed up before roles existed still is.
+     * Only the realm's owner role makes an owner. An account with no role at all,
+     * such as one made by hand in Keycloak, or the backend's own service account,
+     * owns nothing and gets no trial.
      */
     public static boolean isOwner(Authentication authentication) {
-        Set<String> authorities = authorities(authentication);
-        return authorities.contains(OWNER)
-                || !(authorities.contains(ASSISTANT) || authorities.contains(ADMIN));
+        return authorities(authentication).contains(OWNER);
+    }
+
+    public static boolean isAssistant(Authentication authentication) {
+        return authorities(authentication).contains(ASSISTANT);
     }
 
     private static Set<String> authorities(Authentication authentication) {

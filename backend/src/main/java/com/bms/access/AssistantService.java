@@ -74,8 +74,17 @@ public class AssistantService {
     }
 
     @Transactional
+    /**
+     * Narrowing an assistant's permissions only ever reduces risk, so an owner
+     * whose subscription lapsed may still do it; widening them is a change like
+     * any other. A suspended owner is refused everything, but their assistants
+     * lose access with them, so nothing is left to cut off.
+     */
     public AssistantResponse updatePermissions(UUID assignmentId, PermissionsRequest request) {
-        AssistantAssignment assignment = require(assignmentId);
+        AssistantAssignment assignment = requireOwn(assignmentId);
+        if (!assignment.getPermissions().containsAll(request.permissions())) {
+            accessControl.requireWritable(assignment.getOwner());
+        }
         assignment.replacePermissions(request.permissions());
         return AssistantResponse.from(assignment);
     }
@@ -97,8 +106,9 @@ public class AssistantService {
     }
 
     @Transactional
+    /** Allowed even with a lapsed subscription: an owner must always be able to cut off an assistant. */
     public void revoke(UUID assignmentId) {
-        assignments.delete(require(assignmentId));
+        assignments.delete(requireOwn(assignmentId));
     }
 
     private AssistantResponse assign(AppUser owner, AppUser assistant, Set<Permission> permissions,
@@ -112,13 +122,19 @@ public class AssistantService {
         return AssistantResponse.from(assignment, temporaryPassword);
     }
 
+    /** One of the caller's own assignments, which they may change only while their data is writable. */
     private AssistantAssignment require(UUID assignmentId) {
+        AssistantAssignment assignment = requireOwn(assignmentId);
+        accessControl.requireWritable(assignment.getOwner());
+        return assignment;
+    }
+
+    private AssistantAssignment requireOwn(UUID assignmentId) {
         AssistantAssignment assignment = assignments.findById(assignmentId)
                 .orElseThrow(() -> NotFoundException.of("error.notFound.assistant", assignmentId));
         if (!assignment.getOwner().getId().equals(currentUser.requireId())) {
             throw NotFoundException.of("error.notFound.assistant", assignmentId);
         }
-        accessControl.requireWritable(assignment.getOwner());
         return assignment;
     }
 }

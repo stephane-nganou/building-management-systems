@@ -58,7 +58,7 @@ export const fr: Messages = {
     'Hier devient son dernier jour. Ses données restent consultables mais ne peuvent plus être modifiées.',
   'confirm.suspendTitle': 'Suspendre {name} ?',
   'confirm.suspendBody':
-    'Cette personne est aussitôt déconnectée de tout, et ses assistants ne peuvent plus modifier ses données.',
+    'Cette personne est aussitôt déconnectée de tout, et ses assistants ne peuvent plus ni consulter ni modifier ses données.',
 
   'toast.saved': 'Enregistré : {name}',
   'toast.deleted': 'Supprimé : {name}',
@@ -343,6 +343,8 @@ export const fr: Messages = {
 
   'suspended.title': 'Ce compte est suspendu',
   'suspended.body': "Rien ne peut être consulté ni modifié tant qu'il l'est. Contactez-nous pour le faire réactiver.",
+  'suspended.assisting':
+    'Le compte de {names} est suspendu. Ses données ne peuvent être ni consultées ni modifiées avant sa réactivation.',
 
   'register.readyTitle': 'Votre compte est prêt',
   'register.readyBody':

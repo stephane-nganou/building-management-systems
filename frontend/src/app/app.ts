@@ -102,6 +102,12 @@ import { TranslatePipe } from './shared/translate.pipe';
               {{ 'readOnly.assisting' | t: { names: session.readOnlyOwners().join(', ') } }}
             </p>
           }
+          @if (session.suspendedOwners().length > 0) {
+            <p class="notice read-only" role="status">
+              <bms-icon name="alert" />
+              {{ 'suspended.assisting' | t: { names: session.suspendedOwners().join(', ') } }}
+            </p>
+          }
           <router-outlet />
         </main>
       </div>

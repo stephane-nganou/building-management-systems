@@ -8,6 +8,7 @@ import java.util.TreeSet;
 import com.bms.access.AssistantAssignmentRepository;
 import com.bms.access.Permission;
 import com.bms.subscription.SubscriptionService;
+import com.bms.subscription.SubscriptionStatus;
 import com.bms.user.dto.MeResponse;
 import org.springframework.security.core.Authentication;
 import org.springframework.transaction.annotation.Transactional;
@@ -59,8 +60,12 @@ public class MeController {
         if (owner) {
             return EnumSet.allOf(Permission.class);
         }
+        // A suspended owner's delegation is still listed, so the assistant sees
+        // why, but it grants nothing until the owner is reactivated.
         Set<Permission> granted = EnumSet.noneOf(Permission.class);
-        delegations.forEach(delegation -> granted.addAll(delegation.permissions()));
+        delegations.stream()
+                .filter(delegation -> delegation.ownerStatus() != SubscriptionStatus.SUSPENDED)
+                .forEach(delegation -> granted.addAll(delegation.permissions()));
         return new TreeSet<>(granted);
     }
 }
