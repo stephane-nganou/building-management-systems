@@ -107,11 +107,8 @@ public class Invoice extends BaseEntity {
      * received must stay unchanged.
      */
     public void transitionTo(InvoiceStatus target) {
-        if (status == InvoiceStatus.CANCELLED) {
-            throw new ValidationException("error.invoice.cancelledIsFinal");
-        }
-        if (status == InvoiceStatus.PAID && target != InvoiceStatus.CANCELLED) {
-            throw new ValidationException("error.invoice.paidOnlyCancel");
+        if (!status.canBecome(target)) {
+            throw new ValidationException("error.invoice.transition");
         }
         this.status = target;
     }

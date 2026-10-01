@@ -91,6 +91,20 @@ class IssuedRecordsIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(status().isUnprocessableEntity());
     }
 
+    /** The chain the adversary review used: sent, back to draft, then deleted. */
+    @Test
+    void aSentInvoiceCannotBeWalkedBackToADraftAndDeleted() throws Exception {
+        issue();
+
+        mockMvc.perform(post("/api/invoices/" + invoice + "/status").param("status", "DRAFT").with(OWNER))
+                .andExpect(status().isUnprocessableEntity());
+        mockMvc.perform(delete("/api/invoices/" + invoice).with(OWNER))
+                .andExpect(status().isUnprocessableEntity());
+        mockMvc.perform(get("/api/invoices/" + invoice).with(OWNER))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.status").value("SENT"));
+    }
+
     @Test
     void aBuildingWithAnExpenseCannotBeDeleted() throws Exception {
         String other = scenario.createBuilding(OWNER, "Nebenstrasse 2");
