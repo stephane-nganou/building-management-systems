@@ -1,6 +1,7 @@
 # Implementation status
 
-Last updated: 2026-10-01, after BM-17 (a plan for a first, free pilot).
+Last updated: 2026-10-01, after BM-18 (an adversary security review).
+The review and the holes it found are in [ADVERSARY_REVIEW/README.md](ADVERSARY_REVIEW/README.md).
 The go live plan and the gaps it found are in [GO-LIVE-PART-1.md](GO-LIVE-PART-1.md).
 
 The architecture is drawn out in
