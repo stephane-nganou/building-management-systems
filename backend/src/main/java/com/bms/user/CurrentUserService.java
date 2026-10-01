@@ -52,7 +52,9 @@ public class CurrentUserService {
 
     private void refresh(AppUser user, ClaimAccessor claims) {
         syncProfile(user, claims);
-        if (!Roles.isOwner(SecurityContextHolder.getContext().getAuthentication())) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        user.assignRole(roleOf(authentication));
+        if (!Roles.isOwner(authentication)) {
             subscriptions.forget(user);
         }
     }
@@ -62,14 +64,24 @@ public class CurrentUserService {
      * registration, the seeded demo owner among them, and gets the same trial.
      */
     private void create(String keycloakId, ClaimAccessor claims) {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         AppUser user = users.save(new AppUser(
                 keycloakId,
                 email(claims),
                 claims.getClaimAsString("given_name"),
-                claims.getClaimAsString("family_name")));
-        if (Roles.isOwner(SecurityContextHolder.getContext().getAuthentication())) {
+                claims.getClaimAsString("family_name"),
+                roleOf(authentication),
+                false));
+        if (Roles.isOwner(authentication)) {
             subscriptions.startTrial(user);
         }
+    }
+
+    private static AccountRole roleOf(Authentication authentication) {
+        if (Roles.isAdmin(authentication)) {
+            return AccountRole.ADMIN;
+        }
+        return Roles.isOwner(authentication) ? AccountRole.OWNER : AccountRole.ASSISTANT;
     }
 
     @Transactional(readOnly = true)

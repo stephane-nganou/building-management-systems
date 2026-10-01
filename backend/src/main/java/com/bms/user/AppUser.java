@@ -1,8 +1,12 @@
 package com.bms.user;
 
+import java.util.UUID;
+
 import com.bms.common.BaseEntity;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.Table;
 
 @Entity
@@ -34,6 +38,19 @@ public class AppUser extends BaseEntity {
     @Column(name = "suspended", nullable = false)
     private boolean suspended;
 
+    /**
+     * What this account is. An owner or administrator is never managed as an
+     * assistant, so it can neither be linked as one nor have its password reset
+     * by one. Defaults to owner, which is how a role-less account is treated.
+     */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "role", nullable = false)
+    private AccountRole role = AccountRole.OWNER;
+
+    /** The owner who created this assistant, and the only one who may reset its password. */
+    @Column(name = "created_by_owner_id")
+    private UUID createdByOwnerId;
+
     protected AppUser() {
         // for JPA
     }
@@ -44,10 +61,16 @@ public class AppUser extends BaseEntity {
 
     public AppUser(String keycloakId, String email, String firstName, String lastName,
                    boolean mustChangePassword) {
+        this(keycloakId, email, firstName, lastName, AccountRole.OWNER, mustChangePassword);
+    }
+
+    public AppUser(String keycloakId, String email, String firstName, String lastName,
+                   AccountRole role, boolean mustChangePassword) {
         this.keycloakId = keycloakId;
         this.email = email;
         this.firstName = firstName;
         this.lastName = lastName;
+        this.role = role;
         this.mustChangePassword = mustChangePassword;
     }
 
@@ -86,6 +109,28 @@ public class AppUser extends BaseEntity {
     /** Called once the holder has set a password only they know. */
     public void passwordChosen() {
         this.mustChangePassword = false;
+    }
+
+    public AccountRole getRole() {
+        return role;
+    }
+
+    public boolean isAssistant() {
+        return role == AccountRole.ASSISTANT;
+    }
+
+    /** Keeps the local role in step with the realm when the account signs in. */
+    public void assignRole(AccountRole role) {
+        this.role = role;
+    }
+
+    public UUID getCreatedByOwnerId() {
+        return createdByOwnerId;
+    }
+
+    /** Records which owner created this assistant; only they may reset its password. */
+    public void createdBy(UUID ownerId) {
+        this.createdByOwnerId = ownerId;
     }
 
     public boolean isSuspended() {

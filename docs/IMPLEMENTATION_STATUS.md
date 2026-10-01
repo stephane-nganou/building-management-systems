@@ -1,7 +1,8 @@
 # Implementation status
 
-Last updated: 2026-10-01, after BM-18 (an adversary security review).
-The review and the holes it found are in [ADVERSARY_REVIEW/README.md](ADVERSARY_REVIEW/README.md).
+Last updated: 2026-10-01, after BM-19 (closing the assistant account takeover).
+The review that found it and the other holes is in
+[ADVERSARY_REVIEW/README.md](ADVERSARY_REVIEW/README.md).
 The go live plan and the gaps it found are in [GO-LIVE-PART-1.md](GO-LIVE-PART-1.md).
 
 The architecture is drawn out in
@@ -136,6 +137,16 @@ the end to end suite passes against it.
   down.
 
 ## Deliberate decisions
+
+- **An account carries its role, and an assistant its creator (BM-19).** An
+  owner could add any existing account as their assistant and then reset its
+  password, which handed them any other owner's account and, through it, the
+  administrator. The local record now keeps the account's role (set at creation
+  and refreshed from the token on every sign in) and, for an assistant, the
+  owner who created it. An owner or administrator can no longer be linked as an
+  assistant, and only the owner who created an assistant may reset its password.
+  A shared assistant is still linked by other owners, but only the creator holds
+  the password reset. This closes finding 1 of the adversary review.
 
 - **Income counts `SENT` and `PAID` invoices**, by issue date. Drafts and
   cancelled invoices are excluded. Report totals are aggregated in memory so
