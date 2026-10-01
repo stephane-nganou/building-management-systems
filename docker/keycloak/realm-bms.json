@@ -38,16 +38,16 @@
       "description": "The only client. Signs the browser in on the application's behalf, and holds the service account that creates owner and assistant accounts.",
       "protocol": "openid-connect",
       "publicClient": false,
-      "secret": "bms-backend-secret",
+      "secret": "${BMS_KEYCLOAK_CLIENT_SECRET:bms-backend-secret}",
       "standardFlowEnabled": true,
       "directAccessGrantsEnabled": false,
       "serviceAccountsEnabled": true,
       "authorizationServicesEnabled": false,
       "redirectUris": [
-        "http://localhost:4200/api/auth/callback/*"
+        "${BMS_PUBLIC_URL:http://localhost:4200}/api/auth/callback/*"
       ],
       "attributes": {
-        "post.logout.redirect.uris": "http://localhost:4200/*",
+        "post.logout.redirect.uris": "${BMS_PUBLIC_URL:http://localhost:4200}/*",
         "pkce.code.challenge.method": "S256"
       },
       "defaultClientScopes": [
@@ -88,60 +88,6 @@
           "view-realm"
         ]
       }
-    },
-    {
-      "username": "owner",
-      "email": "owner@bms.local",
-      "firstName": "Olivia",
-      "lastName": "Owner",
-      "enabled": true,
-      "emailVerified": true,
-      "credentials": [
-        {
-          "type": "password",
-          "value": "owner",
-          "temporary": false
-        }
-      ],
-      "realmRoles": [
-        "owner"
-      ]
-    },
-    {
-      "username": "assistant",
-      "email": "assistant@bms.local",
-      "firstName": "Adam",
-      "lastName": "Assistant",
-      "enabled": true,
-      "emailVerified": true,
-      "credentials": [
-        {
-          "type": "password",
-          "value": "assistant",
-          "temporary": false
-        }
-      ],
-      "realmRoles": [
-        "assistant"
-      ]
-    },
-    {
-      "username": "admin",
-      "email": "admin@bms.local",
-      "firstName": "Ada",
-      "lastName": "Admin",
-      "enabled": true,
-      "emailVerified": true,
-      "credentials": [
-        {
-          "type": "password",
-          "value": "admin",
-          "temporary": false
-        }
-      ],
-      "realmRoles": [
-        "admin"
-      ]
     }
   ]
 }

@@ -1,6 +1,6 @@
 # Implementation status
 
-Last updated: 2026-10-01, after BM-5 (a currency per building).
+Last updated: 2026-10-01, after BM-16 (a production compose file behind Caddy).
 
 The architecture is drawn out in
 [ARCHITECTURE_DIAGRAMS.md](ARCHITECTURE_DIAGRAMS.md): containers, backend and
@@ -12,6 +12,7 @@ main flow. This file records what is built and why it is built that way.
 | Area | State | Notes |
 |---|---|---|
 | Docker stack | Done | Postgres, Keycloak, backend and frontend; one command to start |
+| Production stack | Done | `docker-compose.prod.yml`: one domain behind Caddy with Let's Encrypt, Keycloak in production mode under `/auth`, secrets from `.env.production`, nightly backups; see `docs/DEPLOYMENT.md` |
 | Start and stop scripts | Done | mac, linux, windows |
 | Database schema | Done | Flyway `V1__init.sql`, validated against JPA mappings by every integration test |
 | Authentication | Done | The backend runs the authorization code flow and gives the browser a session cookie; other clients present a bearer token to the same API |
@@ -78,7 +79,19 @@ building in euros and a Douala one in CFA francs saw each figure on the
 dashboard and the profit and loss as one line per currency, "FCFA 1,500,000"
 fitting beside euros at 1440 and 1100 wide, and the building form in French
 showed its currency as "euro (EUR)" with the warning that changing it converts
-nothing.
+nothing. For BM-16, the production stack
+on this machine with `BMS_DOMAIN=localhost`, where Caddy issues a certificate
+of its own: every service healthy, only 80, 443 and Keycloak's console on
+127.0.0.1 published, HTTP redirected to HTTPS, the issuer
+`https://localhost/auth/realms/bms`, and `/auth/admin`, the admin API and the
+master realm answering 404. In a browser the demo owner was refused, the
+seeded administrator was made to choose a new password on the themed page and
+landed on Accounts, and the session and forgery token cookies came back
+Secure. A backup was taken, the application's users deleted, both dumps
+restored with the commands in `docs/DEPLOYMENT.md`, and the administrator
+signed in again with the password chosen before the backup. The development
+stack still seeds its demo users, on a fresh realm and on an existing one, and
+the end to end suite passes against it.
 
 ## Tests
 
@@ -447,6 +460,36 @@ nothing.
   Taking every ISO 4217 code would mean trusting that each one renders on the
   PDF, which nobody has looked at.
 
+- **One realm definition, and the people are per environment (BM-16).** The
+  export keeps the realm, its roles, the client and the service account. The
+  client secret and the redirect URIs are `${NAME:default}` placeholders
+  whose defaults are the development values, which Keycloak resolves on
+  import and `sync-realm.mjs` resolves the same way, except that it refuses a
+  placeholder with neither a value nor a default. The demo users moved to
+  `users-demo.json` and production's single administrator is in
+  `users-prod.json`, seeded by the sync from `KEYCLOAK_USERS_FILE`. A second
+  realm file for production was rejected: two copies of the client and its
+  mappers drift. The administrator must change their password at the first
+  sign in through `requiredActions`; a credential marked `temporary` in a
+  partial import is not enforced, which was found by signing in.
+
+- **One domain in production, Keycloak under `/auth` (BM-16).** Caddy sends
+  `/api` straight to the backend rather than through the frontend's nginx,
+  which would overwrite `X-Forwarded-Proto` with its own `http`. The backend
+  trusts forwarded headers (`SERVER_FORWARD_HEADERS_STRATEGY=framework`), so
+  its cookies are Secure; it builds every redirect from
+  `BMS_FRONTEND_BASE_URL` either way. Keycloak runs `start` with
+  `KC_HTTP_RELATIVE_PATH=/auth`, which moves its health endpoint on port 9000
+  to `/auth/health` too. Its admin console is refused at the edge and bound to
+  127.0.0.1, reached over an SSH tunnel with `KC_HOSTNAME_ADMIN` pointing
+  there.
+
+- **Backups are dumps on the same host (BM-16).** `pg_dump` of both databases
+  on start and at 02:00 UTC, kept 14 days, written aside and moved into place
+  so a partial file never looks complete. Getting them off the server is left
+  to the operator and said so in the deployment guide; both have to be
+  restored together, because application records are keyed on Keycloak ids.
+
 - **A bare date is a calendar day (BM-14).** `new Date('2026-10-29')` is UTC
   midnight, which is the 28th anywhere west of Greenwich, so `DayPipe` read
   every due date, lease date and subscription end a day early there. A date
@@ -497,13 +540,16 @@ nothing.
   committed without it fails on Linux and macOS, including in CI.
 - The end to end stack uses the same ports as the development one, because the
   realm's redirect URIs name them, so the two cannot run at once.
-- `docker/keycloak/themes/bms` hardcodes the registration URL. Keycloak's
-  templates have no way to reach our configuration.
-- The `bms-backend` client secret is a literal in the realm export, matched by a
-  default in `application.yml`. Fine locally; a deployment has to set
-  `BMS_KEYCLOAK_CLIENT_SECRET` and a realm to match. That client now signs the
-  browser in as well as creating accounts, so the secret matters more than it
-  did.
+- The `bms-backend` client secret defaults to `bms-backend-secret` in the
+  realm export and in `application.yml`, for development. The production
+  compose file refuses to start without `BMS_KEYCLOAK_CLIENT_SECRET`, but a
+  deployment put together some other way would inherit the default.
+- The production stack builds its images on the server from a checkout. There
+  is no registry and no image tag to roll back to; going back is a
+  `git checkout` and another start.
+- Production has no alerting: nothing reports a failed backup, a certificate
+  Caddy could not renew or a service that keeps restarting. `docker compose
+  ps` and the logs are the only view.
 - The session lives in the backend's memory. A second replica would hand a
   browser a session the other one has never heard of, so scaling out needs
   Spring Session backed by Postgres or Redis before it can work.

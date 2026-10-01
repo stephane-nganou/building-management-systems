@@ -64,9 +64,12 @@ services:
       KEYCLOAK_URL: http://keycloak:8080
       KEYCLOAK_ADMIN: ${KEYCLOAK_ADMIN:-admin}
       KEYCLOAK_ADMIN_PASSWORD: ${KEYCLOAK_ADMIN_PASSWORD:-admin}
+      # The demo owner, assistant and administrator the specs sign in as.
+      KEYCLOAK_USERS_FILE: docker/keycloak/users-demo.json
     volumes:
       - ./scripts/sync-realm.mjs:/app/scripts/sync-realm.mjs:ro
       - ./docker/keycloak/realm-bms.json:/app/docker/keycloak/realm-bms.json:ro
+      - ./docker/keycloak/users-demo.json:/app/docker/keycloak/users-demo.json:ro
     depends_on:
       keycloak:
         condition: service_healthy
