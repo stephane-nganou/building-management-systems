@@ -197,7 +197,7 @@ label {
   color: var(--ink);
 }
 
-/* EN and FR, one segmented control. */
+/* EN, FR and DE, one segmented control. */
 .languages {
   display: inline-flex;
   width: fit-content;

@@ -1,6 +1,8 @@
 package com.bms.config;
 
+import java.util.Locale;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.security.oauth2.client.registration.ClientRegistrationRepository;
@@ -11,9 +13,9 @@ import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequ
 /**
  * Carries the reader's language out to the sign in page.
  *
- * <p>Keycloak's own pages speak both languages, and {@code ui_locales} is the
- * standard way to say which. Without this the application would switch to
- * French and then hand the reader an English sign in page.
+ * <p>Keycloak's own pages speak every language we do, and {@code ui_locales} is
+ * the standard way to say which. Without this the application would switch to
+ * French or German and then hand the reader an English sign in page.
  *
  * <p>The value is checked against the languages we actually have rather than
  * passed on as it arrives, so a crafted link cannot append parameters of its own
@@ -22,7 +24,9 @@ import org.springframework.security.oauth2.core.endpoint.OAuth2AuthorizationRequ
 class LocalizedAuthorizationRequestResolver implements OAuth2AuthorizationRequestResolver {
 
     private static final String UI_LOCALES = "ui_locales";
-    private static final Set<String> SUPPORTED = Set.of("en", "fr");
+    private static final Set<String> SUPPORTED = LocaleConfig.SUPPORTED.stream()
+            .map(Locale::getLanguage)
+            .collect(Collectors.toUnmodifiableSet());
 
     private final DefaultOAuth2AuthorizationRequestResolver delegate;
 

@@ -8,7 +8,7 @@ them. Payment, scaling and polish come after we know what they need.
 The product is close. BM-16 already gives a production stack on one server
 behind HTTPS, with nightly database dumps, and every feature a landlord needs
 for a first month: buildings, apartments, tenants, expenses, invoices as PDF,
-profit and loss, assistants, English and French. What is missing is mostly
+profit and loss, assistants, English, French and German. What is missing is mostly
 around the product: legal pages, email, security settings, monitoring and a
 way to hear from users. Section 3 lists it.
 

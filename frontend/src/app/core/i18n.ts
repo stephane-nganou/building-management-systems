@@ -1,27 +1,29 @@
 import { HttpInterceptorFn } from '@angular/common/http';
 import { Injectable, computed, effect, inject, signal } from '@angular/core';
 
+import { de } from '../i18n/de';
 import { MessageKey, Messages, en } from '../i18n/en';
 import { fr } from '../i18n/fr';
 
-export type Language = 'en' | 'fr';
+export type Language = 'en' | 'fr' | 'de';
 
-export const LANGUAGES: readonly Language[] = ['en', 'fr'];
+export const LANGUAGES: readonly Language[] = ['en', 'fr', 'de'];
 
-const DICTIONARIES: Record<Language, Messages> = { en, fr };
+const DICTIONARIES: Record<Language, Messages> = { en, fr, de };
 
-/** What `Intl` is asked for. Both put the day before the month, as the app always has. */
-const LOCALES: Record<Language, string> = { en: 'en-GB', fr: 'fr-FR' };
+/** What `Intl` is asked for. Each puts the day before the month, as the app always has. */
+const LOCALES: Record<Language, string> = { en: 'en-GB', fr: 'fr-FR', de: 'de-DE' };
 
 const STORAGE_KEY = 'bms.language';
 
-/** A previous choice wins; failing that, the browser's own language decides. */
+function supported(code: string | null): Language | undefined {
+  return LANGUAGES.find((language) => language === code);
+}
+
+/** A previous choice wins; failing that, the browser's own language decides, then English. */
 function initialLanguage(): Language {
-  const stored = localStorage.getItem(STORAGE_KEY);
-  if (stored === 'en' || stored === 'fr') {
-    return stored;
-  }
-  return navigator.language.toLowerCase().startsWith('fr') ? 'fr' : 'en';
+  const browser = navigator.language.toLowerCase().slice(0, 2);
+  return supported(localStorage.getItem(STORAGE_KEY)) ?? supported(browser) ?? 'en';
 }
 
 function interpolate(text: string, values: Record<string, string | number>): string {
@@ -32,7 +34,7 @@ function interpolate(text: string, values: Record<string, string | number>): str
  * The language the app speaks, and every string it says.
  *
  * <p>Translation is a runtime lookup rather than Angular's build time i18n, so
- * one bundle serves both languages and switching is immediate. The current
+ * one bundle serves every language and switching is immediate. The current
  * language is a signal: reading it inside a pipe registers the dependency with
  * whichever view is rendering, so a switch marks exactly those views dirty.
  */
