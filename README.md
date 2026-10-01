@@ -26,6 +26,20 @@ Pass `--wipe` (`-Wipe` on Windows) to the stop script to drop the database volum
 | API docs | http://localhost:8080/swagger-ui.html |
 | Keycloak | http://localhost:8081 (admin / admin) |
 | Mailpit (every email sent) | http://localhost:8025 |
+| Logs viewer, when on | http://localhost:9999 |
+
+### Logs
+
+```bash
+scripts/logs.sh                  # follow every service, live (logs-windows.ps1 on Windows)
+scripts/logs.sh backend          # follow one
+scripts/logs.sh --save           # write them to logs/<date-time>.log (-Save on Windows)
+scripts/logs.sh --viewer         # start the web viewer (-Viewer); --viewer-off stops it
+```
+
+The web viewer, [Dozzle](https://dozzle.dev), shows every container of the stack
+live, searchable, on localhost only. To start it with the stack every time, set
+`COMPOSE_PROFILES=logs` in `.env`; the stop scripts stop it either way.
 
 New landlords sign up at http://localhost:4200/register, reachable from
 **Register here** on the sign in page. At their first sign in they confirm their

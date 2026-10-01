@@ -1,7 +1,6 @@
 # Implementation status
 
-Last updated: 2026-10-01, after BM-24 (the smaller hardening items: CSRF, current
-password, unique email, client secret, bounded requests and a CSP).
+Last updated: 2026-10-01, after BM-28 (reading the containers' logs).
 The security review behind BM-19 to BM-24 is in
 [ADVERSARY_REVIEW/README.md](ADVERSARY_REVIEW/README.md).
 The go live plan and the gaps it found are in [GO-LIVE-PART-1.md](GO-LIVE-PART-1.md).
@@ -18,6 +17,7 @@ main flow. This file records what is built and why it is built that way.
 | Docker stack | Done | Postgres, Keycloak, backend and frontend; one command to start |
 | Production stack | Done | `docker-compose.prod.yml`: one domain behind Caddy with Let's Encrypt, Keycloak in production mode under `/auth`, secrets from `.env.production`, nightly backups; see `docs/DEPLOYMENT.md` |
 | Start and stop scripts | Done | mac, linux, windows |
+| Container logs | Done | `scripts/logs.sh`, `logs-windows.ps1` and `logs-prod.sh` follow or save them; a Dozzle web viewer behind the `logs` compose profile |
 | Database schema | Done | Flyway `V1__init.sql`, validated against JPA mappings by every integration test |
 | Authentication | Done | The backend runs the authorization code flow and gives the browser a session cookie; other clients present a bearer token to the same API |
 | Registration | Done | Public `/register` page and `POST /api/auth/register`; new users get the `owner` realm role |
@@ -314,6 +314,20 @@ the end to end suite passes against it.
   is off: it loads the stylesheet through an `onload` handler the policy blocks.
   `e2e/csp.spec.ts` fails on any violation, which is how a changed theme script
   with a stale hash would show.
+- **Logs are read where Docker keeps them (BM-28).** No log shipping and no
+  files written by the services: every container already logs to Docker,
+  rotated in production, so the scripts wrap `docker compose logs` (follow, or
+  save to a git-ignored `logs/`), and the web view is Dozzle, which reads the
+  same logs through the Docker socket. It sits behind a compose profile,
+  `logs`, off by default and switched on with `COMPOSE_PROFILES=logs` in
+  `.env` or `.env.production`, which Compose reads itself, so no start script
+  needed a flag; `--viewer` starts it on demand. It answers on localhost only,
+  production reaching it over an SSH tunnel like Keycloak's console, and shows
+  only this stack's containers: `name=bms-` in development, the `hausbuch`
+  project label in production (checked: a stray container stays hidden).
+  Dozzle's container actions and shell stay at their default, off. A plain
+  `docker compose down` leaves a profile service running (checked), so the
+  stop scripts name the profile.
 - **Translation is a runtime lookup, not Angular's build time i18n.** `$localize`
   produces a bundle per language, served under its own path, which needs the web
   server to route and a full rebuild to change a word. A signal held dictionary
