@@ -128,5 +128,22 @@ services:
     depends_on:
       - backend
 
+  # A web view of this stack's logs, live, at http://localhost:9999. Off unless
+  # the "logs" profile is on: COMPOSE_PROFILES=logs in .env, or scripts/logs.sh
+  # --viewer. It only lists the bms-* containers, and its container actions and
+  # shell stay off, as they are by default. The socket is mounted read only, but
+  # that does not limit the Docker API, which is why it answers on localhost.
+  logs:
+    image: amir20/dozzle:v11.1.3
+    container_name: bms-logs
+    profiles: ["logs"]
+    environment:
+      DOZZLE_FILTER: name=bms-
+      DOZZLE_NO_ANALYTICS: "true"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    ports:
+      - "127.0.0.1:${LOGS_PORT:-9999}:8080"
+
 volumes:
   postgres-data:

@@ -62,6 +62,30 @@ ssh -L 8081:localhost:8081 <user>@<server>
 # then http://localhost:8081/auth/admin, as KEYCLOAK_ADMIN / KEYCLOAK_ADMIN_PASSWORD
 ```
 
+## Logs
+
+Every service logs to Docker, rotated at 10 MB, five files each. On the server:
+
+```bash
+scripts/logs-prod.sh               # follow every service, live
+scripts/logs-prod.sh backend       # follow one
+scripts/logs-prod.sh --save        # write them to logs/<date-time>.log
+```
+
+For a web view, start the viewer, which like the admin console answers only on
+the server's localhost, and tunnel to it:
+
+```bash
+scripts/logs-prod.sh --viewer      # --viewer-off stops it
+ssh -L 9999:localhost:9999 <user>@<server>
+# then http://localhost:9999
+```
+
+`COMPOSE_PROFILES=logs` in `.env.production` starts it with the stack instead.
+It lists only this stack's containers, and its container actions and shell are
+left off, as they are by default. It holds the Docker socket, though, which is
+as good as root on the server, so keep it on localhost and behind the tunnel.
+
 ## Backups
 
 The `backup` service dumps the application database (`bms`) and Keycloak's
