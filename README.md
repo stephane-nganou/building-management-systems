@@ -25,13 +25,15 @@ Pass `--wipe` (`-Wipe` on Windows) to the stop script to drop the database volum
 | Backend | http://localhost:8080 |
 | API docs | http://localhost:8080/swagger-ui.html |
 | Keycloak | http://localhost:8081 (admin / admin) |
+| Mailpit (every email sent) | http://localhost:8025 |
 
 New landlords sign up at http://localhost:4200/register, reachable from
-**Register here** on the sign in page. Demo sign in:
-`owner` / `owner`, `assistant` / `assistant`, or `admin` / `admin` for the
-administrator of the service (a user of the `bms` realm, not Keycloak's own
-console admin). These live in `docker/keycloak/users-demo.json` and exist for
-local development only.
+**Register here** on the sign in page. At their first sign in they confirm their
+address through a link Keycloak emails them; locally that email lands in Mailpit.
+Demo sign in: `owner` / `owner-demo-pass`, `assistant` / `assistant-demo-pass`,
+or `admin` / `admin-demo-pass` for the administrator of the service (a user of
+the `bms` realm, not Keycloak's own console admin). These live in
+`docker/keycloak/users-demo.json` and exist for local development only.
 
 The app opens in French for a French browser and English for anything else;
 **EN / FR** in the sidebar changes it and the choice is remembered. The sign in

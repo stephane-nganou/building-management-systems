@@ -31,7 +31,7 @@ class TrialIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void signingUpStartsATrialOfThirtyDaysFromToday() throws Exception {
-        given(keycloak.createUser(anyString(), anyString(), anyString(), anyString(), eq("owner")))
+        given(keycloak.createUser(anyString(), anyString(), anyString(), anyString(), eq("owner"), eq(false)))
                 .willReturn("kc-nina");
 
         mockMvc.perform(post("/api/auth/register").contentType(MediaType.APPLICATION_JSON).content("""

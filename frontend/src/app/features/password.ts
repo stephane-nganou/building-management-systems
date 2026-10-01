@@ -5,6 +5,7 @@ import { Router } from '@angular/router';
 import { AuthApi } from '../core/api';
 import { AuthService } from '../core/auth';
 import { TranslationService } from '../core/i18n';
+import { acceptablePassword } from '../core/password-rule';
 import { SessionService } from '../core/session';
 import { Gate } from '../shared/gate';
 import { TranslatePipe } from '../shared/translate.pipe';
@@ -79,7 +80,7 @@ export class PasswordPage {
   protected confirmPassword = '';
 
   protected complete(): boolean {
-    return this.newPassword.length >= 8 && this.newPassword === this.confirmPassword;
+    return acceptablePassword(this.newPassword) && this.newPassword === this.confirmPassword;
   }
 
   protected submit(): void {

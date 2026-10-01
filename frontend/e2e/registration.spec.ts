@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { expectNavLabels, signIn, uniqueEmail } from './support';
+import { confirmationLink, expectNavLabels, signIn, submitSignIn, uniqueEmail } from './support';
 
 test.describe('registration', () => {
   test('the sign in page offers a way to register', async ({ page }) => {
@@ -26,8 +26,13 @@ test.describe('registration', () => {
 
     await expect(page.getByRole('heading', { name: /your account is ready/i })).toBeVisible();
 
+    // The first sign in stops until the address is confirmed. Following the
+    // link in the same browser confirms it and finishes signing in.
     await page.getByRole('button', { name: /sign in/i }).click();
-    await signIn(page, email, 'a-good-secret');
+    await submitSignIn(page, email, 'a-good-secret');
+    await expect(page.getByRole('heading', { name: /email verification/i })).toBeVisible();
+    await page.goto(await confirmationLink(page, email));
+    await page.waitForURL(/localhost:4200/);
 
     // A registered user is an owner, so every screen is theirs.
     await expect(page.locator('.spine-foot .role')).toHaveText(/owner/i);
@@ -41,6 +46,33 @@ test.describe('registration', () => {
       'Profit and loss',
       'Assistants',
     ]);
+  });
+
+  /**
+   * Opened on another device, such as a phone, the link cannot finish the sign
+   * in that started elsewhere. It confirms the address, then offers the way back
+   * to the application rather than leaving the owner on Keycloak's page.
+   */
+  test('an address confirmed on another device leads back to the application', async ({ page, browser }) => {
+    const email = uniqueEmail('phone');
+    await page.goto('/register');
+    await page.getByLabel('First name').fill('Paul');
+    await page.getByLabel('Last name').fill('Phone');
+    await page.getByLabel('Email').fill(email);
+    await page.getByLabel('Password').fill('a-good-secret');
+    await page.getByRole('button', { name: /create account/i }).click();
+    await page.getByRole('button', { name: /sign in/i }).click();
+    await submitSignIn(page, email, 'a-good-secret');
+    const link = await confirmationLink(page, email);
+
+    const phone = await browser.newPage();
+    await phone.goto(link);
+    await phone.getByRole('link', { name: /click here to proceed/i }).click();
+    await expect(phone.getByRole('heading', { name: /email address verified/i })).toBeVisible();
+    await phone.getByRole('link', { name: /back to application/i }).click();
+    await signIn(phone, email, 'a-good-secret');
+    await expect(phone.locator('.spine-foot .role')).toHaveText(/owner/i);
+    await phone.close();
   });
 
   test('the same email cannot register twice', async ({ page }) => {

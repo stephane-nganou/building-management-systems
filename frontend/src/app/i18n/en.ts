@@ -333,13 +333,14 @@ export const en = {
   'suspended.body': 'Nothing can be viewed or changed while it is. Contact us to have it reactivated.',
 
   'register.readyTitle': 'Your account is ready',
-  'register.readyBody': 'Sign in with {email} and start by adding your first building.',
+  'register.readyBody':
+    'Sign in with {email}. The first time, we email you a link to confirm the address; then start by adding your first building.',
   'register.signIn': 'Sign in',
   'register.title': 'Create your account',
   'register.subtitle':
     'For landlords who manage their own buildings. Assistants do not sign up here; their owner creates them.',
   'register.password': 'Password',
-  'register.passwordHint': 'At least 8 characters.',
+  'register.passwordHint': '12 to 128 characters, and not your email address.',
   'register.submit': 'Create account',
   'register.submitting': 'Creating',
   'register.haveAccount': 'I already have an account',
@@ -350,7 +351,7 @@ export const en = {
     'Your account was set up with a password somebody else chose. Replace it with one only you know.',
   'password.new': 'New password',
   'password.confirm': 'Repeat it',
-  'password.hint': 'At least 8 characters.',
+  'password.hint': '12 to 128 characters, and not your email address.',
   'password.submit': 'Save password',
   'password.saving': 'Saving',
   'password.failed': 'That password could not be saved.',

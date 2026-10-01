@@ -47,10 +47,15 @@ public class KeycloakAdminClient {
      * Creates an enabled account and returns its Keycloak id, which is the
      * {@code sub} claim of every token it will later carry.
      */
-    public String createUser(String email, String firstName, String lastName, String password, String realmRole) {
+    /**
+     * Creates the account with its password in one call, so a password the realm's
+     * policy refuses leaves no account behind. An unverified account is asked by
+     * Keycloak to confirm its address at the first sign in.
+     */
+    public String createUser(String email, String firstName, String lastName, String password, String realmRole,
+                             boolean emailVerified) {
         String token = accessToken();
-        String userId = createAccount(token, email, firstName, lastName);
-        setPassword(token, userId, password);
+        String userId = createAccount(token, email, firstName, lastName, password, emailVerified);
         assignRealmRole(token, userId, realmRole);
         return userId;
     }
@@ -72,7 +77,8 @@ public class KeycloakAdminClient {
                 });
     }
 
-    private String createAccount(String token, String email, String firstName, String lastName) {
+    private String createAccount(String token, String email, String firstName, String lastName, String password,
+                                 boolean emailVerified) {
         URI location = http.post()
                 .uri("/admin/realms/{realm}/users", properties.realm())
                 .headers(headers -> headers.setBearerAuth(token))
@@ -83,11 +89,13 @@ public class KeycloakAdminClient {
                         "firstName", firstName,
                         "lastName", lastName,
                         "enabled", true,
-                        "emailVerified", true))
+                        "emailVerified", emailVerified,
+                        "credentials", List.of(Map.of("type", "password", "value", password, "temporary", false))))
                 .exchange((request, response) -> {
                     if (response.getStatusCode().value() == 409) {
                         throw new ValidationException("error.account.exists", email);
                     }
+                    failOnPasswordPolicy(response.getStatusCode());
                     failOnError(response.getStatusCode(), "create the account");
                     return response.getHeaders().getLocation();
                 });
@@ -110,9 +118,20 @@ public class KeycloakAdminClient {
                 .contentType(MediaType.APPLICATION_JSON)
                 .body(Map.of("type", "password", "value", password, "temporary", false))
                 .exchange((request, response) -> {
+                    failOnPasswordPolicy(response.getStatusCode());
                     failOnError(response.getStatusCode(), "set the password");
                     return null;
                 });
+    }
+
+    /**
+     * Keycloak answers 400 to a password its policy refuses. Our own validation
+     * mirrors that policy, so this is the backstop for a rule it does not know.
+     */
+    private void failOnPasswordPolicy(HttpStatusCode status) {
+        if (status.value() == 400) {
+            throw new ValidationException("error.password.policy");
+        }
     }
 
     private void assignRealmRole(String token, String userId, String role) {

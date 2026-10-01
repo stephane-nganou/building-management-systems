@@ -1,7 +1,7 @@
 # Implementation status
 
-Last updated: 2026-10-01, after BM-20 (keeping issued invoices and expenses).
-The security review behind BM-19 and BM-20 is in
+Last updated: 2026-10-01, after BM-21 (hardening registration and the realm).
+The security review behind BM-19 to BM-21 is in
 [ADVERSARY_REVIEW/README.md](ADVERSARY_REVIEW/README.md).
 The go live plan and the gaps it found are in [GO-LIVE-PART-1.md](GO-LIVE-PART-1.md).
 
@@ -137,6 +137,33 @@ the end to end suite passes against it.
   down.
 
 ## Deliberate decisions
+
+- **A new owner proves their address, and registration is rate limited (BM-21).**
+  - *Realm:* brute force protection (ten failures lock an account, longer each
+    time, up to 15 minutes), a password policy (12 to 128 characters, not the
+    username or email), and `verifyEmail`. The sync carries all of it to an
+    existing realm. The policy also applies to imported users, which is why the
+    demo passwords are now `owner-demo-pass` and so on.
+  - *Verification:* a self-registered owner is created unverified, and Keycloak
+    itself stops their first sign in and emails the link; the backend sends no
+    email. Owners an administrator creates and assistants an owner creates stay
+    verified: someone who knows them typed the address and handed the password
+    over. Opened in the same browser, the link finishes the sign in; opened on
+    another device, Keycloak asks for one click and offers a way back to the
+    application, which is the client's `baseUrl`.
+  - *Mail:* Mailpit catches everything in development and the end to end suite,
+    which reads it through its API. Production needs an SMTP relay (`BMS_SMTP_*`)
+    and will not start without one.
+  - *Password set atomically:* the account and its password are now created in
+    one Keycloak call, so a password the policy refuses leaves no account behind.
+    Our validation mirrors the policy, so the refusal is explained before
+    Keycloak is asked.
+  - *Rate limit:* `POST /api/auth/register` allows 5 sign ups per client address
+    per hour (`bms.registration.max-per-hour`), then answers 429. It is an
+    interceptor, so the refusal is translated like every other error; the
+    counts live in memory, which only holds for one backend replica.
+  - *Kept on purpose:* "An account already exists" stays, so a real user is told
+    why; the rate limit makes harvesting emails through it slow.
 
 - **Issued records outlive what they belong to (BM-20).** Deleting a tenant,
   apartment or building used to cascade away its invoices, sent and paid ones
@@ -536,10 +563,6 @@ the end to end suite passes against it.
 - Languages beyond English and French. Adding one is a dictionary, a
   `messages_xx.properties`, a locale in `LocaleConfig` and an entry in the
   realm's `supportedLocales`.
-- Email verification and password reset by email; both are Keycloak features
-  that need an SMTP server configured. `resetPasswordAllowed` is on, so the
-  link is offered today and fails to send.
-- Brute force protection and a password policy on the realm (BM-17).
 - An Impressum and a privacy policy, and a feedback link in the app; all three
   are needed before the pilot in [GO-LIVE-PART-1.md](GO-LIVE-PART-1.md).
 - Deleting an account or exporting its data from the app. Until then it is done

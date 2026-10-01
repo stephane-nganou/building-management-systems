@@ -19,6 +19,15 @@ services:
       timeout: 5s
       retries: 20
 
+  # Catches every email Keycloak sends, such as the link that confirms a new
+  # owner's address. Read them at http://localhost:8025; the end to end suite
+  # reads them through its API.
+  mailpit:
+    image: axllent/mailpit:v1.31.3
+    container_name: bms-mailpit
+    ports:
+      - "${MAILPIT_PORT:-8025}:8025"
+
   keycloak:
     image: quay.io/keycloak/keycloak:26.7.3
     container_name: bms-keycloak
@@ -46,6 +55,8 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      mailpit:
+        condition: service_started
     healthcheck:
       test: ["CMD-SHELL", "exec 3<>/dev/tcp/127.0.0.1/9000 && echo -e 'GET /health/ready HTTP/1.1\\r\\nHost: localhost\\r\\nConnection: close\\r\\n\\r\\n' >&3 && cat <&3 | grep -q '200 OK'"]
       interval: 10s
@@ -90,6 +101,9 @@ services:
       BMS_KEYCLOAK_SERVER_URL: http://keycloak:8080
       # Where the browser comes back to after signing in or out.
       BMS_FRONTEND_BASE_URL: http://localhost:${FRONTEND_PORT:-4200}
+      # Every request reaches the backend from the frontend's nginx here, so all
+      # sign ups share one address; the end to end suite makes many of them.
+      BMS_REGISTRATION_MAX_PER_HOUR: ${BMS_REGISTRATION_MAX_PER_HOUR:-1000}
       BMS_CORS_ALLOWED_ORIGINS: http://localhost:${FRONTEND_PORT:-4200}
     ports:
       - "${BACKEND_PORT:-8080}:8080"

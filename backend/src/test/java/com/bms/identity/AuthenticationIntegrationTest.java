@@ -149,7 +149,7 @@ class AuthenticationIntegrationTest extends AbstractIntegrationTest {
 
     @Test
     void anAssistantIsCreatedOwingUsAPasswordOfTheirOwn() throws Exception {
-        given(keycloak.createUser(eq("nora@example.com"), eq("Nora"), eq("New"), anyString(), eq("assistant")))
+        given(keycloak.createUser(eq("nora@example.com"), eq("Nora"), eq("New"), anyString(), eq("assistant"), eq(true)))
                 .willReturn("kc-nora");
         mockMvc.perform(get("/api/me").with(asBrowser(KEYCLOAK_ID, EMAIL, "owner"))).andExpect(status().isOk());
 

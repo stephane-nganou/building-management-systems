@@ -18,7 +18,11 @@ frontend publish nothing; Keycloak's admin console listens on
 ## First install
 
 You need a Linux server with Docker and the Compose plugin, a domain whose DNS
-`A` (and `AAAA`) record points at the server, and ports 80 and 443 open.
+`A` (and `AAAA`) record points at the server, ports 80 and 443 open, and an SMTP
+relay (Brevo's free plan will do) for the emails Keycloak sends: the link that
+confirms a new owner's address, and password resets. The stack refuses to start
+without the `BMS_SMTP_*` values. Send a test from the relay first, and check the
+domain's SPF and DKIM records, or those emails land in spam.
 
 ```bash
 git clone https://github.com/stephane-nganou/building-management-systems.git

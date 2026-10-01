@@ -46,6 +46,10 @@ bms:
     issuer-name: ${BMS_INVOICE_ISSUER_NAME:Building Management}
   subscription:
     trial-days: ${BMS_SUBSCRIPTION_TRIAL_DAYS:30}
+  registration:
+    # Sign ups one client address may make in an hour. Registration needs no
+    # account, so this is what keeps it from being scripted.
+    max-per-hour: ${BMS_REGISTRATION_MAX_PER_HOUR:5}
 
 springdoc:
   swagger-ui:

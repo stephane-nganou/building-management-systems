@@ -1,10 +1,10 @@
 import { Page, expect } from '@playwright/test';
 
 /** The demo owner seeded by the realm export. */
-export const DEMO_OWNER = { username: 'owner', password: 'owner' };
+export const DEMO_OWNER = { username: 'owner', password: 'owner-demo-pass' };
 
 /** The administrator seeded by the realm export. */
-export const DEMO_ADMIN = { username: 'admin', password: 'admin' };
+export const DEMO_ADMIN = { username: 'admin', password: 'admin-demo-pass' };
 
 /** Emails have to be unique per run, because accounts are never deleted. */
 export function uniqueEmail(prefix: string): string {
@@ -23,6 +23,28 @@ export async function submitSignIn(page: Page, username: string, password: strin
   await page.getByLabel(/username or email/i).fill(username);
   await page.getByLabel('Password', { exact: true }).fill(password);
   await page.getByRole('button', { name: /sign in/i }).click();
+}
+
+const MAILPIT = 'http://localhost:8025/api/v1';
+
+/**
+ * The link in the email Keycloak sends a new owner to confirm their address.
+ * Mailpit catches every email; its API is how the suite opens the inbox.
+ */
+export async function confirmationLink(page: Page, email: string): Promise<string> {
+  let link: string | undefined;
+  await expect
+    .poll(async () => {
+      const found = await (await page.request.get(`${MAILPIT}/search?query=to:${email}`)).json();
+      if (found.messages.length === 0) {
+        return undefined;
+      }
+      const message = await (await page.request.get(`${MAILPIT}/message/${found.messages[0].ID}`)).json();
+      link = /https?:\/\/\S+\/login-actions\/action-token\?[^\s"<]+/.exec(message.Text)?.[0];
+      return link;
+    }, { message: `a confirmation email for ${email}` })
+    .toBeTruthy();
+  return link!;
 }
 
 /** Signs in an account that is ready to use, and waits for the app to take over. */
