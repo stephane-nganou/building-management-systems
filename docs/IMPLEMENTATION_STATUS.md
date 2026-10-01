@@ -146,7 +146,11 @@ the end to end suite passes against it.
   owner who created it. An owner or administrator can no longer be linked as an
   assistant, and only the owner who created an assistant may reset its password.
   A shared assistant is still linked by other owners, but only the creator holds
-  the password reset. This closes finding 1 of the adversary review.
+  the password reset. This closes finding 1 of the adversary review. V7 then
+  corrects V6: an account holding a subscription period is an owner even if it
+  was linked as someone's assistant, which is exactly the takeover being closed;
+  and deleting the owner who created an assistant clears the creator instead of
+  being refused.
 
 - **Income counts `SENT` and `PAID` invoices**, by issue date. Drafts and
   cancelled invoices are excluded. Report totals are aggregated in memory so

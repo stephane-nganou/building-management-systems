@@ -50,7 +50,7 @@ public class AssistantService {
         AppUser owner = currentUser.require();
         accessControl.requireWritable(owner);
         return users.findByEmailIgnoreCase(request.email())
-                .map(existing -> assign(owner, existingAssistant(existing), request.permissions(), null))
+                .map(existing -> assign(owner, existingAssistant(owner, existing), request.permissions(), null))
                 .orElseGet(() -> {
                     AccountService.NewAccount created = accounts.createAssistant(
                             request.email(), request.firstName(), request.lastName(), owner.getId());
@@ -63,7 +63,10 @@ public class AssistantService {
      * owner or administrator must never be managed as one: linking them and then
      * resetting their password would be an account takeover.
      */
-    private AppUser existingAssistant(AppUser account) {
+    private AppUser existingAssistant(AppUser owner, AppUser account) {
+        if (account.getId().equals(owner.getId())) {
+            throw new ValidationException("error.assistant.self");
+        }
         if (!account.isAssistant()) {
             throw new ValidationException("error.assistant.notAssistant");
         }
@@ -100,9 +103,6 @@ public class AssistantService {
 
     private AssistantResponse assign(AppUser owner, AppUser assistant, Set<Permission> permissions,
                                      String temporaryPassword) {
-        if (assistant.getId().equals(owner.getId())) {
-            throw new ValidationException("error.assistant.self");
-        }
         AssistantAssignment assignment = assignments.findByOwnerIdAndAssistantId(owner.getId(), assistant.getId())
                 .map(existing -> {
                     existing.replacePermissions(permissions);
