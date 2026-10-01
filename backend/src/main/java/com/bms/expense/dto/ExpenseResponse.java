@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.UUID;
 
+import com.bms.common.CurrencyCode;
 import com.bms.expense.Expense;
 import com.bms.expense.ExpenseCategory;
 
@@ -17,7 +18,8 @@ public record ExpenseResponse(
         BigDecimal amount,
         LocalDate incurredOn,
         String description,
-        String vendor) {
+        String vendor,
+        CurrencyCode currency) {
 
     public static ExpenseResponse from(Expense expense) {
         var apartment = expense.getApartment();
@@ -31,6 +33,7 @@ public record ExpenseResponse(
                 expense.getAmount(),
                 expense.getIncurredOn(),
                 expense.getDescription(),
-                expense.getVendor());
+                expense.getVendor(),
+                expense.getBuilding().getCurrency());
     }
 }

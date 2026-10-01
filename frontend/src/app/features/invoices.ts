@@ -152,7 +152,7 @@ const blank = (): InvoiceForm => {
                   <td>{{ invoice.type | label: 'invoiceType' }}</td>
                   <td class="muted">{{ invoice.periodStart | day }} - {{ invoice.periodEnd | day }}</td>
                   <td class="muted">{{ invoice.dueDate | day }}</td>
-                  <td class="right strong">{{ invoice.total | money }}</td>
+                  <td class="right strong">{{ invoice.total | money: invoice.currency }}</td>
                   <td>
                     <span class="mark {{ invoice.status.toLowerCase() }}">
                       {{ invoice.status | label: 'invoiceStatus' }}

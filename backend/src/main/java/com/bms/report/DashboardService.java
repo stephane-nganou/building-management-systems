@@ -3,7 +3,9 @@ package com.bms.report;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 import com.bms.access.AccessControl;
 import com.bms.access.Permission;
@@ -11,6 +13,7 @@ import com.bms.apartment.Apartment;
 import com.bms.apartment.ApartmentRepository;
 import com.bms.apartment.ApartmentStatus;
 import com.bms.building.BuildingRepository;
+import com.bms.common.CurrencyCode;
 import com.bms.report.dto.DashboardSummary;
 import com.bms.report.dto.ProfitLossReport;
 import com.bms.tenant.TenantRepository;
@@ -42,9 +45,11 @@ public class DashboardService {
 
         long occupied = allApartments.stream()
                 .filter(apartment -> apartment.getStatus() == ApartmentStatus.OCCUPIED).count();
-        BigDecimal rentRoll = allApartments.stream()
-                .map(apartment -> apartment.getBaseRent().add(apartment.getUtilitiesAdvance()))
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        Map<CurrencyCode, BigDecimal> rentRoll = allApartments.stream()
+                .collect(Collectors.groupingBy(apartment -> apartment.getBuilding().getCurrency(),
+                        Collectors.reducing(BigDecimal.ZERO,
+                                apartment -> apartment.getBaseRent().add(apartment.getUtilitiesAdvance()),
+                                BigDecimal::add)));
 
         LocalDate today = LocalDate.now();
         ProfitLossReport yearToDate = profitLoss.report(today.withDayOfYear(1), today, null);
@@ -58,9 +63,13 @@ public class DashboardService {
                 occupied,
                 allApartments.size() - occupied,
                 activeTenants,
-                rentRoll,
-                yearToDate.totalIncome(),
-                yearToDate.totalExpenses(),
-                yearToDate.netResult());
+                yearToDate.totals().stream()
+                        .map(totals -> new DashboardSummary.Totals(
+                                totals.currency(),
+                                rentRoll.getOrDefault(totals.currency(), BigDecimal.ZERO),
+                                totals.income(),
+                                totals.expenses(),
+                                totals.netResult()))
+                        .toList());
     }
 }

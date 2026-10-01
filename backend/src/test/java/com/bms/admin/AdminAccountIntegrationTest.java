@@ -114,7 +114,7 @@ class AdminAccountIntegrationTest extends AbstractIntegrationTest {
                 .andExpect(jsonPath("$.length()").value(2))
                 .andExpect(jsonPath("$[0].note").value("Paid for a year"));
         mockMvc.perform(post("/api/buildings").with(OWNER).contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"name\":\"Nebenstrasse 2\"}"))
+                        .content("{\"name\":\"Nebenstrasse 2\",\"currency\":\"EUR\"}"))
                 .andExpect(status().isCreated());
     }
 

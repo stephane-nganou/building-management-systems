@@ -119,8 +119,8 @@ const blank = (): ApartmentForm => ({
                   <td class="right">{{ apartment.floor ?? '-' }}</td>
                   <td class="right">{{ apartment.sizeSqm ? apartment.sizeSqm + ' m2' : '-' }}</td>
                   <td class="right">{{ apartment.rooms }}</td>
-                  <td class="right">{{ apartment.baseRent | money }}</td>
-                  <td class="right muted">{{ apartment.utilitiesAdvance | money }}</td>
+                  <td class="right">{{ apartment.baseRent | money: apartment.currency }}</td>
+                  <td class="right muted">{{ apartment.utilitiesAdvance | money: apartment.currency }}</td>
                   <td>
                     <span class="mark {{ apartment.status.toLowerCase() }}">
                       {{ apartment.status | label: 'status' }}

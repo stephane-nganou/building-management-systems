@@ -3,6 +3,7 @@ package com.bms.apartment.dto;
 import java.math.BigDecimal;
 import java.util.UUID;
 
+import com.bms.common.CurrencyCode;
 import com.bms.apartment.Apartment;
 import com.bms.apartment.ApartmentStatus;
 
@@ -20,7 +21,8 @@ public record ApartmentResponse(
         int toilets,
         BigDecimal baseRent,
         BigDecimal utilitiesAdvance,
-        ApartmentStatus status) {
+        ApartmentStatus status,
+        CurrencyCode currency) {
 
     public static ApartmentResponse from(Apartment apartment) {
         var rooms = apartment.getRooms();
@@ -38,6 +40,7 @@ public record ApartmentResponse(
                 rooms.getToilets(),
                 apartment.getBaseRent(),
                 apartment.getUtilitiesAdvance(),
-                apartment.getStatus());
+                apartment.getStatus(),
+                apartment.getBuilding().getCurrency());
     }
 }

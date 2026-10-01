@@ -199,7 +199,8 @@ class ReadOnlyIntegrationTest extends AbstractIntegrationTest {
     }
 
     private static final String BUILDING = """
-            {"name":"Renamed","street":"Hauptstrasse 1","city":"Berlin","postalCode":"10115","country":"DE"}
+            {"name":"Renamed","street":"Hauptstrasse 1","city":"Berlin","postalCode":"10115","country":"DE",
+             "currency":"EUR"}
             """;
 
     private static final String APARTMENT = """

@@ -39,14 +39,11 @@ public class InvoicePdfRenderer {
 
     private final TemplateEngine templateEngine;
     private final String issuerName;
-    private final String currency;
 
     public InvoicePdfRenderer(TemplateEngine templateEngine,
-                              @Value("${bms.invoice.issuer-name}") String issuerName,
-                              @Value("${bms.invoice.currency}") String currency) {
+                              @Value("${bms.invoice.issuer-name}") String issuerName) {
         this.templateEngine = templateEngine;
         this.issuerName = issuerName;
-        this.currency = currency;
     }
 
     /**
@@ -60,7 +57,9 @@ public class InvoicePdfRenderer {
         context.setVariable("building", invoice.getApartment().getBuilding());
         context.setVariable("owner", invoice.getApartment().getBuilding().getOwner());
         context.setVariable("issuerName", issuerName);
-        context.setVariable("currency", currency);
+        // The invoice's own currency, which its building may since have changed.
+        context.setVariable("currency", invoice.getCurrency().name());
+        context.setVariable("digits", invoice.getCurrency().fractionDigits());
         context.setVariable("issueDate", DATE.format(invoice.getIssueDate()));
         context.setVariable("dueDate", DATE.format(invoice.getDueDate()));
         context.setVariable("periodStart", DATE.format(invoice.getPeriodStart()));

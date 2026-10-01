@@ -7,6 +7,7 @@ import java.util.List;
 
 import com.bms.apartment.Apartment;
 import com.bms.common.BaseEntity;
+import com.bms.common.CurrencyCode;
 import com.bms.common.exception.ValidationException;
 import com.bms.tenant.Tenant;
 import jakarta.persistence.CascadeType;
@@ -59,6 +60,11 @@ public class Invoice extends BaseEntity {
     @Column(name = "notes", length = 1000)
     private String notes;
 
+    /** Its building's currency on the day it was created, kept even if the building's changes. */
+    @Enumerated(EnumType.STRING)
+    @Column(name = "currency", nullable = false, length = 3, updatable = false)
+    private CurrencyCode currency;
+
     @OneToMany(mappedBy = "invoice", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.LAZY)
     @OrderBy("createdAt asc")
     private List<InvoiceLine> lines = new ArrayList<>();
@@ -68,7 +74,8 @@ public class Invoice extends BaseEntity {
     }
 
     public Invoice(Apartment apartment, Tenant tenant, String invoiceNumber, InvoiceType type,
-                   LocalDate periodStart, LocalDate periodEnd, LocalDate issueDate, LocalDate dueDate, String notes) {
+                   LocalDate periodStart, LocalDate periodEnd, LocalDate issueDate, LocalDate dueDate, String notes,
+                   CurrencyCode currency) {
         if (periodEnd.isBefore(periodStart)) {
             throw new ValidationException("error.invoice.periodOrder");
         }
@@ -84,6 +91,7 @@ public class Invoice extends BaseEntity {
         this.issueDate = issueDate;
         this.dueDate = dueDate;
         this.notes = notes;
+        this.currency = currency;
     }
 
     public void addLine(String description, BigDecimal quantity, BigDecimal unitPrice, String unit) {
@@ -106,6 +114,10 @@ public class Invoice extends BaseEntity {
             throw new ValidationException("error.invoice.paidOnlyCancel");
         }
         this.status = target;
+    }
+
+    public CurrencyCode getCurrency() {
+        return currency;
     }
 
     public Apartment getApartment() {

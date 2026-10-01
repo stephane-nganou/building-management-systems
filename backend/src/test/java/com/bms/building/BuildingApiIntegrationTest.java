@@ -20,7 +20,7 @@ class BuildingApiIntegrationTest extends AbstractIntegrationTest {
 
     private static final String BODY = """
             {"name":"Rosenweg 12","street":"Rosenweg 12","city":"Koln",
-             "postalCode":"50667","country":"DE","notes":"Corner building"}
+             "postalCode":"50667","country":"DE","notes":"Corner building","currency":"EUR"}
             """;
 
     @Test

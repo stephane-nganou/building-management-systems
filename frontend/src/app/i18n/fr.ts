@@ -145,6 +145,9 @@ export const fr: Messages = {
   'buildings.postalCode': 'Code postal',
   'buildings.city': 'Ville',
   'buildings.country': 'Pays',
+  'buildings.currency': 'Devise',
+  'buildings.currencyHint':
+    "Changer de devise ne convertit rien : loyers, cautions et dépenses s'affichent tels quels dans la nouvelle devise. Les factures déjà émises gardent la leur.",
   'buildings.saveFailed': "L'immeuble n'a pas pu être enregistré.",
   'buildings.deleteFailed': "{name} n'a pas pu être supprimé.",
 

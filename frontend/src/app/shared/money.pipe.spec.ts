@@ -2,7 +2,7 @@ import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 
 import { Language, TranslationService } from '../core/i18n';
-import { DayPipe, LabelPipe, MoneyPipe } from './money.pipe';
+import { DayPipe, LabelPipe, MoneyPipe, totalsByCurrency } from './money.pipe';
 
 function pipes(language: Language) {
   TestBed.resetTestingModule();
@@ -21,25 +21,61 @@ describe('MoneyPipe', () => {
 
   it('formats an amount the English way', () => {
     // A non breaking space separates amount from symbol, so match the digits only.
-    expect(pipes('en').money.transform(1234.5)).toContain('1,234.50');
+    expect(pipes('en').money.transform(1234.5, 'EUR')).toContain('1,234.50');
   });
 
   it('formats the same amount the French way', () => {
-    expect(pipes('fr').money.transform(1234.5)).toContain('234,50');
+    expect(pipes('fr').money.transform(1234.5, 'EUR')).toContain('234,50');
   });
 
   it('treats a missing amount as zero', () => {
     const { money } = pipes('en');
-    expect(money.transform(null)).toContain('0.00');
-    expect(money.transform(undefined)).toContain('0.00');
+    expect(money.transform(null, 'EUR')).toContain('0.00');
+    expect(money.transform(undefined, 'EUR')).toContain('0.00');
   });
 
   it('follows a language change without being rebuilt', () => {
     const { i18n, money } = pipes('en');
-    expect(money.transform(1234.5)).toContain('1,234.50');
+    expect(money.transform(1234.5, 'EUR')).toContain('1,234.50');
 
     i18n.use('fr');
-    expect(money.transform(1234.5)).toContain('234,50');
+    expect(money.transform(1234.5, 'EUR')).toContain('234,50');
+  });
+
+  it('writes each amount in the currency it was given', () => {
+    const { money } = pipes('en');
+    expect(money.transform(1234.5, 'EUR')).toContain('€');
+    expect(money.transform(1234.5, 'USD')).toContain('$');
+    expect(money.transform(1234.5, 'CHF')).toContain('CHF');
+  });
+
+  /** The CFA francs have no cents, so there is nothing after the decimal point. */
+  it('writes the CFA francs in whole francs', () => {
+    const { money } = pipes('fr');
+    const amount = money.transform(150000.5, 'XAF');
+
+    expect(amount).toContain('FCFA');
+    expect(amount.replace(/\s/g, '')).toContain('150001');
+    expect(amount).not.toContain(',');
+  });
+});
+
+describe('totalsByCurrency', () => {
+  it('adds amounts up per currency and never across them', () => {
+    const expenses = [
+      { currency: 'EUR' as const, amount: 100 },
+      { currency: 'XAF' as const, amount: 50000 },
+      { currency: 'EUR' as const, amount: 20.5 },
+    ];
+
+    expect(totalsByCurrency(expenses, (expense) => expense.amount)).toEqual([
+      { currency: 'EUR', amount: 120.5 },
+      { currency: 'XAF', amount: 50000 },
+    ]);
+  });
+
+  it('has no line at all for nothing', () => {
+    expect(totalsByCurrency([], () => 0)).toEqual([]);
   });
 });
 

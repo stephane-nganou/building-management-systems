@@ -3,6 +3,7 @@ package com.bms.building.dto;
 import java.util.UUID;
 
 import com.bms.building.Building;
+import com.bms.common.CurrencyCode;
 
 public record BuildingResponse(
         UUID id,
@@ -12,6 +13,7 @@ public record BuildingResponse(
         String postalCode,
         String country,
         String notes,
+        CurrencyCode currency,
         long apartmentCount) {
 
     public static BuildingResponse from(Building building, long apartmentCount) {
@@ -24,6 +26,7 @@ public record BuildingResponse(
                 address == null ? null : address.getPostalCode(),
                 address == null ? null : address.getCountry(),
                 building.getNotes(),
+                building.getCurrency(),
                 apartmentCount);
     }
 }

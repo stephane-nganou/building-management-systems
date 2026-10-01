@@ -4,7 +4,7 @@ import { rxResource } from '@angular/core/rxjs-interop';
 
 import { ApartmentsApi, BuildingsApi } from '../core/api';
 import { TranslationService } from '../core/i18n';
-import { Building } from '../core/models';
+import { Building, CURRENCIES, Currency } from '../core/models';
 import { SessionService } from '../core/session';
 import { ConfirmService } from '../shared/confirm';
 import { Dialog } from '../shared/dialog';
@@ -21,6 +21,7 @@ interface BuildingForm {
   postalCode: string;
   country: string;
   notes: string;
+  currency: Currency;
 }
 
 const blank = (): BuildingForm => ({
@@ -30,6 +31,7 @@ const blank = (): BuildingForm => ({
   postalCode: '',
   country: '',
   notes: '',
+  currency: 'EUR',
 });
 
 @Component({
@@ -130,6 +132,17 @@ const blank = (): BuildingForm => ({
           </div>
         </div>
         <div class="field">
+          <label for="currency">{{ 'buildings.currency' | t }}</label>
+          <select id="currency" name="currency" [(ngModel)]="form.currency">
+            @for (code of currencies; track code) {
+              <option [value]="code">{{ currencyName(code) }} ({{ code }})</option>
+            }
+          </select>
+          @if (editingId()) {
+            <p class="hint">{{ 'buildings.currencyHint' | t }}</p>
+          }
+        </div>
+        <div class="field">
           <label for="notes">{{ 'common.notes' | t }}</label>
           <textarea id="notes" name="notes" rows="3" [(ngModel)]="form.notes"></textarea>
         </div>
@@ -164,6 +177,7 @@ export class BuildingsPage {
   protected readonly editingId = signal<string | null>(null);
   protected readonly error = signal<string | null>(null);
   protected form: BuildingForm = blank();
+  protected readonly currencies = CURRENCIES;
 
   private readonly unitsByBuilding = computed(() => {
     const units = new Map<string, Unit[]>();
@@ -199,6 +213,7 @@ export class BuildingsPage {
       postalCode: building.postalCode ?? '',
       country: building.country ?? '',
       notes: building.notes ?? '',
+      currency: building.currency,
     };
     this.editingId.set(building.id);
     this.editing.set(true);
@@ -206,6 +221,11 @@ export class BuildingsPage {
 
   protected cancel(): void {
     this.editing.set(false);
+  }
+
+  /** The currency's name in the app's language, such as "franc CFA (BEAC)" in French. */
+  protected currencyName(code: Currency): string {
+    return new Intl.DisplayNames([this.i18n.locale()], { type: 'currency' }).of(code) ?? code;
   }
 
   protected save(): void {
