@@ -115,6 +115,7 @@ describe('the dictionaries', () => {
         'tenants.contact',
         'invoices.type',
         'assistants.title',
+        'metrics.series.assistants',
       ]),
     );
   });

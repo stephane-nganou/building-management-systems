@@ -40,30 +40,35 @@ public class CurrentUserService {
         this.subscriptions = subscriptions;
     }
 
-    /** Creates or refreshes the local record for the caller. Runs read write. */
+    /**
+     * Creates or refreshes the local record for the caller, and hands it back.
+     * Empty for an anonymous caller. Runs read write.
+     */
     @Transactional
-    public void provisionCurrent() {
-        currentClaims().ifPresent(claims -> {
+    public Optional<AppUser> provisionCurrent() {
+        return currentClaims().map(claims -> {
             String keycloakId = subjectOf(claims);
-            users.findByKeycloakId(keycloakId)
-                    .ifPresentOrElse(user -> refresh(user, claims), () -> create(keycloakId, claims));
+            return users.findByKeycloakId(keycloakId)
+                    .map(user -> refresh(user, claims))
+                    .orElseGet(() -> create(keycloakId, claims));
         });
     }
 
-    private void refresh(AppUser user, ClaimAccessor claims) {
+    private AppUser refresh(AppUser user, ClaimAccessor claims) {
         syncProfile(user, claims);
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         user.assignRole(roleOf(authentication));
         if (!Roles.isOwner(authentication)) {
             subscriptions.forget(user);
         }
+        return user;
     }
 
     /**
      * An owner first met here was made in Keycloak rather than through our
      * registration, the seeded demo owner among them, and gets the same trial.
      */
-    private void create(String keycloakId, ClaimAccessor claims) {
+    private AppUser create(String keycloakId, ClaimAccessor claims) {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
         AppUser user = users.save(new AppUser(
                 keycloakId,
@@ -75,6 +80,7 @@ public class CurrentUserService {
         if (Roles.isOwner(authentication)) {
             subscriptions.startTrial(user);
         }
+        return user;
     }
 
     private static AccountRole roleOf(Authentication authentication) {

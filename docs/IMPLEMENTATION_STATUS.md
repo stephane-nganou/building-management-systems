@@ -1,6 +1,6 @@
 # Implementation status
 
-Last updated: 2026-10-02, after BM-29 (German).
+Last updated: 2026-10-02, after BM-31 (the administrator's metrics).
 The security review behind BM-19 to BM-24 is in
 [ADVERSARY_REVIEW/README.md](ADVERSARY_REVIEW/README.md).
 The go live plan and the gaps it found are in [GO-LIVE-PART-1.md](GO-LIVE-PART-1.md).
@@ -28,6 +28,7 @@ main flow. This file records what is built and why it is built that way.
 | Owner and assistant access | Done | Per owner scoping plus 11 delegatable permissions |
 | Subscriptions | Done | Dated periods per owner, a 30 day trial to start; outside every period the owner's data is read only, for them and their assistants |
 | Administrator | Done | `admin` realm role and an **Accounts** screen: sign owners up, add or end periods, suspend and reactivate |
+| Metrics | Done | The administrator's **Metrics** screen (BM-31): active users, sign-ins, owners by subscription, sign-ups and trial conversions, what owners create most, API traffic, errors and the busiest and slowest routes, over 7, 30, 90 or 365 days, in Chart.js |
 | Buildings | Done | Full CRUD, API and UI |
 | Apartments | Done | Full CRUD with room layout, rent and status; unique label per building |
 | Tenants | Done | Full CRUD, lease dates, deposit, one active tenant per apartment |
@@ -110,7 +111,13 @@ registrieren" link, the signed in app switches to German and back from the
 sidebar, and an invoice created in German downloads with German wording, dotted
 dates and its umlauts intact. The German screens were looked at 1440 and 390
 wide; the sidebar footer, which a third language button pushed past the rail
-(measured: "Se déconnecter" 40px over, "Abmelden" 7px), now wraps.
+(measured: "Se déconnecter" 40px over, "Abmelden" 7px), now wraps. For BM-31,
+against a throwaway stack after the end to end suite had run through it: the
+administrator's Metrics screen showed that traffic, the owners it had signed up
+and their trials, in Classic light and dark, Magic and Ocean blue at 1440 and
+390 wide with no horizontal scroll; the charts were measured to stop drawing
+within half a second of loading; switching the period fetched the new range;
+and no Content-Security-Policy violation was logged.
 
 ## Tests
 
@@ -134,9 +141,15 @@ wide; the sidebar footer, which a third language button pushed past the rail
   one request may ask for: amounts that fit their columns, the line cap, the
   one year report, and the paged lists with their size cap and ignored sort.
   `LanguageIntegrationTest` covers English, French and German, and
-  `MessageBundleParityTest` the bundles' keys (BM-29). Now 134 tests, counted
+  `MessageBundleParityTest` the bundles' keys (BM-29). `MetricsIntegrationTest`
+  covers who may read the metrics, the range, counting what owners create per
+  UTC day, owners by status and a conversion, active users split by role, sign
+  ins, request counts by route pattern and status (refusals and invented
+  methods included) and the 13 month purge (BM-31). Now 144 tests, counted
   from a full run.
-- Frontend: 73 unit tests (BM-25 added the quiet profile request, the visitor
+- Frontend: 87 unit tests (BM-31 added the chart configuration and the
+  metrics' mapping, both plain functions, since jsdom has no canvas;
+  BM-25 added the quiet profile request, the visitor
   guard and the landing page's headline, buttons and contacts; BM-29 German
   detection, formats and a check that every translation keeps the English
   `{placeholders}`), for the formatting pipes and per currency totals, the translation service and
@@ -160,13 +173,48 @@ wide; the sidebar footer, which a third language button pushed past the rail
   another that fails on any Content-Security-Policy violation, and the landing
   page in both languages, its way to sign up, and who it lets past (BM-25), and
   the app, the landing page, the registration page and the sign in page in
-  German (BM-29).
+  German (BM-29), and the administrator's Metrics screen with its charts, data
+  tables and period switch, which an owner cannot reach (BM-31).
   `openSignIn` in `e2e/support.ts` is how a spec reaches the sign in form now
   that `/` is the landing page. `scripts/e2e` starts the
   stack on its own compose project, waits for every part, runs them and tears it
   down.
 
 ## Deliberate decisions
+
+- **The administrator's metrics are counted by the application itself (BM-31).**
+  - *Active means any request that day, not a sign in.* A session lasts days, so
+    sign ins alone would undercount. `user_activity` holds one row per user and
+    day (user, role, sign ins) and nothing else, written at most once a day per
+    user thanks to an in-memory note of who was already seen; rows older than 13
+    months are deleted at 03:15 UTC. Sign ins are counted in
+    `LoginSuccessHandler`, which also provisions the user, since the callback
+    never reaches the provisioning filter. A bearer token client is active but
+    never signs in here.
+  - *Requests are counted in memory and added to the day's totals once a
+    minute* and at shutdown (`api_stat_daily`, by route pattern and status, no
+    user). A write per request would put a round trip on every call; a crash
+    loses at most a minute of counts. Totals are added, not replaced, so two
+    instances can share the table. The filter runs before security, so 401 and
+    403 are counted; a request no controller matched is `UNMATCHED`, which keeps
+    one row per route rather than per address. For the same reason only the
+    standard methods keep their name and anything else is `OTHER`: the review
+    found that an invented method, sent by anyone, overflowed the column and
+    failed the minute's flush, and that random ones would have grown the counts
+    in memory without end. A test sends three.
+  - *Days are UTC days*, the same span in every table wherever the server runs.
+    Owners by status use the subscription's own today, as the Accounts screen.
+  - *A converted trial is an owner who had one and was later given any other
+    period.* There is no payment record to tell paid from granted.
+  - *Chart.js, loaded only with the Metrics screen* (56 kB gzipped, nothing in
+    the initial bundle), registering only the parts drawn. A canvas cannot read
+    CSS variables, so the chart reads the theme's tokens and redraws on a theme,
+    system light/dark or language change. The four series colours are a
+    validated categorical palette with its own dark steps, checked for colour
+    blind separation against every theme's surface; two of them sit under 3:1
+    on light surfaces, so every chart has a legend for more than one series and
+    a table of its numbers. Statuses (4xx, 5xx) keep their own colours.
+    "Most used" is a ranking of totals, not seven series over time.
 
 - **German, and English never answered in the server's language (BM-29).**
   - *The system locale fallback is off.* English has no `messages_en`, so Spring
@@ -761,6 +809,9 @@ wide; the sidebar footer, which a third language button pushed past the rail
 - The production stack builds its images on the server from a checkout. There
   is no registry and no image tag to roll back to; going back is a
   `git checkout` and another start.
+- Request counts held in memory are lost if the backend dies, at most a
+  minute's worth. A role change in the middle of a day keeps the day's first role
+  in `user_activity`.
 - Production has no alerting: nothing reports a failed backup, a certificate
   Caddy could not renew or a service that keeps restarting. `docker compose
   ps` and the logs are the only view.

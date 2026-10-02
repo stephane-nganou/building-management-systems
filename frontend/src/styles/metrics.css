@@ -1,0 +1,121 @@
+/* ---------- the administrator's metrics ---------- */
+
+/*
+  Chart colours. A canvas cannot read var(), so the chart reads these off the
+  root and hands Chart.js the values. The four series hues are a validated
+  categorical palette, used in this order and never cycled: each mode has its
+  own steps, checked for colour blind separation against the light and dark
+  surfaces of every theme. The two status hues are kept for 4xx and 5xx alone.
+*/
+:root,
+:root[data-theme='ocean'] {
+  --series-1: #2a78d6;
+  --series-2: #eb6834;
+  --series-3: #1baf7a;
+  --series-4: #eda100;
+  --status-warning: #fab219;
+  --status-critical: #d03b3b;
+}
+
+:root[data-theme='magic'] {
+  --series-1: #3987e5;
+  --series-2: #d95926;
+  --series-3: #199e70;
+  --series-4: #c98500;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='magic'], [data-theme='ocean']) {
+    --series-1: #3987e5;
+    --series-2: #d95926;
+    --series-3: #199e70;
+    --series-4: #c98500;
+  }
+}
+
+.metrics-head {
+  align-items: flex-end;
+}
+
+.metrics-kpis {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.metrics-kpis .figure {
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.metrics-kpis .amount {
+  font-size: var(--step-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.metrics-kpis .split {
+  display: block;
+  margin-top: 2px;
+  font-size: var(--step--1);
+  color: var(--ink-3);
+}
+
+.metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.metrics-panel {
+  min-width: 0;
+  padding: 16px 18px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  background: var(--surface);
+}
+
+.metrics-panel h2 {
+  margin-bottom: 12px;
+}
+
+/* Chart.js sizes the canvas to this box, so it needs a height of its own. */
+.chart-box {
+  position: relative;
+  height: 240px;
+}
+
+.chart-data {
+  margin-top: 10px;
+  font-size: var(--step--1);
+}
+
+.chart-data summary {
+  cursor: pointer;
+  color: var(--ink-2);
+}
+
+.chart-data .sheet {
+  margin-top: 8px;
+}
+
+/* One above the other: side by side, five columns of routes do not fit. */
+.metrics-tables {
+  display: grid;
+  gap: 16px;
+}
+
+/* A route reads whole or not at all; the table scrolls instead. */
+.metrics-tables code {
+  font-size: var(--step--1);
+  white-space: nowrap;
+}
+
+@media (max-width: 1100px) {
+  .metrics-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}

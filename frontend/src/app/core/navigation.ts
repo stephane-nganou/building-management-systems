@@ -26,4 +26,5 @@ export const NAV_ENTRIES: NavEntry[] = [
   { path: '/reports', label: 'nav.reports', icon: 'chart', permission: 'REPORT_READ' },
   { path: '/assistants', label: 'nav.assistants', icon: 'assistant', ownerOnly: true },
   { path: '/accounts', label: 'nav.accounts', icon: 'shield', adminOnly: true },
+  { path: '/metrics', label: 'nav.metrics', icon: 'chart', adminOnly: true },
 ];
