@@ -14,6 +14,8 @@ import {
   Invoice,
   InvoiceStatus,
   Me,
+  Metrics,
+  MetricsRange,
   Page,
   Permission,
   ProfitLossReport,
@@ -249,6 +251,10 @@ export class AdminApi {
 
   reactivate(accountId: string): Observable<Account> {
     return this.http.delete<Account>(`/api/admin/accounts/${accountId}/suspension`);
+  }
+
+  metrics(days: MetricsRange): Observable<Metrics> {
+    return this.http.get<Metrics>('/api/admin/metrics', { params: { days } });
   }
 }
 

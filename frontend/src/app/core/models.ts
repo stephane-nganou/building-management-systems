@@ -231,6 +231,71 @@ export interface SubscriptionPeriod {
   note: string | null;
 }
 
+export type MetricsRange = 7 | 30 | 90 | 365;
+
+export const METRICS_RANGES: readonly MetricsRange[] = [7, 30, 90, 365];
+
+/** One entry per day of the range, zeros included, oldest first. Days are UTC. */
+export interface DayCount {
+  day: string;
+  count: number;
+}
+
+export interface Split {
+  owners: number;
+  assistants: number;
+}
+
+export interface Endpoint {
+  method: string;
+  route: string;
+  requests: number;
+  clientErrors: number;
+  serverErrors: number;
+  averageMs: number;
+  maxMs: number;
+}
+
+/** What the administrator's metrics screen shows; see the backend's MetricsResponse. */
+export interface Metrics {
+  days: MetricsRange;
+  from: string;
+  to: string;
+  activity: {
+    signIns: DayCount[];
+    activeUsers: ({ day: string } & Split)[];
+    dau: Split;
+    wau: Split;
+    mau: Split;
+  };
+  customers: {
+    trial: number;
+    active: number;
+    expired: number;
+    suspended: number;
+    newOwners: DayCount[];
+    trialsStarted: number;
+    trialsConverted: number;
+  };
+  features: {
+    buildings: DayCount[];
+    apartments: DayCount[];
+    tenants: DayCount[];
+    expenses: DayCount[];
+    rentInvoices: DayCount[];
+    coldWaterInvoices: DayCount[];
+    pdfDownloads: DayCount[];
+  };
+  traffic: {
+    requests: number;
+    clientErrors: number;
+    serverErrors: number;
+    perDay: { day: string; requests: number; clientErrors: number; serverErrors: number }[];
+    busiest: Endpoint[];
+    slowest: Endpoint[];
+  };
+}
+
 export interface Registration {
   email: string;
   firstName: string;
