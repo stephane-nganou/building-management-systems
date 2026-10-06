@@ -103,11 +103,11 @@ describe('SessionService', () => {
     expect(session.landingRoute()).toBe('/no-access');
   });
 
-  it('shows an administrator the accounts and nothing that belongs to an owner', async () => {
+  it('shows an administrator the accounts and the metrics, and nothing that belongs to an owner', async () => {
     const session = sessionFor(administrator());
     await session.load();
 
-    expect(session.visibleEntries().map((entry) => entry.path)).toEqual(['/accounts']);
+    expect(session.visibleEntries().map((entry) => entry.path)).toEqual(['/accounts', '/metrics']);
     expect(session.landingRoute()).toBe('/accounts');
   });
 

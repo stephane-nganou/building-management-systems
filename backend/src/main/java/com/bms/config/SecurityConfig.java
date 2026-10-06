@@ -2,6 +2,8 @@ package com.bms.config;
 
 import java.util.List;
 
+import com.bms.metrics.ActivityRecorder;
+import com.bms.user.CurrentUserService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
@@ -71,7 +73,9 @@ public class SecurityConfig {
     @Bean
     SecurityFilterChain securityFilterChain(HttpSecurity http, KeycloakJwtAuthenticationConverter converter,
                                             KeycloakAuthoritiesMapper authoritiesMapper,
-                                            ClientRegistrationRepository clients) throws Exception {
+                                            ClientRegistrationRepository clients,
+                                            CurrentUserService currentUser,
+                                            ActivityRecorder activity) throws Exception {
         http
                 .csrf(csrf -> csrf
                         .csrfTokenRepository(csrfTokenRepository())
@@ -106,7 +110,7 @@ public class SecurityConfig {
                         .redirectionEndpoint(endpoint -> endpoint.baseUri(
                                 KeycloakClientConfig.CALLBACK_BASE_URI + "/*"))
                         .userInfoEndpoint(endpoint -> endpoint.userAuthoritiesMapper(authoritiesMapper))
-                        .successHandler(new LoginSuccessHandler(frontend))
+                        .successHandler(new LoginSuccessHandler(frontend, currentUser, activity))
                         .failureHandler(new SimpleUrlAuthenticationFailureHandler(
                                 frontend.homeUrl() + "?error=signin")))
                 .logout(logout -> logout

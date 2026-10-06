@@ -14,6 +14,9 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class SubscriptionService {
 
+    /** The note on the period every owner starts with, which is how a trial is told from the rest. */
+    public static final String TRIAL_NOTE = "Trial";
+
     private final SubscriptionPeriodRepository periods;
     private final SubscriptionProperties properties;
     private final Clock clock;
@@ -29,7 +32,7 @@ public class SubscriptionService {
     @Transactional
     public void startTrial(AppUser owner) {
         LocalDate today = today();
-        periods.save(new SubscriptionPeriod(owner, today, today.plusDays(properties.trialDays() - 1L), "Trial"));
+        periods.save(new SubscriptionPeriod(owner, today, today.plusDays(properties.trialDays() - 1L), TRIAL_NOTE));
     }
 
     /**
