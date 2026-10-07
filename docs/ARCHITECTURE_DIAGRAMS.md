@@ -160,7 +160,7 @@ flowchart TB
     subgraph cross["Cross cutting"]
         ac["AccessControl<br/>may the caller touch this owner's data?<br/>may it be changed today?"]
         msg["Messages<br/>wording for the request's locale"]
-        pdf["InvoicePdfRenderer<br/>Thymeleaf then openhtmltopdf"]
+        pdf["InvoicePdfRenderer<br/>Thymeleaf then openhtmltopdf<br/>PdfSigner signs an issued one"]
         kcc["KeycloakAdminClient<br/>RestClient, five calls"]
     end
 
@@ -479,6 +479,17 @@ classDiagram
         render(invoice, locale) byte[]
     }
 
+    class PdfSigner {
+        <<component>>
+        sign(pdf, signer, signedAt) byte[]
+    }
+
+    class SigningKey {
+        <<record>>
+        PrivateKey privateKey
+        List~X509Certificate~ chain
+    }
+
     class TenantService {
         <<service>>
         require(id, permission) Tenant
@@ -513,6 +524,8 @@ classDiagram
     InvoiceService ..> Invoice
     InvoiceRepository ..> Invoice
     InvoicePdfRenderer ..> Invoice
+    InvoicePdfRenderer --> PdfSigner
+    PdfSigner --> SigningKey
 ```
 
 The DTOs are records and never leave the boundary: a request record is
@@ -1108,6 +1121,7 @@ sequenceDiagram
     participant P as InvoicePdfRenderer
     participant T as Thymeleaf
     participant O as openhtmltopdf
+    participant G as PdfSigner
     participant DB as Postgres
 
     U->>B: Download
@@ -1121,12 +1135,18 @@ sequenceDiagram
     T-->>P: styled HTML, labels resolved from messages_fr.properties
     P->>O: withHtmlContent, fast mode, run
     O-->>P: PDF bytes
+    opt sent, paid or cancelled: a draft is not signed
+        P->>G: sign(pdf, issuer name, now)
+        G-->>P: PDF with a PAdES signature, an incremental update
+    end
     C-->>B: 200, application/pdf<br/>Content-Disposition attachment, filename INV-2026-000042.pdf
     B-->>U: browser saves the file
 ```
 
 The wording around the lines follows the download request; the line
-descriptions keep the language they were written in. `Content-Disposition` is
+descriptions keep the language they were written in. An issued invoice is
+signed afresh at every download with the key `SigningKey` loaded at startup, and
+its footer says so (BM-26). `Content-Disposition` is
 in the CORS exposed headers, otherwise the browser would hide the filename from
 the app.
 

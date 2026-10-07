@@ -4,9 +4,6 @@ import java.util.UUID;
 
 import com.bms.support.AbstractIntegrationTest;
 import com.bms.support.ScenarioBuilder;
-import org.apache.pdfbox.Loader;
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.text.PDFTextStripper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
@@ -14,6 +11,7 @@ import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 import static com.bms.support.Jwts.asUser;
+import static com.bms.support.Pdfs.text;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -179,8 +177,6 @@ class LanguageIntegrationTest extends AbstractIntegrationTest {
                 .andReturn().getResponse().getContentAsByteArray();
 
         assertThat(new String(pdf, 0, 5)).isEqualTo("%PDF-");
-        try (PDDocument document = Loader.loadPDF(pdf)) {
-            return new PDFTextStripper().getText(document);
-        }
+        return text(pdf);
     }
 }

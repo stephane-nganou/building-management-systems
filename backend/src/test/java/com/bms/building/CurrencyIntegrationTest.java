@@ -2,15 +2,13 @@ package com.bms.building;
 
 import com.bms.support.AbstractIntegrationTest;
 import com.bms.support.ScenarioBuilder;
-import org.apache.pdfbox.Loader;
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.text.PDFTextStripper;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
 
 import static com.bms.support.Jwts.asUser;
+import static com.bms.support.Pdfs.text;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -146,11 +144,8 @@ class CurrencyIntegrationTest extends AbstractIntegrationTest {
     }
 
     private String pdfText(String invoiceId) throws Exception {
-        byte[] pdf = mockMvc.perform(get("/api/invoices/" + invoiceId + "/pdf").with(OWNER))
+        return text(mockMvc.perform(get("/api/invoices/" + invoiceId + "/pdf").with(OWNER))
                 .andExpect(status().isOk())
-                .andReturn().getResponse().getContentAsByteArray();
-        try (PDDocument document = Loader.loadPDF(pdf)) {
-            return new PDFTextStripper().getText(document);
-        }
+                .andReturn().getResponse().getContentAsByteArray());
     }
 }

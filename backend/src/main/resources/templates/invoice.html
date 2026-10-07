@@ -178,6 +178,13 @@
             color: #6e7390;
             font-size: 9pt;
         }
+
+        /* The cryptographic signature is invisible; this line says it is there. */
+        .signed {
+            margin-top: 4pt;
+            font-size: 8.5pt;
+            font-weight: 600;
+        }
     </style>
 </head>
 <body>
@@ -288,6 +295,8 @@
 
 <div class="footer">
     <span th:text="#{invoice.paymentTerms(${dueDate}, ${invoice.invoiceNumber})}">Payment terms</span>
+    <div class="signed" th:if="${signedOn != null}"
+         th:text="#{invoice.signed(${issuerName}, ${signedOn})}">Digitally signed</div>
 </div>
 
 </body>

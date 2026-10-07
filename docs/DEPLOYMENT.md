@@ -30,6 +30,7 @@ cd building-management-systems
 cp .env.production.example .env.production
 # Fill in every value. For each password and the client secret:
 openssl rand -base64 32
+# Put the invoice signing keystore in place; see "Signing invoices" below.
 scripts/start-prod.sh
 ```
 
@@ -41,6 +42,35 @@ The first start builds the images and takes a few minutes. When
 
 A new realm has no other user: the demo accounts of the development stack
 (`docker/keycloak/users-demo.json`) never reach production.
+
+## Signing invoices
+
+Every issued invoice is signed as it is downloaded, with the key in
+`secrets/signing.p12`: a PKCS12 keystore holding one private key and its
+certificate chain. Its password is `BMS_SIGNING_KEYSTORE_PASSWORD`, unquoted in
+`.env.production` (the `grep` below would keep the quotes). The backend refuses
+to start without either.
+
+For PDF readers to show the signature as trusted, buy a document signing
+certificate from a certificate authority on Adobe's Approved Trust List and
+export it with its chain as `.p12`. Until then, a certificate of your own works,
+and readers show the signature as valid but its signer as unknown:
+
+```bash
+BMS_SIGNING_KEYSTORE_PASSWORD=$(grep '^BMS_SIGNING_KEYSTORE_PASSWORD=' .env.production | cut -d= -f2-)
+mkdir -p secrets && chmod 700 secrets
+openssl req -x509 -newkey rsa:3072 -sha256 -days 3650 -nodes \
+  -subj "/CN=Hausbuch" -addext "keyUsage=critical,digitalSignature,nonRepudiation" \
+  -keyout secrets/key.pem -out secrets/cert.pem
+openssl pkcs12 -export -inkey secrets/key.pem -in secrets/cert.pem \
+  -out secrets/signing.p12 -passout pass:"$BMS_SIGNING_KEYSTORE_PASSWORD"
+rm secrets/key.pem secrets/cert.pem
+# The backend reads it as an unprivileged user; the directory keeps others out.
+chmod 644 secrets/signing.p12
+```
+
+Replacing the file and restarting the backend changes the key. Invoices are
+signed again at every download, so nothing already issued needs redoing.
 
 ## Updating
 

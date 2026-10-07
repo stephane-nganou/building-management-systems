@@ -145,6 +145,9 @@ services:
       BMS_FRONTEND_BASE_URL: https://${BMS_DOMAIN}
       BMS_CORS_ALLOWED_ORIGINS: https://${BMS_DOMAIN}
       BMS_INVOICE_ISSUER_NAME: ${BMS_INVOICE_ISSUER_NAME:-Hausbuch}
+      # Issued invoices are signed with the key in secrets/signing.p12.
+      BMS_SIGNING_KEYSTORE_PATH: /run/secrets/signing_keystore
+      BMS_SIGNING_KEYSTORE_PASSWORD: ${BMS_SIGNING_KEYSTORE_PASSWORD:?set BMS_SIGNING_KEYSTORE_PASSWORD in .env.production}
       # Caddy is the only way in, so its X-Forwarded-Proto is trusted: the
       # request counts as HTTPS and the session cookie is marked Secure.
       SERVER_FORWARD_HEADERS_STRATEGY: framework
@@ -160,6 +163,8 @@ services:
       timeout: 5s
       retries: 30
       start_period: 60s
+    secrets:
+      - signing_keystore
 
   frontend:
     build:
@@ -212,3 +217,8 @@ volumes:
   postgres-data:
   caddy-data:
   caddy-config:
+
+# Ignored by git; see "Signing invoices" in docs/DEPLOYMENT.md.
+secrets:
+  signing_keystore:
+    file: ./secrets/signing.p12
