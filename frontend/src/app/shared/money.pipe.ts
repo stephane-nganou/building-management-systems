@@ -15,6 +15,7 @@ export type EnumGroup =
 
 const money = new Map<string, Intl.NumberFormat>();
 const day = new Map<string, Intl.DateTimeFormat>();
+const when = new Map<string, Intl.DateTimeFormat>();
 
 function formatter<T>(cache: Map<string, T>, key: string, build: () => T): T {
   let existing = cache.get(key);
@@ -71,6 +72,24 @@ export class DayPipe implements PipeTransform {
       locale,
       () => new Intl.DateTimeFormat(locale, { day: '2-digit', month: '2-digit', year: 'numeric' }),
     ).format(parse(value));
+  }
+}
+
+/** An instant, such as when an announcement starts, as a day and time in the browser's own zone. */
+@Pipe({ name: 'when', pure: false })
+export class WhenPipe implements PipeTransform {
+  private i18n = inject(TranslationService);
+
+  transform(value: string | null | undefined): string {
+    if (!value) {
+      return '';
+    }
+    const locale = this.i18n.locale();
+    return formatter(
+      when,
+      locale,
+      () => new Intl.DateTimeFormat(locale, { dateStyle: 'short', timeStyle: 'short' }),
+    ).format(new Date(value));
   }
 }
 

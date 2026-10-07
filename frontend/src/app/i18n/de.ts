@@ -26,6 +26,7 @@ export const de: Messages = {
   'nav.assistants': 'Assistenz',
   'nav.accounts': 'Konten',
   'nav.metrics': 'Kennzahlen',
+  'nav.announcements': 'Ankündigungen',
 
   'common.cancel': 'Abbrechen',
   'common.close': 'Schließen',
@@ -343,6 +344,35 @@ export const de: Messages = {
   'accounts.suspended': '{name} gesperrt',
   'accounts.reactivated': '{name} wieder freigeschaltet',
   'accounts.saveFailed': 'Diese Änderung konnte nicht gespeichert werden.',
+
+  'announcements.title': 'Ankündigungen',
+  'announcements.subtitle':
+    'Informieren Sie alle angemeldeten Nutzer über ein Update oder geplante Wartungsarbeiten, so lange es nötig ist.',
+  'announcements.add': 'Neue Ankündigung',
+  'announcements.edit': 'Ankündigung bearbeiten',
+  'announcements.publish': 'Veröffentlichen',
+  'announcements.loading': 'Ankündigungen werden geladen.',
+  'announcements.empty': 'Noch keine Ankündigung.',
+  'announcements.kind': 'Art',
+  'announcements.kind.INFO': 'Information',
+  'announcements.kind.WARNING': 'Warnung',
+  'announcements.message': 'Nachricht',
+  'announcements.messageEn': 'Nachricht auf Englisch',
+  'announcements.messageFr': 'Nachricht auf Französisch',
+  'announcements.messageDe': 'Nachricht auf Deutsch',
+  'announcements.fallbackHint':
+    'Bleibt eine Übersetzung leer, zeigt diese Sprache den englischen Text.',
+  'announcements.startsAt': 'Anzeigen ab',
+  'announcements.endsAt': 'Anzeigen bis',
+  'announcements.phase.scheduled': 'Geplant',
+  'announcements.phase.showing': 'Wird angezeigt',
+  'announcements.phase.ended': 'Beendet',
+  'announcements.published': 'Ankündigung veröffentlicht',
+  'announcements.saved': 'Ankündigung gespeichert',
+  'announcements.deleted': 'Ankündigung gelöscht',
+  'announcements.deleteTitle': 'Diese Ankündigung löschen?',
+  'announcements.saveFailed': 'Diese Ankündigung konnte nicht gespeichert werden.',
+  'announcements.dismiss': 'Ausblenden',
 
   'readOnly.own':
     'Ihr Abonnement endete am {date}. Sie können weiterhin alles lesen und herunterladen, aber bis zur Verlängerung nichts mehr ändern.',

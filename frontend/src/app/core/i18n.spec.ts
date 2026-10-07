@@ -91,7 +91,7 @@ describe('the dictionaries', () => {
   // see is a key left holding the English text, which these catch.
   it('translate every key into German, bar the words that are the same', () => {
     expect(sameAsEnglish(de)).toEqual(
-      new Set(['app.role.admin', 'common.name', 'common.status']),
+      new Set(['app.role.admin', 'common.name', 'common.status', 'announcements.kind.INFO']),
     );
   });
 
@@ -116,6 +116,8 @@ describe('the dictionaries', () => {
         'invoices.type',
         'assistants.title',
         'metrics.series.assistants',
+        'announcements.kind.INFO',
+        'announcements.message',
       ]),
     );
   });

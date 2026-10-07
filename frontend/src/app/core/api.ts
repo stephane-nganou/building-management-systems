@@ -6,6 +6,8 @@ import { QUIET_UNAUTHORIZED } from './auth';
 
 import {
   Account,
+  Announcement,
+  AnnouncementRequest,
   Apartment,
   Assistant,
   Building,
@@ -255,6 +257,38 @@ export class AdminApi {
 
   metrics(days: MetricsRange): Observable<Metrics> {
     return this.http.get<Metrics>('/api/admin/metrics', { params: { days } });
+  }
+
+  announcements(): Observable<Announcement[]> {
+    return this.http.get<Announcement[]>('/api/admin/announcements');
+  }
+
+  createAnnouncement(body: AnnouncementRequest): Observable<Announcement> {
+    return this.http.post<Announcement>('/api/admin/announcements', body);
+  }
+
+  updateAnnouncement(id: string, body: AnnouncementRequest): Observable<Announcement> {
+    return this.http.put<Announcement>(`/api/admin/announcements/${id}`, body);
+  }
+
+  removeAnnouncement(id: string): Observable<void> {
+    return this.http.delete<void>(`/api/admin/announcements/${id}`);
+  }
+}
+
+@Injectable({ providedIn: 'root' })
+export class AnnouncementsApi {
+  private http = inject(HttpClient);
+
+  /**
+   * What is showing right now, for anybody signed in. Asked in the background,
+   * so a lapsed session is left for the user's next action to discover, rather
+   * than pulling them to the sign in page in the middle of reading.
+   */
+  showing(): Observable<Announcement[]> {
+    return this.http.get<Announcement[]>('/api/announcements', {
+      context: new HttpContext().set(QUIET_UNAUTHORIZED, true),
+    });
   }
 }
 

@@ -416,6 +416,23 @@ table.sheet {
   color: var(--neg);
 }
 
+/* An announcement on screen now is lit like a let apartment; one still to come
+   is an empty ring; one that is over stays plain. */
+.mark.showing {
+  background: color-mix(in srgb, var(--lamplight) 20%, transparent);
+  color: color-mix(in srgb, var(--lamplight) 45%, var(--ink));
+}
+
+.mark.showing::before {
+  background: var(--lamplight);
+  opacity: 1;
+}
+
+.mark.scheduled::before {
+  background: transparent;
+  border: 1.5px solid currentColor;
+}
+
 /* ---------- ledger figures ---------- */
 
 .figures {
@@ -625,6 +642,24 @@ table.sheet.periods {
 /* Above every screen while the data shown can no longer be changed. */
 .notice.read-only {
   margin: 0 0 20px;
+}
+
+/* The administrator's announcements (BM-30): a warning keeps the alert colours,
+   news is lit by the lamp instead. */
+.notice.announcement {
+  margin: 0 0 20px;
+  align-items: center;
+}
+
+.notice.announcement.info {
+  background: color-mix(in srgb, var(--lamplight) 14%, var(--surface));
+  border-color: color-mix(in srgb, var(--lamplight) 55%, transparent);
+}
+
+.notice.announcement p {
+  flex: 1;
+  margin: 0;
+  white-space: pre-line;
 }
 
 .loading {

@@ -231,6 +231,34 @@ export interface SubscriptionPeriod {
   note: string | null;
 }
 
+export type AnnouncementKind = 'INFO' | 'WARNING';
+
+/**
+ * A message from the administrator to everybody signed in, shown from
+ * `startsAt` until just before `endsAt`, both instants. English is always
+ * there; a missing French or German text falls back to it.
+ */
+export interface Announcement {
+  id: string;
+  kind: AnnouncementKind;
+  messageEn: string;
+  messageFr: string | null;
+  messageDe: string | null;
+  startsAt: string;
+  endsAt: string;
+  /** Changes with every edit, so a dismissed announcement shows again once changed. */
+  updatedAt: string;
+}
+
+export interface AnnouncementRequest {
+  kind: AnnouncementKind;
+  messageEn: string;
+  messageFr: string;
+  messageDe: string;
+  startsAt: string;
+  endsAt: string;
+}
+
 export type MetricsRange = 7 | 30 | 90 | 365;
 
 export const METRICS_RANGES: readonly MetricsRange[] = [7, 30, 90, 365];

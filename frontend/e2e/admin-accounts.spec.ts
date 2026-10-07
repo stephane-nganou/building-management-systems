@@ -22,9 +22,10 @@ test('an administrator signs an owner up and ends their subscription, leaving it
   await openSignIn(page);
   await signIn(page, DEMO_ADMIN.username, DEMO_ADMIN.password);
 
-  // An administrator owns nothing: the accounts, and how the service is used.
+  // An administrator owns nothing: the accounts, how the service is used, and
+  // what everybody is told.
   await expect(page).toHaveURL(/\/accounts$/);
-  await expectNavLabels(page, ['Accounts', 'Metrics']);
+  await expectNavLabels(page, ['Accounts', 'Metrics', 'Announcements']);
   await expect(page.locator('.spine-foot .role')).toHaveText('Administrator');
 
   await page.getByRole('button', { name: /add owner/i }).click();
