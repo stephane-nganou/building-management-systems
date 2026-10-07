@@ -84,7 +84,7 @@ of the first pilot users.
 | Database | Postgres 18, persisted in a Docker volume |
 | Migrations | Flyway |
 | Identity | Keycloak 26.7.3, behind the backend: OAuth2 client for the browser, resource server for everyone else |
-| Invoice PDF | Thymeleaf template rendered by openhtmltopdf |
+| Invoice PDF | Thymeleaf template rendered by openhtmltopdf; issued invoices signed (PAdES) with PDFBox and BouncyCastle |
 | End to end tests | Playwright, driving the real stack |
 | Languages | English, French and German, switched at runtime without a reload |
 
@@ -103,8 +103,9 @@ image tags in the Dockerfiles.
 ```bash
 # Backend: tests run against a real Postgres via Testcontainers, so Docker must be running.
 cd backend && mvn test
-# The committed client secret is refused at startup unless this says it is a development machine.
-cd backend && BMS_KEYCLOAK_ALLOW_DEFAULT_SECRET=true mvn spring-boot:run
+# The committed client secret and a self-signed invoice signing certificate are
+# refused at startup unless these say it is a development machine.
+cd backend && BMS_KEYCLOAK_ALLOW_DEFAULT_SECRET=true BMS_SIGNING_ALLOW_SELF_SIGNED=true mvn spring-boot:run
 
 # Frontend
 cd frontend && npm start

@@ -27,6 +27,9 @@ Thumbs.db
 .env
 .env.production
 
+# The production invoice signing keystore
+/secrets/
+
 # Production database dumps
 /backups/
 

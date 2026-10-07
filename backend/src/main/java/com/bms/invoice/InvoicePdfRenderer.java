@@ -3,11 +3,15 @@ package com.bms.invoice;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
 
 import com.bms.common.i18n.Messages;
+import com.bms.signing.PdfSigner;
 import com.openhtmltopdf.outputdevice.helper.BaseRendererBuilder.FontStyle;
 import com.openhtmltopdf.pdfboxout.PDFontSupplier;
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
@@ -37,12 +41,16 @@ public class InvoicePdfRenderer {
 
     private final TemplateEngine templateEngine;
     private final Messages messages;
+    private final PdfSigner signer;
+    private final Clock clock;
     private final String issuerName;
 
-    public InvoicePdfRenderer(TemplateEngine templateEngine, Messages messages,
+    public InvoicePdfRenderer(TemplateEngine templateEngine, Messages messages, PdfSigner signer, Clock clock,
                               @Value("${bms.invoice.issuer-name}") String issuerName) {
         this.templateEngine = templateEngine;
         this.messages = messages;
+        this.signer = signer;
+        this.clock = clock;
         this.issuerName = issuerName;
     }
 
@@ -50,8 +58,20 @@ public class InvoicePdfRenderer {
      * The locale words the document. Line descriptions are not translated here:
      * they were stored when the invoice was created, whether we generated them
      * or the user typed them.
+     *
+     * <p>An issued invoice is signed as it is rendered, and says so on the page.
+     * A draft is not: it may still change, and nobody should take it for the
+     * real thing.
      */
     public byte[] render(Invoice invoice, Locale locale) {
+        Instant now = clock.instant();
+        boolean signed = invoice.getStatus() != InvoiceStatus.DRAFT;
+        byte[] pdf = toPdf(invoice, html(invoice, locale, signed, now));
+        return signed ? signer.sign(pdf, issuerName, now) : pdf;
+    }
+
+    /** {@code now} is when a signed document is signed, so its page names the same day. */
+    private String html(Invoice invoice, Locale locale, boolean signed, Instant now) {
         Context context = new Context(locale);
         context.setVariable("invoice", invoice);
         context.setVariable("building", invoice.getApartment().getBuilding());
@@ -66,9 +86,13 @@ public class InvoicePdfRenderer {
         context.setVariable("dueDate", date.format(invoice.getDueDate()));
         context.setVariable("periodStart", date.format(invoice.getPeriodStart()));
         context.setVariable("periodEnd", date.format(invoice.getPeriodEnd()));
+        if (signed) {
+            context.setVariable("signedOn", date.format(LocalDate.ofInstant(now, clock.getZone())));
+        }
+        return templateEngine.process("invoice", context);
+    }
 
-        String html = templateEngine.process("invoice", context);
-
+    private static byte[] toPdf(Invoice invoice, String html) {
         ByteArrayOutputStream output = new ByteArrayOutputStream();
         try (PDDocument document = new PDDocument()) {
             PdfRendererBuilder builder = new PdfRendererBuilder();

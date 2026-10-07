@@ -45,17 +45,40 @@ const MAILPIT = 'http://localhost:8025/api/v1';
 export async function confirmationLink(page: Page, email: string): Promise<string> {
   let link: string | undefined;
   await expect
-    .poll(async () => {
-      const found = await (await page.request.get(`${MAILPIT}/search?query=to:${email}`)).json();
-      if (found.messages.length === 0) {
-        return undefined;
-      }
-      const message = await (await page.request.get(`${MAILPIT}/message/${found.messages[0].ID}`)).json();
-      link = /https?:\/\/\S+\/login-actions\/action-token\?[^\s"<]+/.exec(message.Text)?.[0];
-      return link;
-    }, { message: `a confirmation email for ${email}` })
+    .poll(
+      async () => {
+        const found = await (await page.request.get(`${MAILPIT}/search?query=to:${email}`)).json();
+        if (found.messages.length === 0) {
+          return undefined;
+        }
+        const message = await (
+          await page.request.get(`${MAILPIT}/message/${found.messages[0].ID}`)
+        ).json();
+        link = /https?:\/\/\S+\/login-actions\/action-token\?[^\s"<]+/.exec(message.Text)?.[0];
+        return link;
+      },
+      { message: `a confirmation email for ${email}` },
+    )
     .toBeTruthy();
   return link!;
+}
+
+/**
+ * Registers a landlord of its own, confirms the address and lands signed in, for
+ * a spec whose data should land in nobody else's portfolio.
+ */
+export async function registerOwner(page: Page, prefix: string): Promise<void> {
+  const email = uniqueEmail(prefix);
+  await page.goto('/register');
+  await page.getByLabel('First name').fill('Sina');
+  await page.getByLabel('Last name').fill('Siegel');
+  await page.getByLabel('Email').fill(email);
+  await page.getByLabel('Password').fill('a-good-secret');
+  await page.getByRole('button', { name: /create account/i }).click();
+  await page.getByRole('button', { name: /sign in/i }).click();
+  await submitSignIn(page, email, 'a-good-secret');
+  await page.goto(await confirmationLink(page, email));
+  await expect(page.locator('aside.spine')).toBeVisible();
 }
 
 /** Signs in an account that is ready to use, and waits for the app to take over. */

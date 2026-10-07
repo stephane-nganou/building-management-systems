@@ -1,6 +1,6 @@
 # Implementation status
 
-Last updated: 2026-10-02, after BM-31 (the administrator's metrics).
+Last updated: 2026-10-06, after BM-26 (signed invoices).
 The security review behind BM-19 to BM-24 is in
 [ADVERSARY_REVIEW/README.md](ADVERSARY_REVIEW/README.md).
 The go live plan and the gaps it found are in [GO-LIVE-PART-1.md](GO-LIVE-PART-1.md).
@@ -34,6 +34,7 @@ main flow. This file records what is built and why it is built that way.
 | Tenants | Done | Full CRUD, lease dates, deposit, one active tenant per apartment |
 | Expenses | Done | Full CRUD, category, reason, optional apartment, filter by building and period |
 | Invoices | Done | Rent and cold water, status flow, PDF download |
+| Signed invoices | Done | An issued invoice's PDF carries a PAdES signature by the application and a line saying so (BM-26); the key comes from `secrets/signing.p12` in production, see `docs/DEPLOYMENT.md` |
 | Profit and loss | Done | Per building and total, expense breakdown by category; totals per currency |
 | Currencies | Done | Each building keeps its books in EUR, XAF, XOF, USD, GBP or CHF; an invoice keeps the one it was issued in |
 | Dashboard | Done | Portfolio counts, rent roll, year to date position |
@@ -117,7 +118,15 @@ administrator's Metrics screen showed that traffic, the owners it had signed up
 and their trials, in Classic light and dark, Magic and Ocean blue at 1440 and
 390 wide with no horizontal scroll; the charts were measured to stop drawing
 within half a second of loading; switching the period fetched the new range;
-and no Content-Security-Policy violation was logged.
+and no Content-Security-Policy violation was logged. For BM-26, against the
+development stack rather than a throwaway one: a newly registered owner's draft
+invoice downloaded unsigned, and once sent it downloaded signed. pyHanko, an
+independent validator, read that file in strict mode and found the signature
+intact and valid over the entire file, `ETSI.CAdES.detached` with SHA-256,
+untrusted only because the development certificate is self-signed. Its first
+page, rendered with PyMuPDF, shows the signature line under the payment terms.
+A keystore made with the `openssl` steps in `docs/DEPLOYMENT.md` was read back by
+Java as a private key entry.
 
 ## Tests
 
@@ -145,8 +154,15 @@ and no Content-Security-Policy violation was logged.
   covers who may read the metrics, the range, counting what owners create per
   UTC day, owners by status and a conversion, active users split by role, sign
   ins, request counts by route pattern and status (refusals and invented
-  methods included) and the 13 month purge (BM-31). Now 144 tests, counted
-  from a full run.
+  methods included) and the 13 month purge (BM-31). `PdfSignerTest` signs a PDF
+  and verifies it with BouncyCastle, finds an altered copy no longer verifies,
+  and checks both revisions end in a cross-reference table; `SigningKeyTest`
+  and `SigningPropertiesTest` cover the keystore, the development certificate
+  and the startup refusals; `InvoiceSignatureIntegrationTest` covers a draft
+  left unsigned, a sent, paid or cancelled invoice signed with the
+  application's key, and the signature line in all three languages (BM-26).
+  `support/Pdfs` reads a PDF's words and signatures for all of them. Now 159
+  tests, counted from a full run.
 - Frontend: 87 unit tests (BM-31 added the chart configuration and the
   metrics' mapping, both plain functions, since jsdom has no canvas;
   BM-25 added the quiet profile request, the visitor
@@ -158,7 +174,7 @@ and no Content-Security-Policy violation was logged.
   screens exist, including that a refused profile is what "signed out" means and
   that an account owing us a password reaches no screen but the one that takes
   it, and that an administrator and a suspended account each see only theirs.
-- End to end: 12 Playwright specs against the running stack, covering an
+- End to end: 13 Playwright specs against the running stack, covering an
   administrator signing an owner up and ending their subscription, the link
   from the sign in page to registration, signing up and landing on a full
   portfolio, the duplicate email refusal, an owner creating an assistant who
@@ -174,7 +190,9 @@ and no Content-Security-Policy violation was logged.
   page in both languages, its way to sign up, and who it lets past (BM-25), and
   the app, the landing page, the registration page and the sign in page in
   German (BM-29), and the administrator's Metrics screen with its charts, data
-  tables and period switch, which an owner cannot reach (BM-31).
+  tables and period switch, which an owner cannot reach (BM-31), and a newly
+  registered owner's invoice downloading unsigned as a draft and signed once
+  sent (BM-26); `registerOwner` in `e2e/support.ts` makes that owner.
   `openSignIn` in `e2e/support.ts` is how a spec reaches the sign in form now
   that `/` is the landing page. `scripts/e2e` starts the
   stack on its own compose project, waits for every part, runs them and tears it
@@ -182,6 +200,27 @@ and no Content-Security-Policy violation was logged.
 
 ## Deliberate decisions
 
+- **An issued invoice is signed by the application, as it is downloaded (BM-26).**
+  - *A PAdES baseline B signature inside the PDF*, not a verification code
+    printed on it: any PDF reader can check it offline, and an edit after
+    signing shows. The CMS carries the signing certificate's hash and no
+    signing time of its own, as PAdES asks; the time is the signature
+    dictionary's.
+  - *Sent, paid and cancelled invoices are signed; drafts are not.* A draft may
+    still change and should not pass for the real thing.
+  - *Signed at every download*, not once and stored. Nothing about an issued
+    invoice can change, so a fresh signature says the same thing, and a new key
+    applies to every invoice at once. The date on the signature line is the
+    download's, not the issue date.
+  - *The key is a PKCS12 keystore*, mounted as a compose secret in production.
+    Without one only a development machine starts
+    (`BMS_SIGNING_ALLOW_SELF_SIGNED`), with a certificate it makes at every start,
+    the same guard as the Keycloak client secret.
+  - *The PDF is saved again with a classic cross-reference table before it is
+    signed.* openhtmltopdf writes a cross-reference stream, which does not list
+    itself, and PDFBox numbered the signature's objects from the highest one
+    listed, so the update reused the stream's number. pyHanko refused to read
+    such a file at all. `PdfSignerTest` checks both revisions end in a table.
 - **The administrator's metrics are counted by the application itself (BM-31).**
   - *Active means any request that day, not a sign in.* A session lasts days, so
     sign ins alone would undercount. `user_activity` holds one row per user and
@@ -775,7 +814,11 @@ and no Content-Security-Policy violation was logged.
   but should be revisited before large portfolios.
 - Component level frontend tests. The pipes, session and guards have unit tests
   and the main journeys have end to end ones, but individual screens do not.
-- End to end coverage of invoices and the profit and loss report.
+- End to end coverage of the invoice screens and the profit and loss report.
+  `invoice-signature.spec.ts` drives the invoice API only.
+- A trusted timestamp on the signature (PAdES B-T) and long term validation
+  data. Both need an outside timestamp authority; without them a signature is
+  only as good as its certificate's validity on the day it is checked.
 
 ## Known rough edges
 
@@ -853,3 +896,8 @@ and no Content-Security-Policy violation was logged.
 - Native `<input type="date">` controls follow the browser's own locale, not the
   app's, so a date field can show a different separator from the dates in the
   table beside it.
+- A self-signed signing certificate proves nothing to a tenant: readers show
+  the signature as valid but its signer as unknown. Production wants a document
+  signing certificate from a certificate authority on Adobe's Approved Trust
+  List. The development stack makes a new certificate at every start, so a PDF
+  downloaded before a restart verifies against one nobody has any more.

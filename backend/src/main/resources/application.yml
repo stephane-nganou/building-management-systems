@@ -56,6 +56,13 @@ bms:
     allow-default-secret: ${BMS_KEYCLOAK_ALLOW_DEFAULT_SECRET:false}
   invoice:
     issuer-name: ${BMS_INVOICE_ISSUER_NAME:Building Management}
+  signing:
+    # A PKCS12 keystore holding the key issued invoices are signed with.
+    keystore-path: ${BMS_SIGNING_KEYSTORE_PATH:}
+    keystore-password: ${BMS_SIGNING_KEYSTORE_PASSWORD:}
+    # Without a keystore only a development machine may start, with a
+    # certificate it makes itself.
+    allow-self-signed: ${BMS_SIGNING_ALLOW_SELF_SIGNED:false}
   subscription:
     trial-days: ${BMS_SUBSCRIPTION_TRIAL_DAYS:30}
   registration:
