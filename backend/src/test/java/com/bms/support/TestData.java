@@ -6,6 +6,7 @@ import java.util.Set;
 import com.bms.access.AssistantAssignment;
 import com.bms.access.AssistantAssignmentRepository;
 import com.bms.access.Permission;
+import com.bms.announcement.AnnouncementRepository;
 import com.bms.apartment.ApartmentRepository;
 import com.bms.building.BuildingRepository;
 import com.bms.expense.ExpenseRepository;
@@ -30,10 +31,12 @@ public class TestData {
     private final ExpenseRepository expenses;
     private final InvoiceRepository invoices;
     private final SubscriptionPeriodRepository periods;
+    private final AnnouncementRepository announcements;
 
     public TestData(AppUserRepository users, AssistantAssignmentRepository assignments,
                     BuildingRepository buildings, ApartmentRepository apartments, TenantRepository tenants,
-                    ExpenseRepository expenses, InvoiceRepository invoices, SubscriptionPeriodRepository periods) {
+                    ExpenseRepository expenses, InvoiceRepository invoices, SubscriptionPeriodRepository periods,
+                    AnnouncementRepository announcements) {
         this.users = users;
         this.assignments = assignments;
         this.buildings = buildings;
@@ -42,6 +45,7 @@ public class TestData {
         this.expenses = expenses;
         this.invoices = invoices;
         this.periods = periods;
+        this.announcements = announcements;
     }
 
     @Transactional
@@ -55,6 +59,7 @@ public class TestData {
         assignments.deleteAllInBatch();
         periods.deleteAllInBatch();
         users.deleteAllInBatch();
+        announcements.deleteAllInBatch();
     }
 
     @Transactional

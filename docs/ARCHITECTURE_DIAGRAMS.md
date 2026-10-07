@@ -140,17 +140,17 @@ flowchart TB
     subgraph web["Web layer, @RestController"]
         c1["BuildingController<br/>ApartmentController<br/>TenantController"]
         c2["ExpenseController<br/>InvoiceController<br/>ReportController"]
-        c3["AssistantController<br/>MeController<br/>AuthController<br/>AdminAccountController"]
+        c3["AssistantController<br/>MeController<br/>AuthController<br/>AdminAccountController<br/>AnnouncementController<br/>AdminAnnouncementController"]
     end
 
     subgraph app["Application layer, @Service, @Transactional"]
         s1["BuildingService<br/>ApartmentService<br/>TenantService"]
         s2["ExpenseService<br/>InvoiceService<br/>ProfitLossService<br/>DashboardService"]
-        s3["AssistantService<br/>AccountService<br/>CurrentUserService<br/>SubscriptionService<br/>AdminAccountService"]
+        s3["AssistantService<br/>AccountService<br/>CurrentUserService<br/>SubscriptionService<br/>AdminAccountService<br/>AnnouncementService"]
     end
 
     subgraph domain["Domain, JPA entities"]
-        d1["AppUser, Building, Apartment,<br/>Tenant, Expense, Invoice, InvoiceLine,<br/>AssistantAssignment, SubscriptionPeriod"]
+        d1["AppUser, Building, Apartment,<br/>Tenant, Expense, Invoice, InvoiceLine,<br/>AssistantAssignment, SubscriptionPeriod,<br/>Announcement"]
     end
 
     subgraph data["Persistence, Spring Data JPA"]
@@ -167,7 +167,7 @@ flowchart TB
     subgraph infra["Infrastructure"]
         sec["SecurityConfig, session and bearer<br/>KeycloakClientConfig, written out<br/>KeycloakJwtAuthenticationConverter<br/>KeycloakAuthoritiesMapper<br/>UserProvisioningFilter<br/>SuspensionInterceptor"]
         exh["ApiExceptionHandler<br/>@RestControllerAdvice"]
-        fly["Flyway V1__init.sql to<br/>V4__subscription_period_may_be_cut_to_nothing.sql"]
+        fly["Flyway V1__init.sql to<br/>V11__announcements.sql"]
     end
 
     web --> app
@@ -559,7 +559,7 @@ flowchart TB
     end
 
     subgraph shell["Shell"]
-        app["App<br/>sidebar from visibleEntries(), a drawer on phones,<br/>router-outlet, confirm and toast hosts"]
+        app["App<br/>sidebar from visibleEntries(), a drawer on phones,<br/>Announcements above every screen,<br/>router-outlet, confirm and toast hosts"]
         routes["app.routes.ts<br/>canMatch on every screen"]
     end
 
@@ -567,7 +567,7 @@ flowchart TB
         session["SessionService<br/>signal Me, signedIn(), can(),<br/>visibleEntries(), landingRoute()"]
         auth["auth.ts<br/>AuthService signIn() / signOut()<br/>authInterceptor: 401 means sign in"]
         guards["guards.ts<br/>authGuard, permissionGuard,<br/>ownerGuard, passwordChangeGuard"]
-        api["api.ts<br/>BuildingsApi, ApartmentsApi, TenantsApi,<br/>ExpensesApi, InvoicesApi, ReportsApi,<br/>AssistantsApi, AuthApi, MeApi"]
+        api["api.ts<br/>BuildingsApi, ApartmentsApi, TenantsApi,<br/>ExpensesApi, InvoicesApi, ReportsApi,<br/>AssistantsApi, AdminApi, AnnouncementsApi,<br/>AuthApi, MeApi"]
         i18n["TranslationService<br/>language signal, translate()<br/>acceptLanguageInterceptor"]
         theme["ThemeService<br/>theme signal, data-theme on html"]
         nav["navigation.ts<br/>NAV_ENTRIES"]
@@ -575,13 +575,13 @@ flowchart TB
     end
 
     subgraph features["features/, lazy loaded"]
-        pages["DashboardPage, BuildingsPage, ApartmentsPage,<br/>TenantsPage, ExpensesPage, InvoicesPage,<br/>ReportsPage, AssistantsPage, RegisterPage,<br/>PasswordPage, LandingPage, NoAccessPage"]
+        pages["DashboardPage, BuildingsPage, ApartmentsPage,<br/>TenantsPage, ExpensesPage, InvoicesPage,<br/>ReportsPage, AssistantsPage, AccountsPage,<br/>MetricsPage, AnnouncementsPage, RegisterPage,<br/>PasswordPage, LandingPage, NoAccessPage"]
     end
 
     subgraph sharedui["shared/"]
-        pipes["TranslatePipe (t), MoneyPipe (money: currency),<br/>DayPipe (day), LabelPipe (label)<br/>impure on purpose"]
+        pipes["TranslatePipe (t), MoneyPipe (money: currency),<br/>DayPipe (day), WhenPipe (when), LabelPipe (label)<br/>impure on purpose"]
         lang["LanguageSwitcher, ThemeSwitcher"]
-        ui["Dialog (native dialog), ConfirmService,<br/>ToastService, IconButton, Icon"]
+        ui["Dialog (native dialog), ConfirmService,<br/>ToastService, IconButton, Icon,<br/>AnnouncementsFeed (asks every 5 minutes)<br/>and the Announcements banner"]
         look["Facade (floorsOf), Brand, Gate"]
     end
 
@@ -753,6 +753,18 @@ erDiagram
         timestamptz updated_at
     }
 
+    ANNOUNCEMENT {
+        uuid id PK
+        varchar kind "INFO or WARNING"
+        varchar message_en "required"
+        varchar message_fr "null falls back to English"
+        varchar message_de "null falls back to English"
+        timestamptz starts_at
+        timestamptz ends_at "shown until just before"
+        timestamptz created_at
+        timestamptz updated_at "keys a dismissal"
+    }
+
     APP_USER ||--o{ BUILDING : owns
     APP_USER ||--o{ SUBSCRIPTION_PERIOD : "subscribes for"
     APP_USER ||--o{ ASSISTANT_ASSIGNMENT : "delegates as owner"
@@ -777,6 +789,10 @@ Constraints not visible above, all enforced in the database:
 | `ck_tenant_lease_range` | `tenant` | a lease that ends before it starts |
 | `ck_invoice_period`, `ck_invoice_due` | `invoice` | a period or a due date running backwards |
 | `invoice_number_seq` | sequence | duplicate invoice numbers under concurrent creation |
+| `ck_announcement_range` | `announcement` | an announcement that ends before, or as, it starts |
+
+`announcement` stands alone: it belongs to the service rather than to any
+owner, so nothing points at it and it points at nothing (BM-30).
 
 An expense keeps its building when the apartment it named is deleted
 (`on delete set null`), because the money was still spent and still belongs in

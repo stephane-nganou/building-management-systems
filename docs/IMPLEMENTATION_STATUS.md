@@ -1,6 +1,6 @@
 # Implementation status
 
-Last updated: 2026-10-06, after BM-26 (signed invoices).
+Last updated: 2026-10-07, after BM-30 (announcements).
 The security review behind BM-19 to BM-24 is in
 [ADVERSARY_REVIEW/README.md](ADVERSARY_REVIEW/README.md).
 The go live plan and the gaps it found are in [GO-LIVE-PART-1.md](GO-LIVE-PART-1.md).
@@ -29,6 +29,7 @@ main flow. This file records what is built and why it is built that way.
 | Subscriptions | Done | Dated periods per owner, a 30 day trial to start; outside every period the owner's data is read only, for them and their assistants |
 | Administrator | Done | `admin` realm role and an **Accounts** screen: sign owners up, add or end periods, suspend and reactivate |
 | Metrics | Done | The administrator's **Metrics** screen (BM-31): active users, sign-ins, owners by subscription, sign-ups and trial conversions, what owners create most, API traffic, errors and the busiest and slowest routes, over 7, 30, 90 or 365 days, in Chart.js |
+| Announcements | Done | The administrator's **Announcements** screen (BM-30): an information or a warning, in English with optional French and German, shown above every screen to everybody signed in between two date-times; each user can dismiss one until it is next edited |
 | Buildings | Done | Full CRUD, API and UI |
 | Apartments | Done | Full CRUD with room layout, rent and status; unique label per building |
 | Tenants | Done | Full CRUD, lease dates, deposit, one active tenant per apartment |
@@ -126,7 +127,14 @@ intact and valid over the entire file, `ETSI.CAdES.detached` with SHA-256,
 untrusted only because the development certificate is self-signed. Its first
 page, rendered with PyMuPDF, shows the signature line under the payment terms.
 A keystore made with the `openssl` steps in `docs/DEPLOYMENT.md` was read back by
-Java as a private key entry.
+Java as a private key entry. For BM-30, against a throwaway stack: an
+administrator published a warning with a French translation, saw it at once on
+their own screen, and a newly registered owner found it above their portfolio,
+in French after switching language and in English after switching back, then
+dismissed it and found it still gone after a reload. The Announcements screen
+and the banners, an information and a warning together, were looked at 1440
+wide in Classic light and dark and in German, and 390 wide in Magic in French
+and in Ocean blue, with no horizontal scroll at 390.
 
 ## Tests
 
@@ -161,9 +169,15 @@ Java as a private key entry.
   and the startup refusals; `InvoiceSignatureIntegrationTest` covers a draft
   left unsigned, a sent, paid or cancelled invoice signed with the
   application's key, and the signature line in all three languages (BM-26).
-  `support/Pdfs` reads a PDF's words and signatures for all of them. Now 159
-  tests, counted from a full run.
-- Frontend: 87 unit tests (BM-31 added the chart configuration and the
+  `support/Pdfs` reads a PDF's words and signatures for all of them.
+  `AnnouncementIntegrationTest` covers who may manage announcements and who may
+  read them, only those showing now being read, a blank translation stored as
+  none, an edit changing `updatedAt`, deleting, and the refusals for a window
+  running backwards and a missing English text (BM-30). Now 167 tests, counted
+  from a full run.
+- Frontend: 93 unit tests (BM-30 added picking an announcement's language with
+  its English fallback, the dismissal key, an announcement's phase and the
+  round trip through a `datetime-local` field; BM-31 added the chart configuration and the
   metrics' mapping, both plain functions, since jsdom has no canvas;
   BM-25 added the quiet profile request, the visitor
   guard and the landing page's headline, buttons and contacts; BM-29 German
@@ -174,7 +188,7 @@ Java as a private key entry.
   screens exist, including that a refused profile is what "signed out" means and
   that an account owing us a password reaches no screen but the one that takes
   it, and that an administrator and a suspended account each see only theirs.
-- End to end: 13 Playwright specs against the running stack, covering an
+- End to end: 27 Playwright tests in 12 specs against the running stack, covering an
   administrator signing an owner up and ending their subscription, the link
   from the sign in page to registration, signing up and landing on a full
   portfolio, the duplicate email refusal, an owner creating an assistant who
@@ -192,7 +206,10 @@ Java as a private key entry.
   German (BM-29), and the administrator's Metrics screen with its charts, data
   tables and period switch, which an owner cannot reach (BM-31), and a newly
   registered owner's invoice downloading unsigned as a draft and signed once
-  sent (BM-26); `registerOwner` in `e2e/support.ts` makes that owner.
+  sent (BM-26); `registerOwner` in `e2e/support.ts` makes that owner; and an
+  administrator's announcement reaching an owner in their language, who
+  dismisses it for good, then deleted, and an owner who has no Announcements
+  screen (BM-30).
   `openSignIn` in `e2e/support.ts` is how a spec reaches the sign in form now
   that `/` is the landing page. `scripts/e2e` starts the
   stack on its own compose project, waits for every part, runs them and tears it
@@ -200,6 +217,28 @@ Java as a private key entry.
 
 ## Deliberate decisions
 
+- **The administrator's announcements reach everybody signed in (BM-30).**
+  - *Its own endpoint, asked every five minutes*, not a field of `/api/me`. The
+    profile is read once per session, so a maintenance notice published at noon
+    would never reach somebody who signed in that morning. The administrator's
+    own screen asks at once after every change. The refresh is a background
+    request, so a lapsed session does not pull anybody to the sign in page
+    mid-sentence (`QUIET_UNAUTHORIZED`); their next action will.
+  - *All three texts travel together* and the browser picks one, so switching
+    language changes the banner without asking again. English is required; a
+    French or German text left blank is stored as none and falls back to it.
+  - *Dismissed per browser, per version.* Closing one stores `id@updatedAt` in
+    `localStorage`, which an edit changes, so a moved maintenance window is seen
+    again. Only keys of what is still showing are kept. `AnnouncementsFeed`
+    holds what is showing and what was dismissed; the banner starts it and
+    stops it with the signed in shell, so nothing is asked after signing out.
+  - *Signed in users only.* The landing, registration and sign in pages show
+    none, so nothing about the service is readable without an account.
+  - *Instants, not days.* An announcement runs from `starts_at` to just before
+    `ends_at`, entered in the administrator's own time zone and stored in UTC,
+    and the database refuses one that ends before, or as, it starts.
+  - *Deleted for good*, unlike issued records: an announcement belongs to no
+    owner's books.
 - **An issued invoice is signed by the application, as it is downloaded (BM-26).**
   - *A PAdES baseline B signature inside the PDF*, not a verification code
     printed on it: any PDF reader can check it offline, and an edit after
@@ -893,9 +932,14 @@ Java as a private key entry.
   document for the tenant rather than a view for the owner.
 - The currency list lives twice, as `CurrencyCode` and as `CURRENCIES` in
   `models.ts`. Adding one means both, and a look at the invoice PDF.
-- Native `<input type="date">` controls follow the browser's own locale, not the
-  app's, so a date field can show a different separator from the dates in the
-  table beside it.
+- Native `<input type="date">` and `datetime-local` controls follow the
+  browser's own locale, not the app's, so a date field can show a different
+  separator from the dates in the table beside it.
+- An announcement can reach a user up to five minutes after it starts, or stay
+  up to five minutes after it ends, because the banner asks only that often.
+  Every open tab adds one small request per five minutes to the metrics' API
+  traffic. Nobody is told by email, and there is no preview of how a banner
+  will look before it is published.
 - A self-signed signing certificate proves nothing to a tenant: readers show
   the signature as valid but its signer as unknown. Production wants a document
   signing certificate from a certificate authority on Adobe's Approved Trust

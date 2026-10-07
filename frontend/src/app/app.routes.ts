@@ -82,6 +82,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/metrics').then((m) => m.MetricsPage),
   },
   {
+    path: 'announcements',
+    canMatch: [authGuard, adminGuard],
+    loadComponent: () => import('./features/announcements').then((m) => m.AnnouncementsPage),
+  },
+  {
     path: 'no-access',
     canMatch: [authGuard],
     loadComponent: () => import('./features/no-access').then((m) => m.NoAccessPage),

@@ -8,6 +8,7 @@ import { TranslationService } from '../core/i18n';
 import { Account, SubscriptionStatus } from '../core/models';
 import { MessageKey } from '../i18n/en';
 import { ConfirmService } from '../shared/confirm';
+import { isoDay } from '../shared/dates';
 import { Dialog } from '../shared/dialog';
 import { Icon } from '../shared/icon';
 import { IconButton } from '../shared/icon-button';
@@ -16,13 +17,6 @@ import { ToastService } from '../shared/toasts';
 import { TranslatePipe } from '../shared/translate.pipe';
 
 const STATUSES: SubscriptionStatus[] = ['ACTIVE', 'EXPIRED', 'SUSPENDED'];
-
-/** A calendar day as the API writes it, in the browser's own time zone. */
-function isoDay(date: Date): string {
-  const month = String(date.getMonth() + 1).padStart(2, '0');
-  const day = String(date.getDate()).padStart(2, '0');
-  return `${date.getFullYear()}-${month}-${day}`;
-}
 
 function shift(iso: string, years: number, days: number): string {
   const [year, month, day] = iso.split('-').map(Number);

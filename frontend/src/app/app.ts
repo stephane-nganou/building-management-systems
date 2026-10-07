@@ -5,6 +5,7 @@ import { filter } from 'rxjs';
 
 import { AuthService } from './core/auth';
 import { SessionService } from './core/session';
+import { Announcements } from './shared/announcements';
 import { Brand } from './shared/brand';
 import { ConfirmHost } from './shared/confirm';
 import { Icon } from './shared/icon';
@@ -20,6 +21,7 @@ import { TranslatePipe } from './shared/translate.pipe';
     RouterOutlet,
     RouterLink,
     RouterLinkActive,
+    Announcements,
     Brand,
     ConfirmHost,
     DayPipe,
@@ -91,6 +93,7 @@ import { TranslatePipe } from './shared/translate.pipe';
         <div class="nav-scrim" (click)="menuOpen.set(false)"></div>
 
         <main class="main">
+          <bms-announcements />
           @if (session.ownSubscriptionEnded() !== null) {
             <p class="notice read-only" role="status">
               <bms-icon name="alert" />
